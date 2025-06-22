@@ -1,0 +1,58 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const apikey = process.env.EVOLUTION_API_KEY;
+  if (!apikey) {
+    return res.status(500).json({ error: 'API key not configured' });
+  }
+
+  const { instanceName } = req.body;
+  if (!instanceName) {
+    return res.status(400).json({ error: 'instanceName é obrigatório' });
+  }
+
+  try {
+    // 1. Chamar a API externa para deslogar a instância
+    const response = await fetch(`https://evolution.hayttle.dev/instance/logout/${encodeURIComponent(instanceName)}`, {
+      method: 'DELETE',
+      headers: { 'apikey': apikey },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return res.status(response.status).json({ error: errorData.error || 'Erro ao desconectar instância na API externa' });
+    }
+    
+    // 2. Atualizar a instância no nosso banco para 'close'
+    const { error: dbError } = await supabase
+      .from('whatsapp_instances')
+      .update({ 
+          status: 'close', 
+          qrcode: null, // Limpar o QR code antigo
+          updated_at: new Date().toISOString() 
+        })
+      .eq('name', instanceName);
+
+    if (dbError) {
+      console.error("Erro ao atualizar status para 'close':", dbError);
+      // Mesmo com erro no nosso DB, a instância foi desconectada na API externa, então retornamos sucesso.
+    }
+
+    // 3. Retornar sucesso
+    return res.status(200).json({ success: true, message: 'Instância desconectada com sucesso.' });
+
+  } catch (err: any) {
+    console.error("Erro inesperado no endpoint /disconnect:", err);
+    return res.status(500).json({ error: err.message || 'Erro inesperado' });
+  }
+} 
