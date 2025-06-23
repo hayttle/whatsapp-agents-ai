@@ -2,6 +2,8 @@ import React from 'react';
 import { Input, Select } from '@/components/brand';
 import { Instance } from '../types';
 
+type EmpresaDropdown = { id: string; name: string };
+
 interface GeneralSettingsProps {
   instanceName: string;
   handleInstanceNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -9,7 +11,7 @@ interface GeneralSettingsProps {
   setIntegration: (value: string) => void;
   INTEGRATION_OPTIONS: string[];
   instance?: Instance | null;
-  tenants: any[];
+  tenants: EmpresaDropdown[];
   selectedTenant: string;
   setSelectedTenant: (value: string) => void;
 }
@@ -35,8 +37,8 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
           required
         >
           <option value="">Selecione a empresa</option>
-          {tenants.map((emp: any) => (
-            <option key={emp.id} value={emp.id}>{emp.nome}</option>
+          {tenants.map((emp: EmpresaDropdown) => (
+            <option key={emp.id} value={emp.id}>{emp.name}</option>
           ))}
         </Select>
       )}

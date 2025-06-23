@@ -1,6 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { authenticateUser, createApiClient } from '@/lib/supabase/api';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -8,29 +7,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const supabase = createServerComponentClient({ cookies });
+    // Autenticar usuário via cookies
+    const auth = await authenticateUser(req, res);
     
-    // Verificar autenticação
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    if (!auth) {
+      return res.status(401).json({ error: 'Unauthorized - User not authenticated' });
     }
 
-    // Buscar dados do usuário
-    const { data: userData } = await supabase
-      .from('users')
-      .select('role, tenant_id')
-      .eq('email', session.user.email)
-      .single();
-
-    if (!userData) {
-      return res.status(403).json({ error: 'User not found' });
-    }
+    const { userData } = auth;
+    const supabase = createApiClient(req, res);
 
     const { tenant_id, instance_id, title, prompt, fallback_message, active } = req.body;
 
-    // Validação dos dados
-    if (!tenant_id || !instance_id || !title || !prompt || !fallback_message) {
+    // Validação dos dados (instance_id agora é opcional)
+    if (!tenant_id || !title || !prompt || !fallback_message) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -43,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from('agents')
       .insert({
         tenant_id,
-        instance_id,
+        instance_id: instance_id || null,
         title,
         prompt,
         fallback_message,
@@ -54,12 +44,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (error) {
       console.error('Error creating agent:', error);
-      return res.status(500).json({ error: 'Internal server error' });
+      return res.status(500).json({ error: 'Error creating agent: ' + error.message });
     }
 
     return res.status(201).json({ success: true, agent });
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     console.error('Error in agent create API:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
   }
 } 

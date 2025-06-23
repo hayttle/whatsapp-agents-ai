@@ -1,23 +1,23 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-export const useInstanceActions = () => {
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+type ActionFunction = () => Promise<void>;
+type ActionId = string;
 
-  const handleAction = async (action: () => Promise<any>, instanceName: string) => {
-    setActionLoading(instanceName);
+export function useInstanceActions() {
+  const [actionLoading, setActionLoading] = useState<ActionId | null>(null);
+
+  const handleAction = async (action: ActionFunction, actionId: ActionId) => {
+    setActionLoading(actionId);
     try {
       await action();
-    } catch (err: any) {
-      const errorMessage = err instanceof Error ? err.message : "Ocorreu um erro inesperado.";
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro inesperado';
       toast.error(errorMessage);
     } finally {
       setActionLoading(null);
     }
   };
 
-  return {
-    actionLoading,
-    handleAction,
-  };
-}; 
+  return { actionLoading, handleAction };
+} 

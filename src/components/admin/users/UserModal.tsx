@@ -1,34 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Input, Select, Button } from "@/components/brand";
+import Modal, { ModalBody, ModalFooter, ModalHeader } from '@/components/ui/Modal';
+import { Input, Select, Button, Alert } from '@/components/brand';
 import { User, Mail, Lock, Briefcase, Building } from "lucide-react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
+import { UserModalProps } from './types';
 
-interface User {
-  id: string;
-  nome: string;
-  email: string;
-  role: string;
-  tenant_id?: string;
-}
-
-interface Empresa {
-  id: string;
-  nome: string;
-}
-
-interface UserFormProps {
-  user?: User;
-  isSuperAdmin: boolean;
-  tenantId?: string;
-  empresas: Empresa[];
-  onSuccess?: () => void;
-  onCancel?: () => void;
-}
-
-export function UserForm({ user, isSuperAdmin, tenantId, empresas, onSuccess, onCancel }: UserFormProps) {
-  const [nome, setNome] = useState("");
+export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantId, empresas }: UserModalProps) {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [role, setRole] = useState("user");
@@ -37,18 +17,25 @@ export function UserForm({ user, isSuperAdmin, tenantId, empresas, onSuccess, on
   const [error, setError] = useState("");
 
   const isEditing = !!user;
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   // Preencher formulário se estiver editando
   useEffect(() => {
     if (user) {
-      setNome(user.nome);
+      setName(user.name);
       setEmail(user.email);
       setRole(user.role);
       setEmpresa(user.tenant_id || "");
       setSenha(""); // Não preencher senha na edição
+    } else {
+      setName("");
+      setEmail("");
+      setSenha("");
+      setRole("user");
+      setEmpresa(tenantId || "");
     }
-  }, [user]);
+    setError("");
+  }, [user, isOpen, tenantId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +44,7 @@ export function UserForm({ user, isSuperAdmin, tenantId, empresas, onSuccess, on
 
     try {
       // Validações básicas
-      if (!nome.trim()) {
+      if (!name.trim()) {
         throw new Error('Nome é obrigatório');
       }
       
@@ -103,14 +90,14 @@ export function UserForm({ user, isSuperAdmin, tenantId, empresas, onSuccess, on
       }
       
       // Validação final do formulário
-      if (!nome.trim() || !email.trim() || !role) {
+      if (!name.trim() || !email.trim() || !role) {
         throw new Error('Todos os campos obrigatórios devem ser preenchidos');
       }
 
       if (isEditing) {
         // Atualizar usuário existente
-        const updateData: any = {
-          nome,
+        const updateData = {
+          name,
           email,
           role,
           tenant_id: isSuperAdmin ? empresa : tenantId,
@@ -140,8 +127,9 @@ export function UserForm({ user, isSuperAdmin, tenantId, empresas, onSuccess, on
               const errorData = await response.json();
               throw new Error(errorData.error || 'Erro ao atualizar usuário');
             }
-          } catch (apiError: any) {
-            throw new Error('Erro ao atualizar usuário: ' + apiError.message);
+          } catch (apiError) {
+            const errorMessage = apiError instanceof Error ? apiError.message : 'Erro desconhecido';
+            throw new Error('Erro ao atualizar usuário: ' + errorMessage);
           }
         } else {
           // Atualizar dados na tabela users
@@ -161,7 +149,7 @@ export function UserForm({ user, isSuperAdmin, tenantId, empresas, onSuccess, on
         const userData = {
           email,
           password: senha,
-          nome,
+          name,
           role,
           tenant_id: isSuperAdmin ? empresa : tenantId,
         };
@@ -179,116 +167,109 @@ export function UserForm({ user, isSuperAdmin, tenantId, empresas, onSuccess, on
             const errorData = await response.json();
             throw new Error(errorData.error || 'Erro ao criar usuário');
           }
-        } catch (apiError: any) {
-          throw new Error('Erro ao criar usuário: ' + apiError.message);
+        } catch (err: unknown) {
+          const errorMessage = err instanceof Error ? err.message : 'Erro ao salvar usuário';
+          setError(errorMessage);
         }
 
         toast.success("Usuário cadastrado com sucesso!");
       }
 
-      // Limpar formulário se não estiver editando
-      if (!isEditing) {
-        setNome("");
-        setEmail("");
-        setSenha("");
-        setRole("user");
-        if (isSuperAdmin) setEmpresa("");
-      }
-
-      if (onSuccess) onSuccess();
-    } catch (err: any) {
-      setError(err.message || "Erro ao salvar usuário");
+      onSave(user || { id: '', name, email, role: role as 'user' | 'admin' | 'super_admin', tenant_id: empresa, created_at: new Date().toISOString() });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao salvar usuário';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <Input
-        label="Nome do usuário"
-        placeholder="Ex: João da Silva"
-        value={nome}
-        onChange={e => setNome(e.target.value)}
-        required
-        leftIcon={<User className="h-4 w-4" />}
-      />
-      
-      <Input
-        label="E-mail"
-        type="email"
-        placeholder="Ex: joao.silva@email.com"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-        required
-        leftIcon={<Mail className="h-4 w-4" />}
-      />
-      
-      <Input
-        label={isEditing ? "Nova senha (opcional)" : "Senha"}
-        type="password"
-        placeholder={isEditing ? "Deixe em branco para manter a atual" : "Mínimo de 6 caracteres"}
-        value={senha}
-        onChange={e => setSenha(e.target.value)}
-        required={!isEditing}
-        leftIcon={<Lock className="h-4 w-4" />}
-      />
-      
-      <Select
-        label="Papel (Role)"
-        value={role}
-        onChange={e => setRole(e.target.value)}
-        required
-        leftIcon={<Briefcase className="h-4 w-4" />}
-      >
-        {isSuperAdmin && <option value="super_admin">Super Admin</option>}
-        <option value="admin">Admin</option>
-        <option value="user">Usuário</option>
-      </Select>
-      
-      {isSuperAdmin && (
-        <Select
-          label="Empresa"
-          value={empresa}
-          onChange={e => setEmpresa(e.target.value)}
-          required={isSuperAdmin}
-          leftIcon={<Building className="h-4 w-4" />}
-        >
-          <option value="">Selecione a empresa</option>
-          {empresas.map((emp) => (
-            <option key={emp.id} value={emp.id}>{emp.nome}</option>
-          ))}
-        </Select>
-      )}
-
-      {error && (
-        <div className="text-red-600 text-sm bg-red-50 p-3 rounded-md">
-          {error}
-        </div>
-      )}
-
-      <div className="flex gap-3 pt-4">
-        {onCancel && (
-          <Button 
-            type="button" 
+    <Modal isOpen={isOpen} onClose={onClose} className="w-full max-w-lg">
+      <ModalHeader>{user ? 'Editar Usuário' : 'Novo Usuário'}</ModalHeader>
+      <form onSubmit={handleSubmit}>
+        <ModalBody className="space-y-4">
+          {error && (
+            <Alert variant="error" title="Erro">
+              {error}
+            </Alert>
+          )}
+          
+          <Input
+            label="Nome completo"
+            name="name"
+            placeholder="Ex: João Silva"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            required
+            leftIcon={<User className="h-4 w-4" />}
+          />
+          
+          <Input
+            label="E-mail"
+            type="email"
+            placeholder="Ex: joao@empresa.com"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+            leftIcon={<Mail className="h-4 w-4" />}
+          />
+          
+          <Input
+            label={isEditing ? "Nova senha (opcional)" : "Senha"}
+            type="password"
+            placeholder={isEditing ? "Deixe em branco para manter a atual" : "Mínimo 6 caracteres"}
+            value={senha}
+            onChange={e => setSenha(e.target.value)}
+            required={!isEditing}
+            leftIcon={<Lock className="h-4 w-4" />}
+          />
+          
+          <Select
+            label="Papel"
+            value={role}
+            onChange={e => setRole(e.target.value)}
+            required
+            leftIcon={<Briefcase className="h-4 w-4" />}
+          >
+            {isSuperAdmin && <option value="super_admin">Super Admin</option>}
+            <option value="admin">Admin</option>
+            <option value="user">Usuário</option>
+          </Select>
+          
+          {isSuperAdmin && (
+            <Select
+              label="Empresa"
+              value={empresa}
+              onChange={e => setEmpresa(e.target.value)}
+              required
+              leftIcon={<Building className="h-4 w-4" />}
+            >
+              <option value="">Selecione a empresa</option>
+              {empresas.map((emp) => (
+                <option key={emp.id} value={emp.id}>{emp.name}</option>
+              ))}
+            </Select>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            type="button"
+            onClick={onClose}
             variant="outline"
-            onClick={onCancel}
-            className="flex-1"
-            size="lg"
+            disabled={loading}
           >
             Cancelar
           </Button>
-        )}
-        
-        <Button 
-          type="submit" 
-          loading={loading}
-          className="flex-1"
-          size="lg"
-        >
-          {loading ? "Salvando..." : (isEditing ? "Atualizar Usuário" : "Cadastrar Usuário")}
-        </Button>
-      </div>
-    </form>
+          <Button
+            type="submit"
+            loading={loading}
+            disabled={loading}
+          >
+            {user ? 'Salvar Alterações' : 'Criar Usuário'}
+          </Button>
+        </ModalFooter>
+      </form>
+    </Modal>
   );
 } 

@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // Testar a API externa
-    const evolutionUrl = `https://evolution.hayttle.dev/instance/connect/${encodeURIComponent(instanceName)}`;
+    const evolutionUrl = `${process.env.EVOLUTION_API_URL}/instance/connect/${encodeURIComponent(instanceName)}`;
     
     const response = await fetch(evolutionUrl, {
       method: 'GET',
@@ -35,12 +35,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       url: evolutionUrl
     });
 
-  } catch (err: any) {
-    console.error("Erro no teste de conexão:", err);
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Erro inesperado';
     return res.status(500).json({ 
       success: false,
-      error: err.message || 'Erro inesperado',
-      stack: err.stack
+      error: errorMessage,
+      stack: err instanceof Error ? err.stack : undefined
     });
   }
 } 

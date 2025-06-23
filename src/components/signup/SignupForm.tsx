@@ -3,14 +3,14 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Input, Button, Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/brand";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { User, Mail, Lock, Phone } from "lucide-react";
+import { Input, Button, Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/brand";
+import { Mail, Lock, User, Building2 } from "lucide-react";
 
 const signupSchema = z.object({
-  nome: z.string().min(3, "Nome obrigatório"),
+  name: z.string().min(3, "Nome obrigatório"),
   email: z.string().email("E-mail inválido"),
   senha: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
   whatsapp: z.string().min(10, "Número inválido").max(15, "Número inválido"),
@@ -19,7 +19,7 @@ const signupSchema = z.object({
 export type SignupData = z.infer<typeof signupSchema>;
 
 export function SignupForm() {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const {
@@ -51,8 +51,9 @@ export function SignupForm() {
       }
       toast.success("Cadastro realizado com sucesso!");
       router.push("/dashboard");
-    } catch (err: any) {
-      toast.error(err.message || "Erro inesperado. Tente novamente.");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -72,9 +73,9 @@ export function SignupForm() {
               type="text"
               placeholder="Digite seu nome completo"
               leftIcon={<User className="h-4 w-4" />}
-              error={errors.nome?.message}
+              error={errors.name?.message}
               autoComplete="name"
-              {...register("nome")}
+              {...register("name")}
             />
             <Input
               label="E-mail"
@@ -98,7 +99,7 @@ export function SignupForm() {
               label="Número WhatsApp"
               type="tel"
               placeholder="(99) 99999-9999"
-              leftIcon={<Phone className="h-4 w-4" />}
+              leftIcon={<Building2 className="h-4 w-4" />}
               error={errors.whatsapp?.message}
               autoComplete="tel"
               {...register("whatsapp")}

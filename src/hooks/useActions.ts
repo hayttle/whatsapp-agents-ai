@@ -1,26 +1,24 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
-export const useActions = () => {
+export function useActions() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const handleAction = async (action: () => Promise<any>, actionId: string, successMessage?: string) => {
-    setActionLoading(actionId);
+  const handleAction = useCallback(async (
+    action: () => Promise<void>,
+    actionId?: string
+  ) => {
+    setActionLoading(actionId || 'default');
     try {
       await action();
-      if (successMessage) {
-        toast.success(successMessage);
-      }
-    } catch (err: any) {
-      const errorMessage = err instanceof Error ? err.message : "Ocorreu um erro inesperado.";
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       toast.error(errorMessage);
+      throw error;
     } finally {
       setActionLoading(null);
     }
-  };
+  }, []);
 
-  return {
-    actionLoading,
-    handleAction,
-  };
-}; 
+  return { actionLoading, handleAction };
+} 

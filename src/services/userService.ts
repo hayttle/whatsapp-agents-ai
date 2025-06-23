@@ -1,7 +1,7 @@
 export interface User {
   id: string;
   email: string;
-  nome: string;
+  name: string;
   role: 'super_admin' | 'admin' | 'user';
   tenant_id?: string;
   created_at?: string;
@@ -23,32 +23,12 @@ export interface ApiResponse {
 }
 
 class UserService {
-  private async getAuthToken(): Promise<string | null> {
-    if (typeof window !== 'undefined') {
-      // Try to get token from Supabase session
-      const { createClientComponentClient } = await import('@supabase/auth-helpers-nextjs');
-      const supabase = createClientComponentClient();
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      return session?.access_token || null;
-    }
-    return null;
-  }
-
   private async makeRequest<T>(url: string, options?: RequestInit): Promise<T> {
-    const token = await this.getAuthToken();
-    
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...(options?.headers as Record<string, string> || {}),
-    };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
     const response = await fetch(url, {
-      headers,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
       ...options,
     });
 

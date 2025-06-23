@@ -1,10 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { authenticateUser, createApiClient } from '@/lib/supabase/api';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -12,90 +8,64 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Verificar autenticação via token no header
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized - No token provided' });
-    }
-
-    const token = authHeader.split(' ')[1];
+    // Autenticar usuário via cookies
+    const auth = await authenticateUser(req, res);
     
-    // Verificar o token com Supabase
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError || !user) {
-      return res.status(401).json({ error: 'Unauthorized - Invalid token' });
+    if (!auth) {
+      return res.status(401).json({ error: 'Unauthorized - User not authenticated' });
     }
 
-    // Buscar dados do usuário
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('role, tenant_id')
-      .eq('email', user.email)
-      .single();
+    const { userData } = auth;
+    const supabase = createApiClient(req, res);
+    const adminClient = createAdminClient();
 
-    if (userError || !userData) {
-      return res.status(403).json({ error: 'User not found in database' });
-    }
+    const { name, email, role, tenant_id, password } = req.body;
 
-    const { email, password, nome, role, tenant_id } = req.body;
-
-    // Validação dos dados
-    if (!email || !password || !nome || !role || !tenant_id) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    if (!name || !email || !role || !password) {
+      return res.status(400).json({ error: 'Name, email, role and password are required' });
     }
 
     // Verificar permissões
-    if (userData.role !== 'super_admin' && tenant_id !== userData.tenant_id) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
+    if (userData.role !== 'super_admin' && role === 'super_admin') {
+      return res.status(403).json({ error: 'Insufficient permissions to create super_admin' });
     }
 
-    // Criar usuário no Auth
-    const { data: authData, error: createAuthError } = await supabase.auth.admin.createUser({
+    // Se não for super_admin, só pode criar usuários para o mesmo tenant
+    const targetTenantId = userData.role === 'super_admin' ? tenant_id : userData.tenant_id;
+
+    // 1. Criar usuário no Supabase Auth
+    const { data: authUser, error: authError } = await adminClient.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: {
-        nome,
-        role,
-        tenant_id,
-      },
     });
 
-    if (createAuthError) {
-      console.error('Error creating user in Auth:', createAuthError);
-      return res.status(500).json({ error: 'Error creating user in Auth: ' + createAuthError.message });
+    if (authError || !authUser?.user) {
+      return res.status(500).json({ error: 'Erro ao criar usuário no Auth: ' + (authError?.message || 'Erro desconhecido') });
     }
 
-    const userId = authData.user?.id;
-    if (!userId) {
-      return res.status(500).json({ error: 'User created in Auth but ID not returned' });
-    }
-
-    // Inserir na tabela users
-    const { error: dbError } = await supabase
+    // 2. Inserir usuário na tabela users, usando o mesmo id do Auth
+    const { data: user, error } = await supabase
       .from('users')
       .insert({
-        id: userId,
+        id: authUser.user.id,
+        name,
         email,
-        nome,
         role,
-        tenant_id,
-      });
+        tenant_id: targetTenantId
+      })
+      .select()
+      .single();
 
-    if (dbError) {
-      console.error('Error inserting user in database:', dbError);
-      // Tentar deletar o usuário do Auth se falhou no banco
-      await supabase.auth.admin.deleteUser(userId);
-      return res.status(500).json({ error: 'Error inserting user in database: ' + dbError.message });
+    if (error) {
+      // Se falhar aqui, idealmente remover o usuário do Auth para não ficar "órfão"
+      await adminClient.auth.admin.deleteUser(authUser.user.id);
+      return res.status(500).json({ error: 'Erro ao criar usuário na tabela users: ' + error.message });
     }
 
-    return res.status(201).json({ 
-      success: true, 
-      user: { id: userId, email, nome, role, tenant_id } 
-    });
-  } catch (error: any) {
-    console.error('Error in user create API:', error);
-    return res.status(500).json({ error: 'Internal server error: ' + error.message });
+    return res.status(201).json({ success: true, user });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+    return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
   }
 } 

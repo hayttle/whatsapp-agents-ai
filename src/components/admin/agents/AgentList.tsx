@@ -1,11 +1,11 @@
 "use client";
 import { useState } from "react";
-import { AgentModal } from "@/components/admin/AgentModal";
+import { AgentModal } from "./AgentModal";
 import { useAgents } from "@/hooks/useAgents";
 import { useActions } from "@/hooks/useActions";
-import { agentService } from "@/services/agentService";
+import { Agent } from "./types";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
-import { Button, Card, Input, Select, Badge, StatusIndicator, Alert } from "@/components/brand";
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Select, StatusIndicator, Alert } from "@/components/brand";
 import { Bot, Plus, Edit, Trash2, Power, PowerOff, Building } from "lucide-react";
 
 interface AgentListProps {
@@ -14,48 +14,51 @@ interface AgentListProps {
 }
 
 export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
-  const [refreshKey, setRefreshKey] = useState(0);
   const [filtroAtivo, setFiltroAtivo] = useState<'all' | 'active' | 'inactive'>('all');
   const [showModal, setShowModal] = useState(false);
-  const [editAgent, setEditAgent] = useState<any | null>(null);
-  const [deleteAgent, setDeleteAgent] = useState<any | null>(null);
+  const [editAgent, setEditAgent] = useState<Agent | null>(null);
+  const [deleteAgent, setDeleteAgent] = useState<Agent | null>(null);
   
-  const { agentes, empresas, instancias, loading, error } = useAgents({
+  const { 
+    agentes, 
+    empresas, 
+    instancias, 
+    loading, 
+    error, 
+    refetch,
+    toggleAgentStatus,
+    deleteAgent: deleteAgentFromHook
+  } = useAgents({
     isSuperAdmin,
     tenantId,
-    refreshKey,
   });
   
   const { actionLoading, handleAction } = useActions();
 
-  const agentesFiltrados = agentes.filter(a =>
+  const agentesFiltrados = agentes.filter((a: Agent) =>
     filtroAtivo === 'all' ? true : filtroAtivo === 'active' ? a.active : !a.active
   );
 
-  const handleToggleActive = (agente: any) => handleAction(
+  const handleToggleActive = (agente: Agent) => handleAction(
     async () => {
-      await agentService.toggleAgentStatus(agente.id, !agente.active);
-      setRefreshKey(k => k + 1);
+      await toggleAgentStatus(agente.id, !agente.active);
     },
-    `toggle-${agente.id}`,
-    `Agente ${agente.active ? 'desativado' : 'ativado'} com sucesso!`
+    `toggle-${agente.id}`
   );
 
   const handleDelete = () => handleAction(
     async () => {
       if (!deleteAgent) return;
-      await agentService.deleteAgent(deleteAgent.id);
+      await deleteAgentFromHook(deleteAgent.id);
       setDeleteAgent(null);
-      setRefreshKey(k => k + 1);
     },
-    `delete-${deleteAgent?.id}`,
-    "Agente deletado com sucesso!"
+    `delete-${deleteAgent?.id}`
   );
 
   const handleSave = () => {
     setShowModal(false);
     setEditAgent(null);
-    setRefreshKey(k => k + 1);
+    refetch();
   };
 
   if (loading) {
@@ -67,7 +70,7 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
   }
 
   if (error) {
-    return <Alert variant="error" title="Erro ao carregar agentes" children={error} />;
+    return <Alert variant="error" title="Erro ao carregar agentes">{error}</Alert>;
   }
 
   return (
@@ -76,7 +79,7 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
         <Select
           label="Filtrar por status"
           value={filtroAtivo}
-          onChange={e => setFiltroAtivo(e.target.value as any)}
+          onChange={e => setFiltroAtivo(e.target.value as 'all' | 'active' | 'inactive')}
           className="w-full md:w-48"
         >
           <option value="all">Todos</option>
@@ -84,20 +87,20 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
           <option value="inactive">Inativos</option>
         </Select>
         {(isSuperAdmin || tenantId) && (
-          <Button 
-            className="ml-auto" 
+          <button 
+            className="px-4 py-2 text-sm font-semibold text-white bg-brand-gray-dark rounded-md hover:bg-brand-gray-deep transition-colors flex items-center gap-2 whitespace-nowrap self-end"
             onClick={() => { setEditAgent(null); setShowModal(true); }}
-            leftIcon={<Plus className="w-4 h-4" />}
           >
+            <Plus className="w-4 h-4" />
             Novo Agente
-          </Button>
+          </button>
         )}
       </div>
 
       {agentesFiltrados.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {agentesFiltrados.map((agente: any) => {
-            const isLoading = actionLoading.startsWith(`toggle-${agente.id}`) || actionLoading.startsWith(`delete-${agente.id}`);
+          {agentesFiltrados.map((agente: Agent) => {
+            const isLoading = actionLoading?.startsWith(`toggle-${agente.id}`) || actionLoading?.startsWith(`delete-${agente.id}`);
             return (
               <Card key={agente.id} className="flex flex-col">
                 <CardHeader>
@@ -106,10 +109,10 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                       <Bot className="w-5 h-5 text-brand-green-light" />
                       {agente.title}
                     </span>
-                    <StatusIndicator active={agente.active} />
+                    <StatusIndicator status={agente.active ? 'online' : 'offline'} />
                   </CardTitle>
                   <CardDescription>
-                    Instância: {instancias[agente.instance_id] || "Não definida"}
+                    Instância: {instancias[agente.instance_id || ''] || "Não definida"}
                     {isSuperAdmin && empresas[agente.tenant_id] && (
                       <span className="flex items-center gap-1 text-xs mt-1">
                         <Building className="w-3 h-3"/>
@@ -160,7 +163,7 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
         <div className="text-center py-10 text-gray-500 border border-dashed rounded-lg">
           <Bot className="w-12 h-12 mx-auto mb-2 text-gray-300" />
           <h3 className="text-lg font-semibold">Nenhum agente encontrado</h3>
-          <p className="text-sm">Use o botão "Novo Agente" para criar o primeiro.</p>
+          <p className="text-sm">Use o botão &quot;Novo Agente&quot; para criar o primeiro.</p>
         </div>
       )}
       

@@ -24,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // Deletar na API externa
-    const response = await fetch(`https://evolution.hayttle.dev/instance/delete/${encodeURIComponent(instanceName)}`, {
+    const response = await fetch(`${process.env.EVOLUTION_API_URL}/instance/delete/${encodeURIComponent(instanceName)}`, {
       method: 'DELETE',
       headers: {
         'apikey': apikey,
@@ -36,12 +36,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Deletar no banco local
-    const { error: dbError } = await supabase.from('whatsapp_instances').delete().eq('name', instanceName);
+    const { error: dbError } = await supabase.from('whatsapp_instances').delete().eq('instanceName', instanceName);
     if (dbError) {
       return res.status(500).json({ error: dbError.message || 'Erro ao deletar no banco local' });
     }
     return res.status(200).json({ success: true });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message || 'Erro inesperado' });
+  } catch (err: unknown) {
+    return res.status(500).json({ error: err instanceof Error ? err.message : 'Erro inesperado' });
   }
 } 

@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
 
@@ -26,11 +27,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: currentInstance, error: fetchError } = await supabase
       .from('whatsapp_instances')
       .select('status, qrcode')
-      .eq('name', instanceName)
+      .eq('instanceName', instanceName)
       .single();
 
     if (fetchError) {
-      console.error('Erro ao buscar instância:', fetchError);
       return res.status(500).json({ error: 'Erro ao buscar dados da instância.' });
     }
 
@@ -65,13 +65,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             ...existingQrData
           });
         }
-      } catch (parseError) {
+      } catch {
         // Silenciosamente continua para gerar novo QR code
       }
     }
 
     // 1. Obter novo QR code da API externa
-    const evolutionUrl = `https://evolution.hayttle.dev/instance/connect/${encodeURIComponent(instanceName)}`;
+    const evolutionUrl = `${process.env.EVOLUTION_API_URL}/instance/connect/${encodeURIComponent(instanceName)}`;
     
     const response = await fetch(evolutionUrl, {
       method: 'GET',
@@ -84,7 +84,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (!response.ok) {
       const errorMessage = data.error || data.response?.message?.[0] || 'Erro ao gerar QR Code na API externa';
-      console.error('Erro na API externa:', errorMessage);
       return res.status(response.status).json({ error: errorMessage });
     }
     
@@ -119,7 +118,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // Se não conseguimos extrair dados válidos, retornar erro
     if (!qrCodeData && !pairingCode) {
-      console.error('Não foi possível extrair dados de conexão da resposta:', data);
       return res.status(500).json({ 
         error: 'Resposta da API externa não contém dados de conexão válidos',
         originalData: data
@@ -128,18 +126,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // 2. Atualizar a instância no banco de dados com o novo QR Code e status
     const qrCodeString = JSON.stringify(data);
-    
+    let statusToSet = 'connecting';
+    if (
+      data.status === 'open' ||
+      (data.response && data.response.status === 'open') ||
+      (data.instance && (data.instance.state === 'open' || data.instance.status === 'open'))
+    ) {
+      statusToSet = 'open';
+    }
     const { error: dbError } = await supabase
       .from('whatsapp_instances')
       .update({ 
           qrcode: qrCodeString,
-          status: 'connecting',
+          status: statusToSet,
           updated_at: new Date().toISOString() 
         })
-      .eq('name', instanceName);
+      .eq('instanceName', instanceName);
 
     if (dbError) {
-        console.error("Erro ao atualizar a instância no banco:", dbError);
         return res.status(500).json({ error: 'Erro ao salvar o novo QR Code no banco de dados.' });
     }
 
@@ -152,8 +156,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     return res.status(200).json(responseData);
 
-  } catch (err: any) {
-    console.error("Erro inesperado no endpoint /connect:", err);
-    return res.status(500).json({ error: err.message || 'Erro inesperado' });
+  } catch (err: unknown) {
+    return res.status(500).json({ error: err instanceof Error ? err.message : 'Erro inesperado' });
   }
 } 

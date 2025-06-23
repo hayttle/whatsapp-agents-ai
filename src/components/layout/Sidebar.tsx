@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabase/client';
 import { 
   Home, 
   Settings, 
@@ -17,53 +17,57 @@ import {
 } from 'lucide-react';
 import { Button, Badge } from '@/components/brand';
 
-interface NavItem {
-  href: string;
+interface SidebarItem {
   label: string;
-  icon: any;
-  roles: string[];
-  children?: NavItem[];
+  href: string;
+  icon: React.ElementType;
+  adminOnly?: boolean;
+  superAdminOnly?: boolean;
+  children?: SidebarItem[];
 }
 
-const navItems: NavItem[] = [
+const navItems: SidebarItem[] = [
   { 
     href: '/dashboard', 
     label: 'Dashboard', 
     icon: Home, 
-    roles: ['super_admin', 'admin', 'user'] 
+    adminOnly: true,
+    superAdminOnly: true
   },
   { 
     href: '/admin/instancias', 
     label: 'Instâncias', 
     icon: MessageSquare, 
-    roles: ['super_admin', 'admin', 'user'] 
+    adminOnly: true,
+    superAdminOnly: true
   },
   { 
     href: '/admin/agentes', 
     label: 'Agentes', 
     icon: Bot, 
-    roles: ['super_admin', 'admin'] 
+    superAdminOnly: true
   },
   { 
     href: '/admin/usuarios', 
     label: 'Usuários', 
     icon: Users, 
-    roles: ['super_admin', 'admin'] 
+    superAdminOnly: true
   },
   { 
     href: '/admin/empresas', 
     label: 'Empresas', 
     icon: Building2, 
-    roles: ['super_admin'] 
+    superAdminOnly: true
   },
   { 
     href: '/admin', 
     label: 'Administração', 
     icon: Settings, 
-    roles: ['super_admin', 'admin'],
+    adminOnly: true,
+    superAdminOnly: true,
     children: [
-      { href: '/admin/configuracoes', label: 'Configurações', icon: Settings, roles: ['super_admin'] },
-      { href: '/admin/logs', label: 'Logs do Sistema', icon: Settings, roles: ['super_admin'] },
+      { href: '/admin/configuracoes', label: 'Configurações', icon: Settings, superAdminOnly: true },
+      { href: '/admin/logs', label: 'Logs do Sistema', icon: Settings, superAdminOnly: true },
     ]
   },
 ];
@@ -87,20 +91,17 @@ export function Sidebar() {
 
     const fetchUserData = async () => {
       try {
-        const supabase = createClientComponentClient();
-        const { data: { session } } = await supabase.auth.getSession();
+        // Usar a API em vez de consulta direta ao Supabase
+        const response = await fetch('/api/users/current');
         
-        if (session?.user?.email) {
-          const { data: userData } = await supabase
-            .from('users')
-            .select('nome, email, role')
-            .eq('email', session.user.email)
-            .single();
+        if (response.ok) {
+          const data = await response.json();
           
-          if (userData) {
-            setUserRole(userData.role || 'user');
-            setUserName(userData.nome || '');
-            setUserEmail(userData.email || '');
+          if (data.user) {
+            console.log('✅ Sidebar: Usuário carregado:', data.user);
+            setUserRole(data.user.role || 'user');
+            setUserName(data.user.name || '');
+            setUserEmail(data.user.email || '');
           }
         }
         setIsLoading(false);
@@ -123,11 +124,11 @@ export function Sidebar() {
     setExpandedItems(newExpanded);
   };
 
-  const filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
+  const filteredNavItems = navItems.filter(item => item.adminOnly === true || item.superAdminOnly === true);
 
   const handleLogout = async () => {
     try {
-      const supabase = createClientComponentClient();
+      const supabase = createClient();
       await supabase.auth.signOut();
       window.location.href = '/login';
     } catch (error) {
@@ -167,7 +168,7 @@ export function Sidebar() {
             
             const isExpanded = expandedItems.has(item.href);
             const filteredChildren = hasChildren 
-              ? item.children!.filter(child => child.roles.includes(userRole))
+              ? item.children!.filter(child => child.adminOnly === true || child.superAdminOnly === true)
               : [];
 
             return (
@@ -189,7 +190,7 @@ export function Sidebar() {
                     {hasChildren && (
                       <div className="flex items-center gap-2">
                         {filteredChildren.length > 0 && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="default" className="text-xs">
                             {filteredChildren.length}
                           </Badge>
                         )}
@@ -205,7 +206,7 @@ export function Sidebar() {
                   {/* Submenu */}
                   {hasChildren && isExpanded && (
                     <ul className="ml-6 mt-1 space-y-1">
-                      {filteredChildren.map((child) => {
+                      {filteredChildren.map((child: SidebarItem) => {
                         const isChildActive = pathname === child.href;
                         return (
                           <li key={child.href}>

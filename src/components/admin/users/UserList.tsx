@@ -1,22 +1,14 @@
 "use client";
-import React, { useReducer, useState, useEffect } from "react";
+import React, { useReducer, useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import { UserForm } from "@/components/admin/UserForm";
+import { UserModal } from "./UserModal";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
 import ActionButton from "@/components/ui/ActionButton";
 import { useActions } from "@/hooks/useActions";
 import { tenantService } from "@/services/tenantService";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Users, Plus, Edit, Trash2, Mail, User, Shield, Building } from "lucide-react";
-
-interface User {
-  id: string;
-  nome: string;
-  email: string;
-  role: string;
-  tenant_id?: string;
-  tenant_name?: string;
-}
+import { userService } from "@/services/userService";
+import { User as UserType, Empresa } from "./types";
 
 interface UserListProps {
   isSuperAdmin: boolean;
@@ -26,13 +18,13 @@ interface UserListProps {
 type ModalState = 
   | { type: 'NONE' }
   | { type: 'CREATE' }
-  | { type: 'EDIT', payload: User }
-  | { type: 'DELETE', payload: User };
+  | { type: 'EDIT', payload: UserType }
+  | { type: 'DELETE', payload: UserType };
 
 type ModalAction = 
   | { type: 'OPEN_CREATE' }
-  | { type: 'OPEN_EDIT', payload: User }
-  | { type: 'OPEN_DELETE', payload: User }
+  | { type: 'OPEN_EDIT', payload: UserType }
+  | { type: 'OPEN_DELETE', payload: UserType }
   | { type: 'CLOSE' };
 
 const modalReducer = (state: ModalState, action: ModalAction): ModalState => {
@@ -59,41 +51,31 @@ const roleDisplay: { [key: string]: string } = {
 export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [modalState, dispatchModal] = useReducer(modalReducer, { type: 'NONE' });
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserType[]>([]);
   const [empresas, setEmpresas] = useState<{[key: string]: string}>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   const { actionLoading, handleAction } = useActions();
-  const supabase = createClientComponentClient();
 
-  // Buscar usuários e empresas
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      
-      // Buscar usuários diretamente do Supabase
-      let query = supabase.from('users').select('id, email, nome, role, tenant_id');
-      
-      if (!isSuperAdmin && tenantId) {
-        query = query.eq('tenant_id', tenantId);
-      }
-      
-      const { data: usersData, error: usersError } = await query;
-      
-      if (usersError) {
-        throw usersError;
-      }
-      
-      setUsers(usersData || []);
+      const response = await userService.listUsers(tenantId);
+      const usersWithTenants = response.users.map((user) => ({
+        ...user,
+        nome: user.name,
+        created_at: user.created_at || new Date().toISOString()
+      }));
+      setUsers(usersWithTenants);
       
       // Buscar empresas se for super admin
       if (isSuperAdmin) {
         try {
           const tenantsData = await tenantService.listTenants();
           const empresasMap: {[key: string]: string} = {};
-          (tenantsData.tenants || []).forEach((tenant: any) => {
-            empresasMap[tenant.id] = tenant.nome;
+          (tenantsData.tenants || []).forEach((tenant) => {
+            empresasMap[tenant.id] = tenant.name;
           });
           setEmpresas(empresasMap);
         } catch (empresasError) {
@@ -103,18 +85,16 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
       }
       
       setError(null);
-    } catch (err: any) {
-      setError('Erro ao carregar usuários: ' + (err.message || 'Erro desconhecido'));
-      console.error('Error fetching data:', err);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Erro ao carregar usuários');
     } finally {
       setLoading(false);
     }
-  };
+  }, [tenantId, isSuperAdmin]);
 
-  // Carregar dados quando o componente montar ou refreshKey mudar
   useEffect(() => {
     fetchData();
-  }, [refreshKey, isSuperAdmin, tenantId]);
+  }, [refreshKey, isSuperAdmin, tenantId, fetchData]);
 
   const handleDelete = (userId: string) => handleAction(async () => {
     // Deletar usuário usando a API
@@ -131,8 +111,9 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Erro ao deletar usuário');
       }
-    } catch (apiError: any) {
-      throw new Error('Erro ao deletar usuário: ' + apiError.message);
+    } catch (apiError) {
+      const errorMessage = apiError instanceof Error ? apiError.message : 'Erro desconhecido';
+      throw new Error('Erro ao deletar usuário: ' + errorMessage);
     }
     
     toast.success("Usuário deletado com sucesso!");
@@ -143,14 +124,20 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
   const closeModal = () => {
     dispatchModal({ type: 'CLOSE' });
   };
-  
+
   const handleSave = () => {
     closeModal();
     setRefreshKey(k => k + 1);
   };
 
   // Filtrar usuários por tenant se não for super admin
-  const filteredUsers = isSuperAdmin ? users : users.filter(user => user.tenant_id === tenantId);
+  const filteredUsers = isSuperAdmin ? users : users.filter((u) => u.tenant_id === tenantId);
+
+  // Converter empresas para o formato esperado pelo UserModal
+  const empresasForModal: Empresa[] = Object.entries(empresas).map(([id, name]) => ({
+    id,
+    name
+  }));
 
   return (
     <div className="overflow-x-auto">
@@ -193,7 +180,7 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
                       <td className="px-4 py-3 border font-medium">
                         <div className="flex items-center gap-2">
                           <User className="w-4 h-4 text-gray-400" />
-                          <span>{user.nome || '-'}</span>
+                          <span>{user.name || '-'}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 border">
@@ -218,7 +205,7 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
                         <td className="px-4 py-3 border">
                           <div className="flex items-center gap-2">
                             <Building className="w-4 h-4 text-gray-400" />
-                            <span>{user.tenant_id ? empresas[user.tenant_id] || user.tenant_id : '-'}</span>
+                            <span>{empresas[user.tenant_id || ''] || '-'}</span>
                           </div>
                         </td>
                       )}
@@ -248,10 +235,10 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
                 })
               ) : (
                 <tr>
-                  <td colSpan={isSuperAdmin ? 5 : (tenantId ? 4 : 3)} className="text-center py-8 text-gray-500">
+                  <td colSpan={(isSuperAdmin || tenantId) ? (isSuperAdmin ? 5 : 4) : 3} className="text-center py-8 text-gray-500">
                     <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                     <p className="font-medium">Nenhum usuário encontrado</p>
-                    <p className="text-sm">Use o botão "Novo Usuário" para criar o primeiro</p>
+                    <p className="text-sm">Use o botão &quot;Novo Usuário&quot; para criar o primeiro.</p>
                   </td>
                 </tr>
               )}
@@ -259,40 +246,31 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
           </table>
 
           {/* Modal de criação/edição */}
-          {(modalState.type === 'CREATE' || modalState.type === 'EDIT') && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                <div className="p-6">
-                  <h2 className="text-xl font-semibold mb-4">
-                    {modalState.type === 'CREATE' ? 'Novo Usuário' : 'Editar Usuário'}
-                  </h2>
-                  <UserForm 
-                    user={modalState.type === 'EDIT' ? modalState.payload : undefined}
-                    isSuperAdmin={isSuperAdmin}
-                    tenantId={tenantId}
-                    empresas={isSuperAdmin ? Object.entries(empresas).map(([id, nome]) => ({ id, nome })) : []}
-                    onSuccess={handleSave}
-                    onCancel={closeModal}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+          <UserModal
+            isOpen={modalState.type === 'CREATE' || modalState.type === 'EDIT'}
+            onClose={closeModal}
+            onSave={handleSave}
+            user={modalState.type === 'EDIT' ? modalState.payload : undefined}
+            isSuperAdmin={isSuperAdmin}
+            tenantId={tenantId}
+            empresas={empresasForModal}
+          />
 
           {/* Modal de confirmação de exclusão */}
-          {modalState.type === 'DELETE' && (
-            <ConfirmationModal
-              isOpen={true}
-              onClose={closeModal}
-              onConfirm={() => handleDelete(modalState.payload.id)}
-              title="Confirmar exclusão"
-              confirmText="Deletar"
-              isLoading={actionLoading === modalState.payload.id}
-            >
-              Tem certeza que deseja deletar o usuário <span className="font-semibold">&quot;{modalState.payload.nome || modalState.payload.email}&quot;</span>? 
-              Essa ação não pode ser desfeita.
-            </ConfirmationModal>
-          )}
+          <ConfirmationModal
+            isOpen={modalState.type === 'DELETE'}
+            onClose={closeModal}
+            onConfirm={() => handleDelete(modalState.type === 'DELETE' ? modalState.payload.id : '')}
+            title="Confirmar Exclusão"
+            confirmText="Excluir"
+            cancelText="Cancelar"
+            isLoading={actionLoading === (modalState.type === 'DELETE' ? modalState.payload.id : '')}
+          >
+            <p>
+              Tem certeza que deseja excluir o usuário <span className="font-semibold">&quot;{modalState.type === 'DELETE' ? modalState.payload.name : ''}&quot;</span>? 
+              Esta ação não pode ser desfeita.
+            </p>
+          </ConfirmationModal>
         </>
       )}
     </div>

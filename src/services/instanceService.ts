@@ -14,6 +14,23 @@ export interface ApiResponse {
   error?: string;
 }
 
+export interface CreateInstanceData {
+  instanceName: string;
+  descricao?: string;
+  webhook_url?: string;
+  behavior_settings?: Record<string, unknown>;
+  tenant_id: string;
+  status?: string;
+}
+
+export interface UpdateInstanceData {
+  instanceName?: string;
+  descricao?: string;
+  webhook_url?: string;
+  behavior_settings?: Record<string, unknown>;
+  status?: string;
+}
+
 class InstanceService {
   private async makeRequest<T>(url: string, options?: RequestInit): Promise<T> {
     const response = await fetch(url, {
@@ -43,7 +60,7 @@ class InstanceService {
   }
 
   async connectInstance(instanceName: string, forceRegenerate?: boolean): Promise<ConnectResponse> {
-    const response = await this.makeRequest<any>('/api/whatsapp-instances/connect', {
+    const response = await this.makeRequest<ConnectResponse>('/api/whatsapp-instances/connect', {
       method: 'POST',
       body: JSON.stringify({ instanceName, forceRegenerate }),
     });
@@ -65,14 +82,14 @@ class InstanceService {
     });
   }
 
-  async createInstance(instanceData: any): Promise<ApiResponse> {
+  async createInstance(instanceData: CreateInstanceData): Promise<ApiResponse> {
     return this.makeRequest<ApiResponse>("/api/whatsapp-instances/create", {
       method: "POST",
       body: JSON.stringify(instanceData),
     });
   }
 
-  async updateInstance(instanceName: string, instanceData: any): Promise<ApiResponse> {
+  async updateInstance(instanceName: string, instanceData: UpdateInstanceData): Promise<ApiResponse> {
     return this.makeRequest<ApiResponse>("/api/whatsapp-instances/update", {
       method: "PUT",
       body: JSON.stringify({ instanceName, ...instanceData }),

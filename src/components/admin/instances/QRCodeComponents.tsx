@@ -1,5 +1,6 @@
 import React from 'react';
 import Modal, { ModalHeader, ModalBody } from '@/components/ui/Modal';
+import Image from 'next/image';
 
 interface RenderQrCodeProps {
   qrCode: string;
@@ -8,7 +9,6 @@ interface RenderQrCodeProps {
 export const RenderQrCode: React.FC<RenderQrCodeProps> = ({ qrCode }) => {
   // Verificar se o QR code é uma string válida
   if (!qrCode || typeof qrCode !== 'string') {
-    console.error('QR code inválido:', qrCode);
     return (
       <div className="w-56 h-56 border rounded flex items-center justify-center bg-gray-100">
         <p className="text-red-500 text-sm">Erro: QR Code inválido</p>
@@ -22,12 +22,13 @@ export const RenderQrCode: React.FC<RenderQrCodeProps> = ({ qrCode }) => {
     const qrCodeWithPrefix = qrCode.startsWith('data:') ? qrCode : `data:image/png;base64,${qrCode}`;
     
     return (
-      <img 
+      <Image 
         src={qrCodeWithPrefix} 
         alt="QR Code" 
         className="w-56 h-56 border rounded"
+        width={224}
+        height={224}
         onError={(e) => {
-          console.error('Erro ao carregar imagem QR code:', e);
           e.currentTarget.style.display = 'none';
           e.currentTarget.nextElementSibling?.classList.remove('hidden');
         }}
@@ -36,12 +37,13 @@ export const RenderQrCode: React.FC<RenderQrCodeProps> = ({ qrCode }) => {
   }
   
   return (
-    <img 
+    <Image 
       src={qrCode} 
       alt="QR Code" 
       className="w-56 h-56 border rounded"
+      width={224}
+      height={224}
       onError={(e) => {
-        console.error('Erro ao carregar imagem QR code:', e);
         e.currentTarget.style.display = 'none';
         e.currentTarget.nextElementSibling?.classList.remove('hidden');
       }}
@@ -55,7 +57,6 @@ interface RenderPairedProps {
 
 export const RenderPaired: React.FC<RenderPairedProps> = ({ pairingCode }) => {
   if (!pairingCode || typeof pairingCode !== 'string') {
-    console.error('Código de pareamento inválido:', pairingCode);
     return null;
   }
   

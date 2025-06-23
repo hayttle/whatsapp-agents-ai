@@ -1,17 +1,14 @@
-import { cookies } from "next/headers";
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { redirect } from "next/navigation";
-import { UserList } from "@/components/admin/UserList";
+import { UserList } from "@/components/admin/users/UserList";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Alert } from "@/components/brand";
 import { Users, Shield } from "lucide-react";
-
-const SUPER_ADMIN_EMAILS = ["hayttle@gmail.com"];
+import { createClient } from '@/lib/supabase/server';
 
 export default async function UsuariosAdminPage() {
-  const supabase = createServerComponentClient({ cookies });
-  const { data: { session } } = await supabase.auth.getSession();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect("/login");
   }
 
@@ -19,10 +16,10 @@ export default async function UsuariosAdminPage() {
   const { data: userData } = await supabase
     .from("users")
     .select("id, email, role, tenant_id")
-    .eq("email", session.user.email)
+    .eq("email", user.email)
     .single();
 
-  const isSuperAdmin = SUPER_ADMIN_EMAILS.includes(String(session.user.email));
+  const isSuperAdmin = userData?.role === 'super_admin';
   const isAdmin = userData?.role === 'admin';
   
   if (!isSuperAdmin && !isAdmin) {

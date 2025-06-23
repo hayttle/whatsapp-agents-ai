@@ -1,24 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { User } from '@/services/userService';
 import { userService } from '@/services/userService';
-import { tenantService } from '@/services/tenantService';
+import { tenantService, Tenant } from '@/services/tenantService';
 
 interface UseUsersProps {
   isSuperAdmin: boolean;
   tenantId?: string;
-  refreshKey?: number;
 }
 
-export const useUsers = ({ isSuperAdmin, tenantId, refreshKey }: UseUsersProps) => {
-  const [usuarios, setUsuarios] = useState<User[]>([]);
-  const [empresas, setEmpresas] = useState<Record<string, string>>({});
+export const useUsers = ({ isSuperAdmin, tenantId }: UseUsersProps) => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [empresas, setEmpresas] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  const fetchUsuarios = async () => {
-    if (!loading) setLoading(true);
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
     setError(null);
     
     try {
@@ -29,36 +28,31 @@ export const useUsers = ({ isSuperAdmin, tenantId, refreshKey }: UseUsersProps) 
 
       // Buscar lista de usuários
       const data = await userService.listUsers(isSuperAdmin ? undefined : tenantId);
-      setUsuarios(data.users || []);
+      setUsers(data.users || []);
       
-      // Buscar nomes das empresas
-      const tenantIds = Array.from(new Set((data.users || []).map((u: User) => u.tenant_id).filter(Boolean)));
-      if (tenantIds.length > 0) {
-        const dataEmp = await tenantService.listTenants();
-        const empresaMap: Record<string, string> = {};
-        (dataEmp.tenants || []).forEach((t: any) => { empresaMap[t.id] = t.nome; });
-        setEmpresas(empresaMap);
-      } else {
-        setEmpresas({});
+      if (isSuperAdmin) {
+        const tenantsData = await tenantService.listTenants();
+        setEmpresas((tenantsData.tenants || []).map((t: Tenant) => ({ ...t, name: t.name })));
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  };
+  }, [isSuperAdmin, tenantId]);
 
   useEffect(() => {
-    fetchUsuarios();
-  }, [isSuperAdmin, tenantId, refreshKey]);
+    fetchUsers();
+  }, [fetchUsers]);
 
   return {
-    usuarios,
+    users,
     empresas,
     loading,
     error,
     currentUserRole,
     currentUser,
-    refetch: fetchUsuarios,
+    refetch: fetchUsers,
   };
 }; 

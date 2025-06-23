@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Instance } from './types';
+type EmpresaDropdown = { id: string; name: string };
 import Modal, { ModalBody, ModalFooter, ModalHeader } from '@/components/ui/Modal';
 import { Button, Alert } from '@/components/brand';
 import GeneralSettings from './modal-parts/GeneralSettings';
@@ -21,9 +22,9 @@ const INTEGRATION_OPTIONS = ["WHATSAPP-BAILEYS", "WHATSAPP-BUSINESS"];
 interface InstanceModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (instance: any) => void;
+  onSave: (instance: Instance) => void;
   instance?: Instance | null;
-  tenants: any[];
+  tenants: EmpresaDropdown[];
   tenantId?: string;
 }
 
@@ -48,7 +49,7 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
 
   useEffect(() => {
     if (instance) {
-      setInstanceName(instance.name || "");
+      setInstanceName(instance.instanceName || "");
       setIntegration(instance.integration || INTEGRATION_OPTIONS[0]);
       setWebhookUrl(instance.webhookUrl || "");
       setWebhookEvents(instance.webhookEvents || []);
@@ -97,11 +98,26 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
     setError("");
 
     const payload = {
-      instanceName, integration, webhookUrl, webhookEvents, webhookByEvents,
-      webhookBase64, msgCall, rejectCall, groupsIgnore, alwaysOnline,
-      readMessages, readStatus, syncFullHistory,
+      instanceName,
+      integration,
+      webhookUrl,
+      webhookEvents,
+      webhookByEvents,
+      webhookBase64,
+      msgCall,
+      rejectCall,
+      groupsIgnore,
+      alwaysOnline,
+      readMessages,
+      readStatus,
+      syncFullHistory,
       tenantId: tenants.length > 0 ? selectedTenant : tenantId,
-      webhook: { url: webhookUrl, base64: webhookBase64, events: webhookEvents },
+      webhook: {
+        url: webhookUrl,
+        byEvents: webhookByEvents,
+        base64: webhookBase64,
+        events: webhookEvents,
+      },
       ...(instance && { id: instance.id })
     };
 
@@ -119,16 +135,17 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
         setError(data.error || "Ocorreu um erro.");
       } else {
         setMsg(`Instância ${instance ? 'atualizada' : 'criada'} com sucesso!`);
-        onSave(data);
+        setTimeout(() => {
+          setMsg("");
+          setError("");
+          onSave(data.instance || data);
+          onClose();
+        }, 800);
       }
-    } catch (err: any) {
-      setError(err.message || "Erro inesperado.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro inesperado.");
     } finally {
       setLoading(false);
-      setTimeout(() => {
-        setMsg("");
-        setError("");
-      }, 3000);
     }
   };
 

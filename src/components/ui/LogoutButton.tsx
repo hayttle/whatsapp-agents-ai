@@ -1,5 +1,5 @@
 "use client";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/brand";
 import { toast } from "sonner";
@@ -7,7 +7,7 @@ import { useState } from "react";
 import { LogOut } from "lucide-react";
 
 export function LogoutButton() {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 

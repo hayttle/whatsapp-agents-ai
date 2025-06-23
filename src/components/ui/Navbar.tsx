@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { UserProfileModal } from "@/components/admin/UserProfileModal";
+import { createClient } from "@/lib/supabase/client";
+import { UserProfileModal } from "@/components/admin/users/UserProfileModal";
 import { Button, Badge, Card, CardContent } from "@/components/brand";
 import { 
   Bell, 
@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Menu
 } from "lucide-react";
+import { User as UserType } from "@/services/userService";
 
 function getInitials(name?: string, email?: string) {
   if (name) {
@@ -25,10 +26,13 @@ function getInitials(name?: string, email?: string) {
 }
 
 export function Navbar() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserType | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [notifications, setNotifications] = useState(3);
+  const [notifications] = useState([
+    { id: 1, message: "Nova mensagem recebida", time: "2 min atrás" },
+    { id: 2, message: "Instância conectada", time: "5 min atrás" }
+  ]);
   const [isLoading, setIsLoading] = useState(true);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -36,23 +40,48 @@ export function Navbar() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const supabase = createClientComponentClient();
-        const { data: sessionData } = await supabase.auth.getSession();
-        const email = sessionData?.session?.user?.email;
-        if (!email) {
+        // Primeiro, verificar se há um usuário autenticado no frontend
+        const supabase = createClient();
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (!authUser) {
           setIsLoading(false);
           return;
         }
-        const { data: userDb } = await supabase.from("users").select("id, nome, email, role").eq("email", email).single();
-        setUser(userDb);
+        // Usar a API em vez de consulta direta ao Supabase
+        const response = await fetch('/api/users/current');
+        if (!response.ok) {
+          setIsLoading(false);
+          return;
+        }
+        const data = await response.json();
+        if (!data.user) {
+          setIsLoading(false);
+          return;
+        }
+        // Mapear os dados da API para o formato esperado
+        const mappedUser: UserType = {
+          id: data.user.id,
+          name: data.user.name || 'Usuário',
+          email: data.user.email,
+          role: data.user.role || 'user',
+          tenant_id: data.user.tenant_id,
+          created_at: data.user.created_at || new Date().toISOString(),
+          updated_at: data.user.updated_at || new Date().toISOString()
+        };
+        setUser(mappedUser);
         setIsLoading(false);
-      } catch (error) {
-        console.error('Erro ao carregar dados do usuário:', error);
-        setIsLoading(false);
+      } catch {
+        // erro ao fazer logout
       }
     };
     fetchUser();
   }, []);
+
+  // Monitorar mudanças no estado do usuário
+  useEffect(() => {
+    if (user) {
+    }
+  }, [user]);
 
   // Fecha menu ao clicar fora
   useEffect(() => {
@@ -69,15 +98,15 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showMenu]);
 
-  const initials = getInitials(user?.nome, user?.email);
+  const initials = getInitials(user?.name, user?.email);
 
   const handleLogout = async () => {
     try {
-      const supabase = createClientComponentClient();
+      const supabase = createClient();
       await supabase.auth.signOut();
       router.push('/login');
-    } catch (error) {
-      console.error('Erro ao fazer logout:', error);
+    } catch {
+      // erro ao fazer logout
     }
   };
 
@@ -91,6 +120,19 @@ export function Navbar() {
           <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
         </div>
         <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+      </nav>
+    );
+  }
+
+  if (!user) {
+    return (
+      <nav className="w-full h-16 flex items-center justify-between px-6 bg-white border-b border-gray-200 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="w-8 h-8 rounded-lg bg-brand-green-light flex items-center justify-center">
+            <MessageSquare className="w-4 h-4 text-white" />
+          </div>
+          <div className="text-red-500 text-sm">Erro: Dados do usuário não carregados</div>
+        </div>
       </nav>
     );
   }
@@ -128,12 +170,12 @@ export function Navbar() {
         {/* Notifications */}
         <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
           <Bell className="w-5 h-5 text-gray-600" />
-          {notifications > 0 && (
+          {notifications.length > 0 && (
             <Badge 
               variant="error" 
               className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-xs"
             >
-              {notifications}
+              {notifications.length}
             </Badge>
           )}
         </button>
@@ -158,10 +200,10 @@ export function Navbar() {
             </div>
             <div className="hidden md:block text-left">
               <p className="text-sm font-medium text-brand-gray-dark truncate max-w-32">
-                {user?.nome || "Usuário"}
+                {user.name}
               </p>
               <p className="text-xs text-gray-500 truncate max-w-32">
-                {user?.email}
+                {user.email}
               </p>
             </div>
             <Menu className="w-4 h-4 text-gray-500" />
@@ -178,17 +220,17 @@ export function Navbar() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-brand-gray-dark truncate">
-                        {user?.nome || "Usuário"}
+                        {user.name}
                       </p>
                       <p className="text-sm text-gray-500 truncate">
-                        {user?.email}
+                        {user.email}
                       </p>
                       <Badge 
                         variant="success" 
                         className="text-xs mt-1"
                       >
-                        {user?.role === 'super_admin' ? 'Super Admin' : 
-                         user?.role === 'admin' ? 'Admin' : 'Usuário'}
+                        {user.role === 'super_admin' ? 'Super Admin' : 
+                         user.role === 'admin' ? 'Admin' : 'Usuário'}
                       </Badge>
                     </div>
                   </div>
@@ -232,9 +274,16 @@ export function Navbar() {
         {/* Profile Modal */}
         {showProfile && user && (
           <UserProfileModal
-            user={user}
+            isOpen={showProfile}
+            user={{
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              role: user.role,
+              tenant_id: user.tenant_id,
+              created_at: user.created_at || new Date().toISOString()
+            }}
             onClose={() => setShowProfile(false)}
-            onUpdated={() => { setShowProfile(false); }}
           />
         )}
       </div>

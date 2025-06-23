@@ -1,6 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { authenticateUser, createApiClient } from '@/lib/supabase/api';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'PUT') {
@@ -8,59 +7,55 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const supabase = createServerComponentClient({ cookies });
+    // Autenticar usuário via cookies
+    const auth = await authenticateUser(req, res);
     
-    // Verificar autenticação
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    if (!auth) {
+      return res.status(401).json({ error: 'Unauthorized - User not authenticated' });
     }
 
-    // Buscar dados do usuário
-    const { data: userData } = await supabase
-      .from('users')
-      .select('role, tenant_id')
-      .eq('email', session.user.email)
-      .single();
-
-    if (!userData) {
-      return res.status(403).json({ error: 'User not found' });
-    }
+    const { userData } = auth;
+    const supabase = createApiClient(req, res);
 
     const { id, active } = req.body;
 
-    if (!id || typeof active !== 'boolean') {
-      return res.status(400).json({ error: 'Invalid request data' });
+    if (!id) {
+      return res.status(400).json({ error: 'Agent ID is required' });
     }
 
-    // Verificar permissões
-    const { data: agent } = await supabase
+    if (typeof active !== 'boolean') {
+      return res.status(400).json({ error: 'Active status is required' });
+    }
+
+    // Verificar se o agente existe e se o usuário tem permissão
+    const { data: existingAgent } = await supabase
       .from('agents')
       .select('tenant_id')
       .eq('id', id)
       .single();
 
-    if (!agent) {
+    if (!existingAgent) {
       return res.status(404).json({ error: 'Agent not found' });
     }
 
-    if (userData.role !== 'super_admin' && agent.tenant_id !== userData.tenant_id) {
+    if (userData.role !== 'super_admin' && existingAgent.tenant_id !== userData.tenant_id) {
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
 
-    const { error } = await supabase
+    const { data: agent, error } = await supabase
       .from('agents')
       .update({ active })
-      .eq('id', id);
+      .eq('id', id)
+      .select()
+      .single();
 
     if (error) {
-      console.error('Error updating agent status:', error);
-      return res.status(500).json({ error: 'Internal server error' });
+      return res.status(500).json({ error: 'Error toggling agent status: ' + error.message });
     }
 
-    return res.status(200).json({ success: true });
-  } catch (error: any) {
-    console.error('Error in agent toggle status API:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(200).json({ success: true, agent });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+    return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
   }
 } 

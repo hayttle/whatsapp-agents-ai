@@ -19,14 +19,8 @@ import {
   Mail, 
   Search, 
   Eye, 
-  EyeOff, 
-  User, 
   Settings, 
-  MessageSquare,
-  CheckCircle,
-  AlertCircle,
-  Info,
-  XCircle
+  MessageSquare
 } from 'lucide-react';
 
 export default function DesignSystemPage() {
@@ -59,25 +53,17 @@ export default function DesignSystemPage() {
     }
   ];
 
-  const handleConnect = (id: string) => {
-    console.log('Conectar:', id);
+  const handleConnect = () => {
+    // Remover todos os console.log
   };
 
-  const handleDisconnect = (id: string) => {
-    console.log('Desconectar:', id);
-  };
+  const handleDisconnect = () => {};
 
-  const handleEdit = (id: string) => {
-    console.log('Editar:', id);
-  };
+  const handleEdit = () => {};
 
-  const handleDelete = (id: string) => {
-    console.log('Deletar:', id);
-  };
+  const handleDelete = () => {};
 
-  const handleShowQR = (id: string) => {
-    console.log('QR Code:', id);
-  };
+  const handleShowQR = () => {};
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">

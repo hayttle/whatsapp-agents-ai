@@ -12,7 +12,7 @@ import {
   Badge,
   StatusIndicator
 } from '@/components/brand';
-import { Settings, MessageSquare, QrCode, Power, Edit, Trash2 } from 'lucide-react';
+import { MessageSquare, Power, Edit, Trash2, QrCode } from "lucide-react";
 
 interface WhatsAppInstance {
   id: string;

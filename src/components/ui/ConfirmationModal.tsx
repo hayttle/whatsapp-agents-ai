@@ -57,7 +57,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} className="w-full max-w-md" aria-modal="true" role="dialog">
+    <Modal isOpen={isOpen} onClose={onClose} className="w-full max-w-md">
       <div ref={modalRef}>
         <ModalHeader>{title}</ModalHeader>
         <ModalBody>

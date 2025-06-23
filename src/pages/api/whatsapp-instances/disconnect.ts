@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // 1. Chamar a API externa para deslogar a instância
-    const response = await fetch(`https://evolution.hayttle.dev/instance/logout/${encodeURIComponent(instanceName)}`, {
+    const response = await fetch(`${process.env.EVOLUTION_API_URL}/instance/logout/${encodeURIComponent(instanceName)}`, {
       method: 'DELETE',
       headers: { 'apikey': apikey },
     });
@@ -41,18 +41,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           qrcode: null, // Limpar o QR code antigo
           updated_at: new Date().toISOString() 
         })
-      .eq('name', instanceName);
+      .eq('instanceName', instanceName);
 
     if (dbError) {
-      console.error("Erro ao atualizar status para 'close':", dbError);
       // Mesmo com erro no nosso DB, a instância foi desconectada na API externa, então retornamos sucesso.
     }
 
     // 3. Retornar sucesso
     return res.status(200).json({ success: true, message: 'Instância desconectada com sucesso.' });
 
-  } catch (err: any) {
-    console.error("Erro inesperado no endpoint /disconnect:", err);
-    return res.status(500).json({ error: err.message || 'Erro inesperado' });
+  } catch (err: unknown) {
+    return res.status(500).json({ error: err instanceof Error ? err.message : 'Erro inesperado' });
   }
 } 

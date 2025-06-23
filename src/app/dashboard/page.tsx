@@ -1,15 +1,14 @@
-import { cookies } from "next/headers";
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { redirect } from "next/navigation";
 import { LogoutButton } from '@/components/ui/LogoutButton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/brand';
 import { Bot, MessageSquare, Users, Settings } from 'lucide-react';
+import { createClient } from '@/lib/supabase/server';
 
 export default async function DashboardPage() {
-  const supabase = createServerComponentClient({ cookies });
-  const { data: { session } } = await supabase.auth.getSession();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect("/login");
   }
 
@@ -17,7 +16,7 @@ export default async function DashboardPage() {
     <div className="max-w-6xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-brand-gray-dark mb-2">Dashboard</h1>
-        <p className="text-gray-600">Bem-vindo de volta, {session.user.email}</p>
+        <p className="text-gray-600">Bem-vindo de volta, {user.email}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

@@ -14,7 +14,6 @@ import { Power, Edit, Trash2, Plus, Bug, RefreshCw } from "lucide-react";
 interface InstanceListProps {
   isSuperAdmin: boolean;
   isAdmin: boolean;
-  isUser: boolean;
   tenantId?: string;
 }
 
@@ -61,12 +60,12 @@ const modalReducer = (state: ModalState, action: ModalAction): ModalState => {
 };
 // --- End of Step 4 ---
 
-export function InstanceList({ isSuperAdmin, isAdmin, isUser, tenantId }: InstanceListProps) {
+export function InstanceList({ isSuperAdmin, isAdmin, tenantId }: InstanceListProps) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [modalState, dispatchModal] = useReducer(modalReducer, { type: 'NONE' });
   const { actionLoading, handleAction } = useInstanceActions();
   
-  const { instancias, empresas, loading, error } = useInstances({
+  const { instances, empresas, loading } = useInstances({
     isSuperAdmin,
     tenantId,
     refreshKey,
@@ -76,9 +75,6 @@ export function InstanceList({ isSuperAdmin, isAdmin, isUser, tenantId }: Instan
     const data = await instanceService.connectInstance(instanceName, forceRegenerate);
     
     if (data && (data.base64 || data.pairingCode)) {
-      if (data.fromCache) {
-        toast.info('Usando QR code existente. Use "Forçar Regeneração" se necessário.');
-      }
       dispatchModal({ type: 'OPEN_CONNECT', payload: { qr: data.base64 || null, code: data.pairingCode || null } });
     } else {
       toast.error('Não foi possível obter os dados de conexão.');
@@ -96,7 +92,7 @@ export function InstanceList({ isSuperAdmin, isAdmin, isUser, tenantId }: Instan
       } else {
         toast.error(`Erro no teste: ${data.error}`);
       }
-    } catch (error) {
+    } catch {
       toast.error('Erro ao realizar teste de conexão');
     }
   };
@@ -124,6 +120,22 @@ export function InstanceList({ isSuperAdmin, isAdmin, isUser, tenantId }: Instan
     setRefreshKey(k => k + 1);
   };
 
+  // Função para atualizar status da instância na Evolution e no banco
+  const handleUpdateStatus = async (instanceName: string) => {
+    try {
+      const response = await fetch(`/api/whatsapp-instances/status?instanceName=${encodeURIComponent(instanceName)}`);
+      const data = await response.json();
+      if (response.ok) {
+        toast.success(`Status atualizado: ${data.status}`);
+        setRefreshKey(k => k + 1);
+      } else {
+        toast.error(data.error || 'Erro ao atualizar status');
+      }
+    } catch (err: unknown) {
+      toast.error((err as Error)?.message || 'Erro ao atualizar status');
+    }
+  };
+
   return (
     <div className="overflow-x-auto">
       {(isSuperAdmin || isAdmin) && (
@@ -139,8 +151,6 @@ export function InstanceList({ isSuperAdmin, isAdmin, isUser, tenantId }: Instan
       )}
       {loading ? (
         <div>Carregando instâncias...</div>
-      ) : error ? (
-        <div className="text-red-500">{error}</div>
       ) : (
         <>
           <table className="min-w-full text-sm border">
@@ -155,12 +165,12 @@ export function InstanceList({ isSuperAdmin, isAdmin, isUser, tenantId }: Instan
               </tr>
             </thead>
             <tbody>
-              {instancias.length > 0 ? (
-                instancias.map((inst) => {
-                  const isLoading = actionLoading === inst.name;
+              {instances.length > 0 ? (
+                instances.map((inst) => {
+                  const isLoading = actionLoading === inst.instanceName;
                   return (
                     <tr key={inst.id} className="border-t">
-                      <td className="px-2 py-1 border">{inst.name}</td>
+                      <td className="px-2 py-1 border">{inst.instanceName}</td>
                       <td className="px-2 py-1 border">{inst.integration || '-'}</td>
                       <td className="px-2 py-1 border">
                         <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -180,26 +190,6 @@ export function InstanceList({ isSuperAdmin, isAdmin, isUser, tenantId }: Instan
                       )}
                       {(isSuperAdmin || isAdmin) && (
                         <td className="px-2 py-1 border flex gap-2 items-center">
-                          {inst.status !== 'open' && (
-                            <ActionButton
-                              icon={Power}
-                              onClick={() => handleConnect(inst.name)}
-                              variant="success"
-                              disabled={isLoading}
-                              loading={isLoading}
-                              title="Conectar"
-                            />
-                          )}
-                          {inst.status === 'connecting' && (
-                            <ActionButton
-                              icon={RefreshCw}
-                              onClick={() => handleConnect(inst.name, true)}
-                              variant="warning"
-                              disabled={isLoading}
-                              loading={isLoading}
-                              title="Forçar Regeneração"
-                            />
-                          )}
                           {inst.status === 'open' && (
                             <ActionButton
                               icon={Power}
@@ -210,6 +200,32 @@ export function InstanceList({ isSuperAdmin, isAdmin, isUser, tenantId }: Instan
                               title="Desconectar"
                             />
                           )}
+                          {inst.status === 'close' && (
+                            <ActionButton
+                              icon={Power}
+                              onClick={() => handleConnect(inst.instanceName)}
+                              variant="success"
+                              disabled={isLoading}
+                              loading={isLoading}
+                              title="Conectar"
+                            />
+                          )}
+                          {inst.status === 'connecting' && (
+                            <ActionButton
+                              icon={RefreshCw}
+                              onClick={() => handleConnect(inst.instanceName, true)}
+                              variant="warning"
+                              disabled={isLoading}
+                              loading={isLoading}
+                              title="Forçar Regeneração"
+                            />
+                          )}
+                          <ActionButton
+                            icon={RefreshCw}
+                            onClick={() => handleUpdateStatus(inst.instanceName)}
+                            variant="secondary"
+                            title="Atualizar Status"
+                          />
                           <ActionButton
                             icon={Edit}
                             onClick={() => dispatchModal({ type: 'OPEN_EDIT', payload: inst })}
@@ -219,7 +235,7 @@ export function InstanceList({ isSuperAdmin, isAdmin, isUser, tenantId }: Instan
                           />
                           <ActionButton
                             icon={Bug}
-                            onClick={() => handleTestConnection(inst.name)}
+                            onClick={() => handleTestConnection(inst.instanceName)}
                             variant="secondary"
                             disabled={isLoading}
                             title="Testar Conexão"
@@ -250,7 +266,7 @@ export function InstanceList({ isSuperAdmin, isAdmin, isUser, tenantId }: Instan
             onClose={closeModal}
             onSave={handleSave}
             instance={modalState.type === 'EDIT' ? modalState.payload : undefined}
-            tenants={isSuperAdmin ? Object.entries(empresas).map(([id, nome]) => ({ id, nome })) : []}
+            tenants={isSuperAdmin ? Object.entries(empresas).map(([id, name]) => ({ id, name })) : []}
             tenantId={tenantId}
           />
 
@@ -266,12 +282,12 @@ export function InstanceList({ isSuperAdmin, isAdmin, isUser, tenantId }: Instan
             <ConfirmationModal
               isOpen={true}
               onClose={closeModal}
-              onConfirm={() => handleDelete(modalState.payload.name)}
+              onConfirm={() => handleDelete(modalState.payload.instanceName)}
               title="Confirmar exclusão"
               confirmText="Deletar"
-              isLoading={actionLoading === modalState.payload.name}
+              isLoading={actionLoading === modalState.payload.instanceName}
             >
-              Tem certeza que deseja deletar a instância <span className="font-semibold">&quot;{modalState.payload.name}&quot;</span>? Essa ação não pode ser desfeita.
+              Tem certeza que deseja deletar a instância <span className="font-semibold">&quot;{modalState.payload.instanceName}&quot;</span>? Essa ação não pode ser desfeita.
             </ConfirmationModal>
           )}
 
@@ -279,12 +295,12 @@ export function InstanceList({ isSuperAdmin, isAdmin, isUser, tenantId }: Instan
             <ConfirmationModal
               isOpen={true}
               onClose={closeModal}
-              onConfirm={() => handleDisconnect(modalState.payload.name)}
+              onConfirm={() => handleDisconnect(modalState.payload.instanceName)}
               title="Confirmar Desconexão"
               confirmText="Desconectar"
-              isLoading={actionLoading === modalState.payload.name}
+              isLoading={actionLoading === modalState.payload.instanceName}
             >
-              Tem certeza que deseja desconectar a instância <span className="font-semibold">&quot;{modalState.payload.name}&quot;</span>?
+              Tem certeza que deseja desconectar a instância <span className="font-semibold">&quot;{modalState.payload.instanceName}&quot;</span>?
             </ConfirmationModal>
           )}
         </>

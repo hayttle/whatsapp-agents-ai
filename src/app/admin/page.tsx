@@ -1,23 +1,20 @@
-import { cookies } from "next/headers";
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { redirect } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Alert } from "@/components/brand";
 import { Building2, Users, Bot, MessageSquare, Settings, Shield } from "lucide-react";
-
-const ADMIN_EMAILS = ["seu-email-admin@dominio.com"];
+import { createClient } from '@/lib/supabase/server';
 
 export default async function AdminPage() {
-  const supabase = createServerComponentClient({ cookies });
-  const { data: { session } } = await supabase.auth.getSession();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session || !session.user.email || !ADMIN_EMAILS.includes(session.user.email)) {
+  if (!user) {
     redirect("/login");
   }
 
   const { data: userData } = await supabase
     .from("users")
     .select("role")
-    .eq("email", session.user.email)
+    .eq("email", user.email)
     .single();
 
   const isSuperAdmin = userData?.role === 'super_admin';
@@ -47,7 +44,7 @@ export default async function AdminPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-brand-gray-dark mb-2">Painel Administrativo</h1>
         <p className="text-gray-600">
-          Bem-vindo, {session.user.email} 
+          Bem-vindo, {user.email} 
           {isSuperAdmin && <span className="ml-2 text-brand-green-dark font-medium">(Super Admin)</span>}
           {isAdmin && <span className="ml-2 text-brand-green-dark font-medium">(Admin)</span>}
         </p>
@@ -70,7 +67,7 @@ export default async function AdminPage() {
             <p className="text-sm text-gray-600 mb-4">
               Crie, edite e gerencie as empresas que utilizam a plataforma.
             </p>
-            <Button asChild className="w-full">
+            <Button className="w-full">
               <a href="/admin/empresas">Gerenciar Empresas</a>
             </Button>
           </CardContent>
@@ -92,7 +89,7 @@ export default async function AdminPage() {
             <p className="text-sm text-gray-600 mb-4">
               Adicione, edite e gerencie os usuários e suas permissões.
             </p>
-            <Button asChild className="w-full">
+            <Button className="w-full">
               <a href="/admin/usuarios">Gerenciar Usuários</a>
             </Button>
           </CardContent>
@@ -114,7 +111,7 @@ export default async function AdminPage() {
             <p className="text-sm text-gray-600 mb-4">
               Configure e gerencie as instâncias do WhatsApp Business.
             </p>
-            <Button asChild className="w-full">
+            <Button className="w-full">
               <a href="/admin/instancias">Gerenciar Instâncias</a>
             </Button>
           </CardContent>
@@ -136,7 +133,7 @@ export default async function AdminPage() {
             <p className="text-sm text-gray-600 mb-4">
               Crie e configure agentes de inteligência artificial.
             </p>
-            <Button asChild className="w-full">
+            <Button className="w-full">
               <a href="/admin/agentes">Gerenciar Agentes</a>
             </Button>
           </CardContent>
@@ -159,7 +156,7 @@ export default async function AdminPage() {
               <p className="text-sm text-gray-600 mb-4">
                 Configure parâmetros globais do sistema.
               </p>
-              <Button asChild variant="secondary" className="w-full">
+              <Button variant="secondary" className="w-full">
                 <a href="/admin/configuracoes">Configurações</a>
               </Button>
             </CardContent>

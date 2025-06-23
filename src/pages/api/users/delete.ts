@@ -1,10 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { authenticateUser, createApiClient } from '@/lib/supabase/api';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'DELETE') {
@@ -12,86 +7,56 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Verificar autenticação via token no header
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized - No token provided' });
-    }
-
-    const token = authHeader.split(' ')[1];
+    // Autenticar usuário via cookies
+    const auth = await authenticateUser(req, res);
     
-    // Verificar o token com Supabase
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError || !user) {
-      return res.status(401).json({ error: 'Unauthorized - Invalid token' });
+    if (!auth) {
+      return res.status(401).json({ error: 'Unauthorized - User not authenticated' });
     }
 
-    // Buscar dados do usuário
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('role, tenant_id')
-      .eq('email', user.email)
-      .single();
+    const { userData } = auth;
+    const supabase = createApiClient(req, res);
 
-    if (userError || !userData) {
-      return res.status(403).json({ error: 'User not found in database' });
-    }
+    // Permitir id via body (JSON) ou query
+    let id = req.body?.id;
+    if (!id) id = req.query?.id;
 
-    const { id } = req.body;
-
-    if (!id) {
+    if (!id || typeof id !== 'string') {
       return res.status(400).json({ error: 'User ID is required' });
     }
 
     // Verificar permissões
-    const { data: targetUser, error: targetError } = await supabase
+    const { data: targetUser, error: userError } = await supabase
       .from('users')
-      .select('tenant_id, role')
+      .select('role, tenant_id')
       .eq('id', id)
       .single();
 
-    if (targetError || !targetUser) {
+    if (userError || !targetUser) {
       return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Verificar se não está tentando deletar a si mesmo
-    if (id === userData.id) {
-      return res.status(400).json({ error: 'Cannot delete your own account' });
     }
 
     // Apenas super_admin pode deletar qualquer usuário
     // Admin pode deletar apenas usuários do mesmo tenant
-    if (userData.role === 'user') {
-      return res.status(403).json({ error: 'Insufficient permissions' });
-    }
-    
-    if (userData.role === 'admin' && targetUser.tenant_id !== userData.tenant_id) {
+    if (userData.role !== 'super_admin' && targetUser.tenant_id !== userData.tenant_id) {
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
 
-    // Deletar usuário do Auth
-    const { error: authDeleteError } = await supabase.auth.admin.deleteUser(id);
-    
-    if (authDeleteError) {
-      console.error('Error deleting user from Auth:', authDeleteError);
-      return res.status(500).json({ error: 'Error deleting user from Auth: ' + authDeleteError.message });
-    }
-
-    // Deletar da tabela users
-    const { error: dbDeleteError } = await supabase
+    // Deletar usuário
+    const { error } = await supabase
       .from('users')
       .delete()
       .eq('id', id);
 
-    if (dbDeleteError) {
-      console.error('Error deleting user from database:', dbDeleteError);
-      return res.status(500).json({ error: 'Error deleting user from database: ' + dbDeleteError.message });
+    if (error) {
+      console.error('Error deleting user:', error);
+      return res.status(500).json({ error: 'Error deleting user: ' + error.message });
     }
 
     return res.status(200).json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     console.error('Error in user delete API:', error);
-    return res.status(500).json({ error: 'Internal server error: ' + error.message });
+    return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
   }
 } 

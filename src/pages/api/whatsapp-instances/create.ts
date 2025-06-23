@@ -12,12 +12,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const apikey = process.env.EVOLUTION_API_KEY;
+  const evolutionUrl = `${process.env.EVOLUTION_API_URL}/instance/create`;
+
   if (!apikey) {
     return res.status(500).json({ error: 'API key not configured' });
   }
 
   try {
-    const { tenantId, instanceName, integration, webhookByEvents, webhookBase64 } = req.body;
+    const { tenantId, instanceName, integration, webhookByEvents, webhookBase64, webhookUrl, webhookEvents, msgCall, rejectCall, groupsIgnore, alwaysOnline, readMessages, readStatus, syncFullHistory } = req.body;
     if (!tenantId) {
       return res.status(400).json({ error: 'tenantId é obrigatório' });
     }
@@ -29,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: existingGlobal, error: checkErrorGlobal } = await supabase
       .from('whatsapp_instances')
       .select('id')
-      .ilike('name', instanceName);
+      .ilike('instanceName', instanceName);
     if (checkErrorGlobal) {
       return res.status(500).json({ error: checkErrorGlobal.message || 'Erro ao verificar duplicidade global' });
     }
@@ -37,14 +39,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(409).json({ error: 'Já existe uma instância com este nome na plataforma. Por favor, escolha um nome diferente.' });
     }
 
+    // Montar payload para Evolution
+    const evolutionPayload: Record<string, unknown> = {
+      instanceName,
+      integration,
+      msgCall,
+      rejectCall,
+      groupsIgnore,
+      alwaysOnline,
+      readMessages,
+      readStatus,
+      syncFullHistory,
+      webhook: {
+        url: webhookUrl,
+        byEvents: webhookByEvents ?? false,
+        base64: webhookBase64 ?? true,
+        events: webhookEvents || [],
+      },
+    };
+    // Remover campos undefined
+    Object.keys(evolutionPayload).forEach(key => {
+      if (evolutionPayload[key] === undefined) delete evolutionPayload[key];
+    });
+    // Limpar campos undefined do webhook
+    if (evolutionPayload.webhook && typeof evolutionPayload.webhook === 'object') {
+      Object.keys(evolutionPayload.webhook as { [key: string]: unknown }).forEach(key => {
+        if ((evolutionPayload.webhook as { [key: string]: unknown })[key] === undefined) {
+          delete (evolutionPayload.webhook as { [key: string]: unknown })[key];
+        }
+      });
+    }
+
     // Criar na API externa
-    const response = await fetch('https://evolution.hayttle.dev/instance/create', {
+    const response = await fetch(evolutionUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'apikey': apikey,
       },
-      body: JSON.stringify(req.body),
+      body: JSON.stringify(evolutionPayload),
     });
     const data = await response.json();
     if (!response.ok) {
@@ -54,23 +87,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Salvar no banco de dados
     const instanceData = {
       id: data.instanceId || data.id, // id retornado pela API externa
-      name: instanceName,
+      instanceName,
       integration,
-      status: data.status || data.instance?.status || 'pending',
+      status: data.status || data.instance?.status || 'close',
       qrcode: data.qrcode || null,
       apikey: data.apikey || null,
       tenant_id: tenantId,
-      webhookUrl: req.body.webhook?.url || null,
-      webhookEvents: req.body.webhook?.events || null,
+      webhookUrl,
+      webhookEvents,
       webhookByEvents: webhookByEvents ?? false,
       webhookBase64: webhookBase64 ?? true,
-      msgCall: req.body.msgCall || null,
-      rejectCall: req.body.rejectCall ?? false,
-      groupsIgnore: req.body.groupsIgnore ?? true,
-      alwaysOnline: req.body.alwaysOnline ?? false,
-      readMessages: req.body.readMessages ?? false,
-      readStatus: req.body.readStatus ?? false,
-      syncFullHistory: req.body.syncFullHistory ?? false,
+      msgCall,
+      rejectCall: rejectCall ?? false,
+      groupsIgnore: groupsIgnore ?? true,
+      alwaysOnline: alwaysOnline ?? false,
+      readMessages: readMessages ?? false,
+      readStatus: readStatus ?? false,
+      syncFullHistory: syncFullHistory ?? false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -79,7 +112,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: dbError.message || 'Erro ao salvar instância no banco' });
     }
     return res.status(201).json({ instance: instanceData });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message || 'Erro inesperado' });
+  } catch (err: unknown) {
+    return res.status(500).json({ error: err instanceof Error ? err.message : 'Erro inesperado' });
   }
 } 

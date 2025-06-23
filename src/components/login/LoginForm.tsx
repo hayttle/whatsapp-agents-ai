@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Input, Button, Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/brand";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Mail, Lock } from "lucide-react";
@@ -17,7 +17,7 @@ const loginSchema = z.object({
 type LoginData = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const {
@@ -44,8 +44,9 @@ export function LoginForm() {
           router.push("/dashboard");
         }, 500);
       }
-    } catch (err: any) {
-      toast.error(err.message || "Erro inesperado. Tente novamente.");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

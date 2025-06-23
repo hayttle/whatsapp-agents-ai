@@ -1,5 +1,5 @@
-import { ArrowRight, Bot, BarChart, Zap, MessageCircle, Star, Repeat, Settings, UserCheck } from "lucide-react";
-import { Button, Card, CardHeader, CardTitle, CardContent, Badge } from "@/components/brand";
+import { ArrowRight, Bot, Zap, Settings, UserCheck } from "lucide-react";
+import { Card, CardContent } from "@/components/brand";
 
 export default function LandingPage() {
   return (
@@ -13,9 +13,9 @@ export default function LandingPage() {
           <a href="/login" className="text-sm font-medium text-brand-gray-dark hover:text-brand-green-dark transition-colors">
             Login
           </a>
-          <Button asChild size="sm">
-            <a href="/signup">Criar Conta</a>
-          </Button>
+          <a href="/signup" className="inline-flex items-center justify-center font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 px-3 py-1.5 text-sm rounded-md bg-brand-green-light hover:bg-brand-green-medium text-white focus:ring-brand-green-light shadow-sm">
+            Criar Conta
+          </a>
         </div>
       </header>
 
@@ -28,12 +28,10 @@ export default function LandingPage() {
           <p className="mt-4 text-lg max-w-2xl mx-auto text-brand-gray-dark">
             Automatize o atendimento do seu negócio com inteligência artificial personalizada. Seus clientes terão respostas profissionais 24 horas por dia.
           </p>
-          <Button asChild size="lg" className="mt-8">
-            <a href="/signup">
-              Criar meu agente de IA
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </a>
-          </Button>
+          <a href="/signup" className="inline-flex items-center justify-center font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 px-6 py-3 text-base rounded-lg bg-brand-green-light hover:bg-brand-green-medium text-white focus:ring-brand-green-light shadow-sm mt-8">
+            Criar meu agente de IA
+            <ArrowRight className="w-5 h-5 ml-2" />
+          </a>
         </section>
 
         {/* How it works */}
@@ -91,12 +89,10 @@ export default function LandingPage() {
             <p className="mt-4 max-w-2xl mx-auto">
               Junte-se a centenas de pequenas empresas que já automatizaram seu WhatsApp com IA.
             </p>
-            <Button asChild size="lg" variant="secondary" className="mt-8">
-              <a href="/signup">
-                Começar agora gratuitamente
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </a>
-            </Button>
+            <a href="/signup" className="inline-flex items-center justify-center font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 px-6 py-3 text-base rounded-lg bg-brand-gray-dark hover:bg-brand-gray-deep text-white focus:ring-brand-gray-dark shadow-sm mt-8">
+              Começar agora gratuitamente
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </a>
           </div>
         </section>
       </main>

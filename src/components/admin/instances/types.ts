@@ -1,6 +1,6 @@
 export interface Instance {
   id: string;
-  name: string;
+  instanceName: string;
   integration: string;
   status: 'open' | 'connecting' | 'close';
   qrcode?: string | null;

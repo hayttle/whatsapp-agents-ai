@@ -1,15 +1,14 @@
-import { cookies } from "next/headers";
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { redirect } from "next/navigation";
-import { AgentList } from "@/components/admin/AgentList";
+import { AgentList } from "@/components/admin/agents/AgentList";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Alert } from "@/components/brand";
 import { Bot, Shield } from "lucide-react";
+import { createClient } from '@/lib/supabase/server';
 
 export default async function AgentesAdminPage() {
-  const supabase = createServerComponentClient({ cookies });
-  const { data: { session } } = await supabase.auth.getSession();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect("/login");
   }
 
@@ -17,11 +16,12 @@ export default async function AgentesAdminPage() {
   const { data: userData } = await supabase
     .from("users")
     .select("id, email, role, tenant_id")
-    .eq("email", session.user.email)
+    .eq("email", user.email)
     .single();
 
   const isSuperAdmin = userData?.role === 'super_admin';
   const isAdmin = userData?.role === 'admin';
+  const tenantId = userData?.tenant_id;
   
   if (!isSuperAdmin && !isAdmin) {
     return (
@@ -69,7 +69,7 @@ export default async function AgentesAdminPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <AgentList isSuperAdmin={isSuperAdmin} tenantId={userData?.tenant_id} />
+          <AgentList isSuperAdmin={isSuperAdmin} tenantId={tenantId} />
         </CardContent>
       </Card>
     </div>

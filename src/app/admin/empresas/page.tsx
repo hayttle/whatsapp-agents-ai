@@ -1,30 +1,27 @@
-import { cookies } from "next/headers";
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { redirect } from "next/navigation";
-import { EmpresaList } from "@/components/admin/EmpresaList";
+import { TenantList } from "@/components/admin/tenants/TenantList";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Alert } from "@/components/brand";
 import { Building2, Shield } from "lucide-react";
-
-const ADMIN_EMAILS = ["hayttle@gmail.com"];
+import { createClient } from '@/lib/supabase/server';
 
 export default async function EmpresasAdminPage() {
-  const supabase = createServerComponentClient({ cookies });
-  const { data: { session } } = await supabase.auth.getSession();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session || !ADMIN_EMAILS.includes(String(session.user.email))) {
+  if (!user) {
     redirect("/login");
   }
 
+  // Buscar dados do usuário logado
   const { data: userData } = await supabase
     .from("users")
     .select("id, email, role, tenant_id")
-    .eq("email", session.user.email)
+    .eq("email", user.email)
     .single();
 
   const isSuperAdmin = userData?.role === 'super_admin';
-  const isAdmin = userData?.role === 'admin';
   
-  if (!isSuperAdmin && !isAdmin) {
+  if (!isSuperAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
         <Card className="max-w-md w-full">
@@ -35,7 +32,7 @@ export default async function EmpresasAdminPage() {
           </CardHeader>
           <CardContent>
             <Alert variant="error" title="Permissão Insuficiente">
-              Entre em contato com o administrador do sistema para solicitar acesso.
+              Apenas super administradores podem gerenciar empresas.
             </Alert>
           </CardContent>
         </Card>
@@ -70,7 +67,7 @@ export default async function EmpresasAdminPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <EmpresaList isSuperAdmin={isSuperAdmin} />
+          <TenantList isSuperAdmin={isSuperAdmin} />
         </CardContent>
       </Card>
     </div>

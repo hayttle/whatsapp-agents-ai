@@ -1,14 +1,14 @@
 "use client";
 import React, { useReducer, useState, useEffect } from "react";
 import { toast } from "sonner";
-import { EmpresaForm } from "@/components/admin/EmpresaForm";
+import TenantModal from "./TenantModal";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
 import ActionButton from "@/components/ui/ActionButton";
 import { useActions } from "@/hooks/useActions";
 import { tenantService, Tenant } from "@/services/tenantService";
 import { Building2, Plus, Edit, Trash2, Mail, Phone, FileText } from "lucide-react";
 
-interface EmpresaListProps {
+interface TenantListProps {
   isSuperAdmin: boolean;
 }
 
@@ -39,21 +39,21 @@ const modalReducer = (state: ModalState, action: ModalAction): ModalState => {
   }
 };
 
-export function EmpresaList({ isSuperAdmin }: EmpresaListProps) {
+export function TenantList({ isSuperAdmin }: TenantListProps) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [modalState, dispatchModal] = useReducer(modalReducer, { type: 'NONE' });
-  const [empresas, setEmpresas] = useState<Tenant[]>([]);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   const { actionLoading, handleAction } = useActions();
 
-  // Buscar empresas
-  const fetchEmpresas = async () => {
+  // Buscar tenants
+  const fetchTenants = async () => {
     try {
       setLoading(true);
       const data = await tenantService.listTenants();
-      setEmpresas(data.tenants || []);
+      setTenants(data.tenants || []);
       setError(null);
     } catch (err) {
       setError('Erro ao carregar empresas');
@@ -63,18 +63,23 @@ export function EmpresaList({ isSuperAdmin }: EmpresaListProps) {
     }
   };
 
-  // Carregar empresas quando o componente montar ou refreshKey mudar
+  // Carregar tenants quando o componente montar ou refreshKey mudar
   useEffect(() => {
-    fetchEmpresas();
+    fetchTenants();
   }, [refreshKey]);
 
-  const handleDelete = (empresaId: string) => handleAction(async () => {
-    // Implementar delete quando o service estiver disponível
-    // await tenantService.deleteTenant(empresaId);
-    toast.success("Empresa deletada com sucesso!");
-    setRefreshKey(k => k + 1);
-    dispatchModal({ type: 'CLOSE' });
-  }, empresaId);
+  const handleDelete = (tenantId: string) => handleAction(async () => {
+    try {
+      await tenantService.deleteTenant(tenantId);
+      toast.success("Empresa deletada com sucesso!");
+      setRefreshKey(k => k + 1);
+      dispatchModal({ type: 'CLOSE' });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      toast.error(errorMessage);
+      throw err;
+    }
+  }, tenantId);
 
   const closeModal = () => {
     dispatchModal({ type: 'CLOSE' });
@@ -118,28 +123,28 @@ export function EmpresaList({ isSuperAdmin }: EmpresaListProps) {
               </tr>
             </thead>
             <tbody>
-              {empresas.length > 0 ? (
-                empresas.map((empresa) => {
-                  const isLoading = actionLoading === empresa.id;
+              {tenants.length > 0 ? (
+                tenants.map((tenant) => {
+                  const isLoading = actionLoading === tenant.id;
                   return (
-                    <tr key={empresa.id} className="border-t hover:bg-gray-50">
-                      <td className="px-4 py-3 border font-medium">{empresa.nome}</td>
+                    <tr key={tenant.id} className="border-t hover:bg-gray-50">
+                      <td className="px-4 py-3 border font-medium">{tenant.name}</td>
                       <td className="px-4 py-3 border">
                         <div className="flex items-center gap-2">
                           <Mail className="w-4 h-4 text-gray-400" />
-                          <span>{empresa.email || '-'}</span>
+                          <span>{tenant.email || '-'}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 border">
                         <div className="flex items-center gap-2">
                           <FileText className="w-4 h-4 text-gray-400" />
-                          <span>{empresa.cpf_cnpj || '-'}</span>
+                          <span>{tenant.cpf_cnpj || '-'}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 border">
                         <div className="flex items-center gap-2">
                           <Phone className="w-4 h-4 text-gray-400" />
-                          <span>{empresa.telefone || '-'}</span>
+                          <span>{tenant.phone || '-'}</span>
                         </div>
                       </td>
                       {isSuperAdmin && (
@@ -147,14 +152,14 @@ export function EmpresaList({ isSuperAdmin }: EmpresaListProps) {
                           <div className="flex gap-2 items-center">
                             <ActionButton
                               icon={Edit}
-                              onClick={() => dispatchModal({ type: 'OPEN_EDIT', payload: empresa })}
+                              onClick={() => dispatchModal({ type: 'OPEN_EDIT', payload: tenant })}
                               variant="primary"
                               disabled={isLoading}
                               title="Editar"
                             />
                             <ActionButton
                               icon={Trash2}
-                              onClick={() => dispatchModal({ type: 'OPEN_DELETE', payload: empresa })}
+                              onClick={() => dispatchModal({ type: 'OPEN_DELETE', payload: tenant })}
                               variant="danger"
                               disabled={isLoading}
                               loading={isLoading}
@@ -171,7 +176,7 @@ export function EmpresaList({ isSuperAdmin }: EmpresaListProps) {
                   <td colSpan={isSuperAdmin ? 5 : 4} className="text-center py-8 text-gray-500">
                     <Building2 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                     <p className="font-medium">Nenhuma empresa encontrada</p>
-                    <p className="text-sm">Use o botão "Nova Empresa" para criar a primeira</p>
+                    <p className="text-sm">Use o botão &quot;Nova Empresa&quot; para criar a primeira.</p>
                   </td>
                 </tr>
               )}
@@ -179,37 +184,28 @@ export function EmpresaList({ isSuperAdmin }: EmpresaListProps) {
           </table>
 
           {/* Modal de criação/edição */}
-          {(modalState.type === 'CREATE' || modalState.type === 'EDIT') && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                <div className="p-6">
-                  <h2 className="text-xl font-semibold mb-4">
-                    {modalState.type === 'CREATE' ? 'Nova Empresa' : 'Editar Empresa'}
-                  </h2>
-                  <EmpresaForm 
-                    empresa={modalState.type === 'EDIT' ? modalState.payload : undefined}
-                    onSuccess={handleSave}
-                    onCancel={closeModal}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+          <TenantModal
+            isOpen={modalState.type === 'CREATE' || modalState.type === 'EDIT'}
+            onClose={closeModal}
+            onSave={handleSave}
+            tenant={modalState.type === 'EDIT' ? modalState.payload : undefined}
+          />
 
           {/* Modal de confirmação de exclusão */}
-          {modalState.type === 'DELETE' && (
-            <ConfirmationModal
-              isOpen={true}
-              onClose={closeModal}
-              onConfirm={() => handleDelete(modalState.payload.id)}
-              title="Confirmar exclusão"
-              confirmText="Deletar"
-              isLoading={actionLoading === modalState.payload.id}
-            >
-              Tem certeza que deseja deletar a empresa <span className="font-semibold">&quot;{modalState.payload.nome}&quot;</span>? 
-              Essa ação não pode ser desfeita e todos os dados relacionados serão perdidos.
-            </ConfirmationModal>
-          )}
+          <ConfirmationModal
+            isOpen={modalState.type === 'DELETE'}
+            onClose={closeModal}
+            onConfirm={() => handleDelete(modalState.type === 'DELETE' ? modalState.payload.id : '')}
+            title="Confirmar Exclusão"
+            confirmText="Excluir"
+            cancelText="Cancelar"
+            isLoading={actionLoading === (modalState.type === 'DELETE' ? modalState.payload.id : '')}
+          >
+            <p>
+              Tem certeza que deseja excluir a empresa <span className="font-semibold">&quot;{modalState.type === 'DELETE' ? modalState.payload.name : ''}&quot;</span>? 
+              Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos.
+            </p>
+          </ConfirmationModal>
         </>
       )}
     </div>

@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Buscar o nome da instância no banco
     const { data: instanceData, error: fetchError } = await supabase
       .from('whatsapp_instances')
-      .select('name')
+      .select('instanceName')
       .eq('id', id)
       .single();
     
@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'Instância não encontrada' });
     }
 
-    const instanceName = instanceData.name;
+    const instanceName = instanceData.instanceName;
 
     // 1. Atualizar configurações na API externa
     const settingsResponse = await fetch(`https://evolution.hayttle.dev/settings/set/${encodeURIComponent(instanceName)}`, {
@@ -124,7 +124,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     return res.status(200).json({ success: true });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message || 'Erro inesperado' });
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Erro inesperado';
+    return res.status(500).json({ error: errorMessage });
   }
 } 
