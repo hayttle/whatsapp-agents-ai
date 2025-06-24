@@ -68,30 +68,6 @@ export const useInstances = ({ isSuperAdmin, tenantId, refreshKey }: UseInstance
     fetchInstances();
   }, [fetchInstances, refreshKey]);
 
-  // Efeito para polling quando há instâncias conectando
-  useEffect(() => {
-    // Limpar intervalo anterior
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-
-    const hasConnecting = instances.some(inst => inst.status === 'connecting');
-    if (hasConnecting) {
-      intervalRef.current = setInterval(() => {
-        fetchInstances();
-      }, 3000);
-    }
-
-    // Cleanup
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [instances, fetchInstances]);
-
   const createInstance = useCallback(async (instanceData: InstanceFormData) => {
     try {
       await instanceService.createInstance(instanceData);
