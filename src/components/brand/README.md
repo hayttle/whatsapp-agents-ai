@@ -28,7 +28,7 @@ import { Button } from '@/components/brand';
 ```
 
 **Props:**
-- `variant`: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive'
+- `variant`: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'warning'
 - `size`: 'sm' | 'md' | 'lg'
 - `loading`: boolean
 - `disabled`: boolean
@@ -39,6 +39,7 @@ import { Button } from '@/components/brand';
 - `outline`: Borda verde com texto verde, hover preenche com verde
 - `ghost`: Texto cinza escuro com hover cinza
 - `destructive`: Vermelho para ações destrutivas
+- `warning`: Amarelo claro (bg-yellow-50) com texto amarelo escuro e hover amarelo mais escuro
 
 ### ActionButton
 Botão de ação compacto com ícone, ideal para listas e ações secundárias.
@@ -58,7 +59,7 @@ import { Edit, Trash2 } from 'lucide-react';
 **Props:**
 - `icon`: LucideIcon (ícone do Lucide React)
 - `onClick`: () => void
-- `variant`: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive'
+- `variant`: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'warning'
 - `size`: 'sm' | 'md' | 'lg'
 - `disabled`: boolean
 - `loading`: boolean
@@ -70,12 +71,14 @@ import { Edit, Trash2 } from 'lucide-react';
 - `outline`: Borda verde com texto verde, hover preenche com verde
 - `ghost`: Texto cinza escuro com hover cinza
 - `destructive`: Vermelho para ações destrutivas
+- `warning`: Amarelo claro (bg-yellow-50) com texto amarelo escuro e hover amarelo mais escuro
 
 **Uso Recomendado:**
 - Use `variant="secondary"` para botões de "Editar" em listas
 - Use `variant="primary"` para botões de ativar/ativar agentes
 - Use `variant="destructive"` para botões de "Deletar"
 - Use `variant="ghost"` para ações menos importantes
+- Use `variant="warning"` para ações de ativar/desativar ou pausar/retomar
 
 ### Card
 Sistema de cards modular com header, content e footer.
@@ -298,6 +301,7 @@ import { Modal, Tooltip, ConfirmationModal, ActionButton } from '@/components/ui
 - **outline**: Ações alternativas que não são a principal
 - **ghost**: Ações menos importantes ou de navegação
 - **destructive**: Ações destrutivas (deletar, remover, desconectar)
+- **warning**: Ações de ativar/desativar, pausar/retomar ou estados intermediários
 
 ### Exemplos de Uso
 ```tsx
@@ -317,7 +321,7 @@ import { Modal, Tooltip, ConfirmationModal, ActionButton } from '@/components/ui
 // Botão de ativar/desativar agente
 <ActionButton 
   icon={isActive ? Pause : Play} 
-  variant={isActive ? "secondary" : "primary"}
+  variant={isActive ? "warning" : "primary"}
   onClick={() => handleToggleStatus(id)}
   title={isActive ? "Desativar" : "Ativar"}
 />
@@ -328,6 +332,14 @@ import { Modal, Tooltip, ConfirmationModal, ActionButton } from '@/components/ui
   variant="destructive" 
   onClick={() => handleDelete(id)}
   title="Deletar"
+/>
+
+// Botão de pausar/retomar
+<ActionButton 
+  icon={isPaused ? Play : Pause} 
+  variant="warning" 
+  onClick={() => handlePauseResume(id)}
+  title={isPaused ? "Retomar" : "Pausar"}
 />
 ```
 

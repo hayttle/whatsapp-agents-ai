@@ -4,7 +4,7 @@ import { LucideIcon, Loader2 } from 'lucide-react';
 interface ActionButtonProps {
   icon: LucideIcon;
   onClick: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'warning';
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   loading?: boolean;
@@ -18,6 +18,7 @@ const variantStyles = {
   outline: 'border-2 border-brand-green-light text-brand-green-light hover:bg-brand-green-light hover:text-white focus:ring-brand-green-light',
   ghost: 'text-brand-gray-dark hover:bg-brand-gray-dark hover:text-white focus:ring-brand-gray-dark',
   destructive: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-600 shadow-sm',
+  warning: 'bg-yellow-50 hover:bg-yellow-100 text-yellow-800 shadow-sm',
 };
 
 const sizeStyles = {
@@ -32,7 +33,7 @@ const iconSizes = {
   lg: 'w-5 h-5',
 };
 
-export const ActionButton: React.FC<Omit<ActionButtonProps, 'variant'> & { variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' }> = ({
+export const ActionButton: React.FC<Omit<ActionButtonProps, 'variant'> & { variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'warning' }> = ({
   icon: Icon,
   onClick,
   variant = 'primary',

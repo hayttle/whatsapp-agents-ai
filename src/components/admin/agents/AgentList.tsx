@@ -146,7 +146,7 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                   </Tooltip>
                   <Tooltip content={agente.active ? 'Desativar' : 'Ativar'}>
                     <Button 
-                      variant={agente.active ? 'secondary' : 'primary'}
+                      variant={agente.active ? 'warning' : 'primary'}
                       size="sm" 
                       className="min-w-0 w-9 h-9 p-0 flex items-center justify-center"
                       onClick={() => handleToggleActive(agente)} 

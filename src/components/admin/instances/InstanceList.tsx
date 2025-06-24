@@ -193,7 +193,7 @@ export function InstanceList({ isSuperAdmin, isAdmin, tenantId }: InstanceListPr
                             <ActionButton
                               icon={Power}
                               onClick={() => dispatchModal({ type: 'OPEN_DISCONNECT', payload: inst })}
-                              variant="secondary"
+                              variant="warning"
                               disabled={isLoading}
                               loading={isLoading}
                               title="Desconectar"
@@ -203,7 +203,7 @@ export function InstanceList({ isSuperAdmin, isAdmin, tenantId }: InstanceListPr
                             <ActionButton
                               icon={Power}
                               onClick={() => handleConnect(inst.instanceName)}
-                              variant="primary"
+                              variant="warning"
                               disabled={isLoading}
                               loading={isLoading}
                               title="Conectar"
@@ -213,7 +213,7 @@ export function InstanceList({ isSuperAdmin, isAdmin, tenantId }: InstanceListPr
                             <ActionButton
                               icon={RefreshCw}
                               onClick={() => handleConnect(inst.instanceName, true)}
-                              variant="secondary"
+                              variant="warning"
                               disabled={isLoading}
                               loading={isLoading}
                               title="Forçar Regeneração"
