@@ -8,6 +8,9 @@ export interface Agent {
   active: boolean;
   created_at: string;
   updated_at: string;
+  personality?: string;
+  custom_personality?: string;
+  tone?: string;
 }
 
 export interface AgentListResponse {

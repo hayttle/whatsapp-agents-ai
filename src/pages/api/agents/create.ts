@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { userData } = auth;
     const supabase = createApiClient(req, res);
 
-    const { tenant_id, instance_id, title, prompt, fallback_message, active } = req.body;
+    const { tenant_id, instance_id, title, prompt, fallback_message, active, personality, custom_personality, tone } = req.body;
 
     // Validação dos dados (instance_id agora é opcional)
     if (!tenant_id || !title || !prompt || !fallback_message) {
@@ -37,7 +37,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         title,
         prompt,
         fallback_message,
-        active: active ?? true
+        active: active ?? true,
+        personality,
+        custom_personality,
+        tone
       })
       .select()
       .single();

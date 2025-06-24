@@ -6,6 +6,9 @@ export interface Agent {
   active: boolean;
   instance_id: string | null;
   tenant_id: string;
+  personality?: string;
+  custom_personality?: string;
+  tone?: string;
 }
 
 export interface Instance {

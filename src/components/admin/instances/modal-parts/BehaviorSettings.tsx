@@ -1,5 +1,5 @@
 import React from 'react';
-import { Input } from '@/components/brand';
+import { Input, Switch } from '@/components/brand';
 
 interface BehaviorSettingsProps {
   msgCall: string;
@@ -40,60 +40,12 @@ const BehaviorSettings: React.FC<BehaviorSettingsProps> = ({
       <div>
         <label className="block font-semibold mb-2 text-sm">Comportamentos:</label>
         <div className="grid grid-cols-2 gap-3">
-          <label className="flex items-center gap-2 text-sm cursor-pointer p-2 rounded hover:bg-gray-50">
-            <input 
-              type="checkbox" 
-              checked={rejectCall} 
-              onChange={e => setRejectCall(e.target.checked)}
-              className="rounded"
-            />
-            <span>Rejeitar chamadas</span>
-          </label>
-          <label className="flex items-center gap-2 text-sm cursor-pointer p-2 rounded hover:bg-gray-50">
-            <input 
-              type="checkbox" 
-              checked={groupsIgnore} 
-              onChange={e => setGroupsIgnore(e.target.checked)}
-              className="rounded"
-            />
-            <span>Ignorar grupos</span>
-          </label>
-          <label className="flex items-center gap-2 text-sm cursor-pointer p-2 rounded hover:bg-gray-50">
-            <input 
-              type="checkbox" 
-              checked={alwaysOnline} 
-              onChange={e => setAlwaysOnline(e.target.checked)}
-              className="rounded"
-            />
-            <span>Sempre online</span>
-          </label>
-          <label className="flex items-center gap-2 text-sm cursor-pointer p-2 rounded hover:bg-gray-50">
-            <input 
-              type="checkbox" 
-              checked={readMessages} 
-              onChange={e => setReadMessages(e.target.checked)}
-              className="rounded"
-            />
-            <span>Ler mensagens</span>
-          </label>
-          <label className="flex items-center gap-2 text-sm cursor-pointer p-2 rounded hover:bg-gray-50">
-            <input 
-              type="checkbox" 
-              checked={readStatus} 
-              onChange={e => setReadStatus(e.target.checked)}
-              className="rounded"
-            />
-            <span>Ler status</span>
-          </label>
-          <label className="flex items-center gap-2 text-sm cursor-pointer p-2 rounded hover:bg-gray-50">
-            <input 
-              type="checkbox" 
-              checked={syncFullHistory} 
-              onChange={e => setSyncFullHistory(e.target.checked)}
-              className="rounded"
-            />
-            <span>Sincronizar histórico</span>
-          </label>
+          <Switch checked={rejectCall} onCheckedChange={setRejectCall} id="rejectCall">Rejeitar chamadas</Switch>
+          <Switch checked={groupsIgnore} onCheckedChange={setGroupsIgnore} id="groupsIgnore">Ignorar grupos</Switch>
+          <Switch checked={alwaysOnline} onCheckedChange={setAlwaysOnline} id="alwaysOnline">Sempre online</Switch>
+          <Switch checked={readMessages} onCheckedChange={setReadMessages} id="readMessages">Ler mensagens</Switch>
+          <Switch checked={readStatus} onCheckedChange={setReadStatus} id="readStatus">Ler status</Switch>
+          <Switch checked={syncFullHistory} onCheckedChange={setSyncFullHistory} id="syncFullHistory">Sincronizar histórico</Switch>
         </div>
       </div>
     </div>

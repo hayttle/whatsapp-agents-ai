@@ -1,5 +1,5 @@
 import React from 'react';
-import { Input } from '@/components/brand';
+import { Input, Switch } from '@/components/brand';
 
 interface WebhookSettingsProps {
   webhookUrl: string;
@@ -52,24 +52,8 @@ const WebhookSettings: React.FC<WebhookSettingsProps> = ({
       </div>
       
       <div className="grid grid-cols-2 gap-4">
-        <label className="flex items-center gap-2 text-sm cursor-pointer">
-          <input 
-            type="checkbox" 
-            checked={webhookByEvents} 
-            onChange={e => setWebhookByEvents(e.target.checked)}
-            className="rounded"
-          />
-          <span>Webhook por eventos</span>
-        </label>
-        <label className="flex items-center gap-2 text-sm cursor-pointer">
-          <input 
-            type="checkbox" 
-            checked={webhookBase64} 
-            onChange={e => setWebhookBase64(e.target.checked)}
-            className="rounded"
-          />
-          <span>Webhook Base64</span>
-        </label>
+        <Switch checked={webhookByEvents} onCheckedChange={setWebhookByEvents} id="webhookByEvents">Webhook por eventos</Switch>
+        <Switch checked={webhookBase64} onCheckedChange={setWebhookBase64} id="webhookBase64">Webhook Base64</Switch>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { agentService } from "@/services/agentService";
 import { useInstances } from "@/hooks/useInstances";
 import { tenantService, Tenant } from "@/services/tenantService";
 import Modal, { ModalHeader, ModalBody, ModalFooter } from "@/components/ui/Modal";
-import { Input, Button, Select, Alert } from "@/components/brand";
+import { Input, Button, Select, Alert, Switch } from "@/components/brand";
 import { Building } from "lucide-react";
 import { AgentModalProps } from "./types";
 
@@ -19,6 +19,9 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
+  const [personality, setPersonality] = useState('Friendly');
+  const [customPersonality, setCustomPersonality] = useState('');
+  const [tone, setTone] = useState('Empathetic');
 
   const { instances } = useInstances({
     isSuperAdmin: false,
@@ -34,6 +37,9 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
       setActive(agent.active ?? true);
       setInstanceId(agent.instance_id || "");
       setSelectedTenant(agent.tenant_id || tenantId || "");
+      setPersonality(agent.personality || 'Friendly');
+      setCustomPersonality(agent.personality === 'Custom' ? (agent.custom_personality || '') : '');
+      setTone(agent.tone || 'Empathetic');
     } else {
       setTitle("");
       setPrompt("");
@@ -41,6 +47,9 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
       setActive(true);
       setInstanceId("");
       setSelectedTenant(tenantId || "");
+      setPersonality('Friendly');
+      setCustomPersonality('');
+      setTone('Empathetic');
     }
     setMsg("");
     setError("");
@@ -74,6 +83,9 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
         active,
         instance_id: instanceId || "",
         tenant_id: selectedTenant,
+        personality: personality,
+        custom_personality: personality === 'Custom' ? customPersonality : undefined,
+        tone: tone,
       };
       if (agent) {
         await agentService.updateAgent(agent.id, agentData);
@@ -137,6 +149,43 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
             />
           </div>
           <div>
+            <label className="block text-sm font-medium mb-1">Personalidade</label>
+            <select
+              className="border rounded px-3 py-2 w-full"
+              value={personality}
+              onChange={e => setPersonality(e.target.value)}
+              required
+            >
+              <option value="Friendly">Amigável</option>
+              <option value="Professional">Profissional</option>
+              <option value="Sophisticated">Sofisticado</option>
+              <option value="Custom">Personalizado</option>
+            </select>
+            {personality === 'Custom' && (
+              <input
+                className="border rounded px-3 py-2 w-full mt-2"
+                placeholder="Descreva a personalidade personalizada"
+                value={customPersonality}
+                onChange={e => setCustomPersonality(e.target.value)}
+                required
+              />
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Tom de Voz</label>
+            <select
+              className="border rounded px-3 py-2 w-full"
+              value={tone}
+              onChange={e => setTone(e.target.value)}
+              required
+            >
+              <option value="Empathetic">Empático</option>
+              <option value="Direct">Direto</option>
+              <option value="Humorous">Bem-humorado</option>
+              <option value="Robotic">Robótico</option>
+            </select>
+          </div>
+          <div>
             <label className="block text-sm font-medium mb-1">Mensagem fallback (caso IA falhe)</label>
             <textarea
               className="border rounded px-3 py-2 w-full"
@@ -148,21 +197,22 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
             />
           </div>
           <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
+            <Switch
               checked={active}
-              onChange={e => setActive(e.target.checked)}
+              onCheckedChange={setActive}
               id="active"
-            />
-            <label htmlFor="active">Ativo</label>
+            >
+              Ativo
+            </Switch>
           </div>
           <Select
             label="Instância vinculada"
             value={instanceId}
             onChange={e => setInstanceId(e.target.value)}
+            required
           >
-            <option value="">Sem instância vinculada</option>
-            {(instances || []).map((inst) => (
+            <option value="">Selecione uma instância ativa</option>
+            {(instances || []).filter(inst => inst.status === 'open').map((inst) => (
               <option key={inst.id} value={inst.id}>{inst.instanceName}</option>
             ))}
           </Select>
