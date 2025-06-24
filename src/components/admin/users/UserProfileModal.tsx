@@ -3,6 +3,7 @@ import Modal, { ModalHeader, ModalBody, ModalFooter } from '@/components/ui/Moda
 import { Button } from '@/components/brand';
 import { User, Mail, Shield, Building } from 'lucide-react';
 import { UserProfileModalProps } from './types';
+import { useEffect, useState } from 'react';
 
 export function UserProfileModal({ isOpen, onClose, user }: UserProfileModalProps) {
   const roleDisplay: { [key: string]: string } = {
@@ -10,6 +11,34 @@ export function UserProfileModal({ isOpen, onClose, user }: UserProfileModalProp
     admin: 'Admin',
     user: 'Usuário',
   };
+
+  const [empresaNome, setEmpresaNome] = useState<string | null>(null);
+  const [empresaLoading, setEmpresaLoading] = useState(false);
+
+  useEffect(() => {
+    async function fetchEmpresa() {
+      if (user.tenant_id && user.role !== 'super_admin') {
+        setEmpresaLoading(true);
+        try {
+          const res = await fetch(`/api/tenants/${user.tenant_id}`);
+          const data = await res.json();
+          if (data.tenant && data.tenant.name) {
+            setEmpresaNome(data.tenant.name);
+          } else {
+            setEmpresaNome(null);
+          }
+        } catch (e) {
+          setEmpresaNome(null);
+        } finally {
+          setEmpresaLoading(false);
+        }
+      } else {
+        setEmpresaNome(null);
+        setEmpresaLoading(false);
+      }
+    }
+    fetchEmpresa();
+  }, [user.tenant_id, user.role]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="w-full max-w-md">
@@ -42,10 +71,10 @@ export function UserProfileModal({ isOpen, onClose, user }: UserProfileModalProp
             </span>
           </div>
           
-          {user.tenant_id && (
+          {(user.role === 'admin' || user.role === 'user') && empresaNome && (
             <div className="flex items-center gap-2">
               <Building className="w-4 h-4 text-gray-400" />
-              <span className="text-sm">Tenant ID: {user.tenant_id}</span>
+              <span className="text-sm">{empresaNome}</span>
             </div>
           )}
           

@@ -40,14 +40,7 @@ export function Navbar() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        // Primeiro, verificar se há um usuário autenticado no frontend
-        const supabase = createClient();
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        if (!authUser) {
-          setIsLoading(false);
-          return;
-        }
-        // Usar a API em vez de consulta direta ao Supabase
+        // Buscar sempre via API protegida
         const response = await fetch('/api/users/current');
         if (!response.ok) {
           setIsLoading(false);
@@ -71,7 +64,7 @@ export function Navbar() {
         setUser(mappedUser);
         setIsLoading(false);
       } catch {
-        // erro ao fazer logout
+        setIsLoading(false);
       }
     };
     fetchUser();
@@ -102,8 +95,7 @@ export function Navbar() {
 
   const handleLogout = async () => {
     try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
+      await fetch('/api/auth/logout', { method: 'POST' });
       router.push('/login');
     } catch {
       // erro ao fazer logout

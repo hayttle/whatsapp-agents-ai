@@ -4,7 +4,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Input, Button, Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/brand";
-import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Mail, Lock } from "lucide-react";
@@ -17,7 +16,6 @@ const loginSchema = z.object({
 type LoginData = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
-  const supabase = createClient();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const {
@@ -31,17 +29,18 @@ export function LoginForm() {
   const onSubmit = async (data: LoginData) => {
     setLoading(true);
     try {
-      const { data: loginData, error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.senha,
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: data.email, password: data.senha })
       });
-
-      if (error) {
-        toast.error(error.message);
-      } else if (loginData.user) {
-        toast.success("Login realizado com sucesso!");
+      const result = await response.json();
+      if (!response.ok) {
+        toast.error(result.error || 'Erro ao fazer login.');
+      } else {
+        toast.success('Login realizado com sucesso!');
         setTimeout(() => {
-          router.push("/dashboard");
+          router.push('/dashboard');
         }, 500);
       }
     } catch (err) {

@@ -4,11 +4,15 @@ import { useEffect, useState } from 'react';
 export function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   useEffect(() => {
-    // Checa se existe o cookie de autenticação do Supabase
-    const cookies = document.cookie;
-    setIsAuthenticated(
-      cookies.includes('sb-access-token') || cookies.includes('supabase-auth-token')
-    );
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/users/current');
+        setIsAuthenticated(response.ok);
+      } catch {
+        setIsAuthenticated(false);
+      }
+    };
+    checkAuth();
   }, []);
   return { isAuthenticated };
 } 

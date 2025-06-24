@@ -13,13 +13,19 @@ export function LogoutButton() {
 
   const handleLogout = async () => {
     setLoading(true);
-    const { error } = await supabase.auth.signOut();
-    setLoading(false);
-    if (error) {
-      toast.error("Erro ao sair. Tente novamente.");
-    } else {
-      toast.success("Logout realizado!");
-      router.push("/login");
+    try {
+      const response = await fetch('/api/auth/logout', { method: 'POST' });
+      const result = await response.json();
+      setLoading(false);
+      if (!response.ok) {
+        toast.error('Erro ao sair. Tente novamente.');
+      } else {
+        toast.success('Logout realizado!');
+        router.push('/login');
+      }
+    } catch (err) {
+      setLoading(false);
+      toast.error('Erro ao sair. Tente novamente.');
     }
   };
 

@@ -17,10 +17,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { userData } = auth;
     const supabase = createApiClient(req, res);
 
-    const { id, name, email, role, tenant_id } = req.body;
+    const { id, email, name, role, tenant_id } = req.body;
 
-    if (!id) {
-      return res.status(400).json({ error: 'User ID is required' });
+    if (!id || !email || !name || !role) {
+      return res.status(400).json({ error: 'Campos obrigatórios faltando.' });
+    }
+    if (role !== 'super_admin' && !tenant_id) {
+      return res.status(400).json({ error: 'Usuários que não são super_admin devem ter uma empresa associada.' });
     }
 
     // Verificar se o usuário existe e se o usuário atual tem permissão

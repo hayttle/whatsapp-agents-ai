@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Input, Button, Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/brand";
@@ -19,7 +18,6 @@ const signupSchema = z.object({
 export type SignupData = z.infer<typeof signupSchema>;
 
 export function SignupForm() {
-  const supabase = createClient();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const {
@@ -33,24 +31,22 @@ export function SignupForm() {
   const onSubmit = async (data: SignupData) => {
     setLoading(true);
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.senha,
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: data.email, password: data.senha })
       });
-      if (authError) {
-        if (authError.message.toLowerCase().includes("user already registered") || authError.message.toLowerCase().includes("already registered")) {
-          toast.error("E-mail já cadastrado. Faça login ou recupere sua senha.");
-        } else {
-          toast.error(authError.message);
-        }
+      const result = await response.json();
+      if (!response.ok) {
+        toast.error(result.error || 'Erro ao cadastrar.');
         return;
       }
-      if (!authData.user) {
-        toast.error("Usuário não criado. Verifique seu e-mail para confirmação.");
+      if (!result.user) {
+        toast.error('Usuário não criado. Verifique seu e-mail para confirmação.');
         return;
       }
-      toast.success("Cadastro realizado com sucesso!");
-      router.push("/dashboard");
+      toast.success('Cadastro realizado com sucesso!');
+      router.push('/dashboard');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
       toast.error(errorMessage);
