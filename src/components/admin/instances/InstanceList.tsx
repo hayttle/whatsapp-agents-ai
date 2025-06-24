@@ -8,7 +8,7 @@ import { ConfirmationModal, ActionButton } from "@/components/ui";
 import { useInstanceActions } from "@/hooks/useInstanceActions";
 import { useInstances } from "@/hooks/useInstances";
 import { instanceService } from "@/services/instanceService";
-import { Power, Edit, Trash2, Plus, RefreshCw } from "lucide-react";
+import { Power, Edit, Trash2, Plus, RefreshCw, PowerOff, Play } from "lucide-react";
 
 interface InstanceListProps {
   isSuperAdmin: boolean;
@@ -176,7 +176,7 @@ export function InstanceList({ isSuperAdmin, isAdmin, tenantId }: InstanceListPr
                         <td className="px-2 py-1 border flex gap-2 items-center">
                           {inst.status === 'open' && (
                             <ActionButton
-                              icon={Power}
+                              icon={PowerOff}
                               onClick={() => dispatchModal({ type: 'OPEN_DISCONNECT', payload: inst })}
                               variant="warning"
                               disabled={isLoading}
@@ -186,7 +186,7 @@ export function InstanceList({ isSuperAdmin, isAdmin, tenantId }: InstanceListPr
                           )}
                           {inst.status === 'close' && (
                             <ActionButton
-                              icon={Power}
+                              icon={Play}
                               onClick={() => handleConnect(inst.instanceName)}
                               variant="warning"
                               disabled={isLoading}
