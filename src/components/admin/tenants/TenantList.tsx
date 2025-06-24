@@ -6,7 +6,7 @@ import { ConfirmationModal } from "@/components/ui";
 import { ActionButton } from "@/components/ui";
 import { useActions } from "@/hooks/useActions";
 import { tenantService, Tenant } from "@/services/tenantService";
-import { Building2, Plus, Edit, Trash2, Mail, Phone, FileText } from "lucide-react";
+import { Building2, Plus, Edit, Trash2, Mail, Phone, FileText, Power, PowerOff } from "lucide-react";
 
 interface TenantListProps {
   isSuperAdmin: boolean;
@@ -81,6 +81,26 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
     }
   }, tenantId);
 
+  const handleToggleStatus = (tenant: Tenant) => handleAction(async () => {
+    try {
+      const newStatus = tenant.status === 'active' ? 'inactive' : 'active';
+      await tenantService.updateTenant({
+        id: tenant.id,
+        name: tenant.name,
+        email: tenant.email,
+        cpf_cnpj: tenant.cpf_cnpj || '',
+        phone: tenant.phone || '',
+        type: tenant.type,
+      });
+      toast.success(`Empresa ${newStatus === 'active' ? 'ativada' : 'desativada'} com sucesso!`);
+      setRefreshKey(k => k + 1);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      toast.error(errorMessage);
+      throw err;
+    }
+  }, tenant.id);
+
   const closeModal = () => {
     dispatchModal({ type: 'CLOSE' });
   };
@@ -119,6 +139,7 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
                 <th className="px-4 py-3 border text-left">E-mail</th>
                 <th className="px-4 py-3 border text-left">CPF/CNPJ</th>
                 <th className="px-4 py-3 border text-left">Telefone</th>
+                <th className="px-4 py-3 border text-left">Status</th>
                 {isSuperAdmin && <th className="px-4 py-3 border text-left">Ações</th>}
               </tr>
             </thead>
@@ -147,9 +168,25 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
                           <span>{tenant.phone || '-'}</span>
                         </div>
                       </td>
+                      <td className="px-4 py-3 border">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          tenant.status === 'active' ? 'bg-green-100 text-green-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {tenant.status === 'active' ? 'Ativa' : 'Inativa'}
+                        </span>
+                      </td>
                       {isSuperAdmin && (
                         <td className="px-4 py-3 border">
                           <div className="flex gap-2 items-center">
+                            <ActionButton
+                              icon={tenant.status === 'active' ? PowerOff : Power}
+                              onClick={() => handleToggleStatus(tenant)}
+                              variant={tenant.status === 'active' ? 'warning' : 'primary'}
+                              disabled={isLoading}
+                              loading={isLoading}
+                              title={tenant.status === 'active' ? 'Desativar' : 'Ativar'}
+                            />
                             <ActionButton
                               icon={Edit}
                               onClick={() => dispatchModal({ type: 'OPEN_EDIT', payload: tenant })}
@@ -173,7 +210,7 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
                 })
               ) : (
                 <tr>
-                  <td colSpan={isSuperAdmin ? 5 : 4} className="text-center py-8 text-gray-500">
+                  <td colSpan={isSuperAdmin ? 6 : 5} className="text-center py-8 text-gray-500">
                     <Building2 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                     <p className="font-medium">Nenhuma empresa encontrada</p>
                     <p className="text-sm">Use o botão &quot;Nova Empresa&quot; para criar a primeira.</p>
