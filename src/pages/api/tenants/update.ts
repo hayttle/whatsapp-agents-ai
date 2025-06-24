@@ -22,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(403).json({ error: 'Insufficient permissions - Only super_admin can update tenants' });
     }
 
-    const { id, name, email, cpf_cnpj, phone, type } = req.body;
+    const { id, name, email, cpf_cnpj, phone, type, status } = req.body;
 
     if (!id) {
       return res.status(400).json({ error: 'Tenant ID is required' });
@@ -52,6 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         cpf_cnpj,
         phone,
         type,
+        ...(status !== undefined ? { status } : {}),
       })
       .eq('id', id)
       .select()

@@ -39,6 +39,7 @@ export interface UpdateTenantData {
   cpf_cnpj: string;
   phone: string;
   type?: string;
+  status?: string;
 }
 
 class TenantService {

@@ -91,6 +91,7 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
         cpf_cnpj: tenant.cpf_cnpj || '',
         phone: tenant.phone || '',
         type: tenant.type,
+        status: newStatus,
       });
       toast.success(`Empresa ${newStatus === 'active' ? 'ativada' : 'desativada'} com sucesso!`);
       setRefreshKey(k => k + 1);
