@@ -4,9 +4,11 @@ import { AgentModal } from "./AgentModal";
 import { useAgents } from "@/hooks/useAgents";
 import { useActions } from "@/hooks/useActions";
 import { Agent } from "./types";
-import ConfirmationModal from "@/components/ui/ConfirmationModal";
+import { ConfirmationModal } from "@/components/ui";
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Select, StatusIndicator, Alert } from "@/components/brand";
 import { Bot, Plus, Edit, Trash2, Power, PowerOff, Building } from "lucide-react";
+import { Tooltip } from '@/components/ui';
+import { ActionButton } from "@/components/ui";
 
 interface AgentListProps {
   isSuperAdmin: boolean;
@@ -101,8 +103,11 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {agentesFiltrados.map((agente: Agent) => {
             const isLoading = actionLoading?.startsWith(`toggle-${agente.id}`) || actionLoading?.startsWith(`delete-${agente.id}`);
+            const instanceName = agente.instance_id && instancias[agente.instance_id]
+              ? instancias[agente.instance_id]
+              : "Não definida";
             return (
-              <Card key={agente.id} className="flex flex-col">
+              <Card key={agente.id} className="flex flex-col p-4">
                 <CardHeader>
                   <CardTitle className="flex items-start justify-between">
                     <span className="flex items-center gap-2">
@@ -112,7 +117,7 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                     <StatusIndicator status={agente.active ? 'online' : 'offline'} />
                   </CardTitle>
                   <CardDescription>
-                    Instância: {instancias[agente.instance_id || ''] || "Não definida"}
+                    <span className="font-bold">Instância: {instanceName}</span>
                     {isSuperAdmin && empresas[agente.tenant_id] && (
                       <span className="flex items-center gap-1 text-xs mt-1">
                         <Building className="w-3 h-3"/>
@@ -122,38 +127,49 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow">
-                  <p className="text-sm text-gray-600 line-clamp-2">
-                    {agente.prompt || "Este agente não possui uma descrição detalhada."}
-                  </p>
+                  {/* Prompt removido */}
+                  {''}
                 </CardContent>
-                <CardFooter className="flex justify-end gap-2 bg-gray-50/50 p-3">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => { setEditAgent(agente); setShowModal(true); }} 
-                    disabled={isLoading}
-                    leftIcon={<Edit className="w-4 h-4" />}
-                  >
-                    Editar
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleToggleActive(agente)} 
-                    disabled={isLoading}
-                    leftIcon={agente.active ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
-                  >
-                    {agente.active ? 'Desativar' : 'Ativar'}
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    onClick={() => setDeleteAgent(agente)} 
-                    disabled={isLoading}
-                    leftIcon={<Trash2 className="w-4 h-4" />}
-                  >
-                    Deletar
-                  </Button>
+                <CardFooter className="flex flex-wrap items-center justify-end gap-2 pt-2 pb-2 px-0 bg-transparent">
+                  <Tooltip content="Editar">
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="min-w-0 w-9 h-9 p-0 flex items-center justify-center"
+                      onClick={() => { setEditAgent(agente); setShowModal(true); }} 
+                      disabled={isLoading}
+                      leftIcon={<Edit className="w-4 h-4" />}
+                      aria-label="Editar"
+                    >
+                      {''}
+                    </Button>
+                  </Tooltip>
+                  <Tooltip content={agente.active ? 'Desativar' : 'Ativar'}>
+                    <Button 
+                      variant={agente.active ? 'secondary' : 'primary'}
+                      size="sm" 
+                      className="min-w-0 w-9 h-9 p-0 flex items-center justify-center"
+                      onClick={() => handleToggleActive(agente)} 
+                      disabled={isLoading}
+                      leftIcon={agente.active ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+                      aria-label={agente.active ? 'Desativar' : 'Ativar'}
+                    >
+                      {''}
+                    </Button>
+                  </Tooltip>
+                  <Tooltip content="Deletar">
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      className="min-w-0 w-9 h-9 p-0 flex items-center justify-center"
+                      onClick={() => setDeleteAgent(agente)} 
+                      disabled={isLoading}
+                      leftIcon={<Trash2 className="w-4 h-4" />}
+                      aria-label="Deletar"
+                    >
+                      {''}
+                    </Button>
+                  </Tooltip>
                 </CardFooter>
               </Card>
             );

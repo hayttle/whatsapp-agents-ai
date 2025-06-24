@@ -52,7 +52,7 @@ export const useAgents = ({ isSuperAdmin, tenantId }: UseAgentsProps) => {
       if (instanceIds.length > 0) {
         // TODO: Criar instanceService.listInstancesByIds quando necessário
         // Por enquanto, vamos manter a lógica atual
-        const { data: insts } = await fetch('/api/whatsapp-instances/list').then(res => res.json());
+        const insts = await fetch('/api/whatsapp-instances/list').then(res => res.json());
         const instMap: Record<string, string> = {};
         (insts?.instances || []).forEach((i: Instance) => { instMap[i.id] = i.instanceName; });
         setInstancias(instMap);

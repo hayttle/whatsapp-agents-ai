@@ -1,5 +1,5 @@
 "use client";
-import Modal, { ModalHeader, ModalBody, ModalFooter } from '@/components/ui/Modal';
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui';
 import { Button } from '@/components/brand';
 import { User, Mail, Shield, Building } from 'lucide-react';
 import { UserProfileModalProps } from './types';

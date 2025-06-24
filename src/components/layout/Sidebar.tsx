@@ -118,7 +118,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
           const data = await response.json();
           
           if (data.user) {
-            console.log('✅ Sidebar: Usuário carregado:', data.user);
+            // console.log('✅ Sidebar: Usuário carregado:', data.user);
             setUserRole(data.user.role || 'user');
             setUserName(data.user.name || '');
             setUserEmail(data.user.email || '');

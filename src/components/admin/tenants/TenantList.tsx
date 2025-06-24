@@ -2,8 +2,8 @@
 import React, { useReducer, useState, useEffect } from "react";
 import { toast } from "sonner";
 import TenantModal from "./TenantModal";
-import ConfirmationModal from "@/components/ui/ConfirmationModal";
-import ActionButton from "@/components/ui/ActionButton";
+import { ConfirmationModal } from "@/components/ui";
+import { ActionButton } from "@/components/ui";
 import { useActions } from "@/hooks/useActions";
 import { tenantService, Tenant } from "@/services/tenantService";
 import { Building2, Plus, Edit, Trash2, Mail, Phone, FileText } from "lucide-react";
@@ -153,14 +153,14 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
                             <ActionButton
                               icon={Edit}
                               onClick={() => dispatchModal({ type: 'OPEN_EDIT', payload: tenant })}
-                              variant="primary"
+                              variant="secondary"
                               disabled={isLoading}
                               title="Editar"
                             />
                             <ActionButton
                               icon={Trash2}
                               onClick={() => dispatchModal({ type: 'OPEN_DELETE', payload: tenant })}
-                              variant="danger"
+                              variant="destructive"
                               disabled={isLoading}
                               loading={isLoading}
                               title="Deletar"

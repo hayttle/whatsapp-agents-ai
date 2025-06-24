@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { LogoutButton } from '@/components/ui/LogoutButton';
+import { LogoutButton } from '@/components/ui';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/brand';
 import { Bot, MessageSquare, Users, Settings } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';

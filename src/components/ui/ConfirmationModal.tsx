@@ -1,6 +1,7 @@
+"use client";
 import React, { useEffect, useRef } from 'react';
 import Modal, { ModalHeader, ModalBody, ModalFooter } from './Modal';
-import { Button } from '@/components/brand/Button';
+import { Button } from '@/components/brand';
 
 interface ConfirmationModalProps {
   isOpen: boolean;

@@ -4,8 +4,7 @@ import { toast } from "sonner";
 import { Instance } from "./types";
 import InstanceModal from "./InstanceModal";
 import { ConnectionModal } from "./QRCodeComponents";
-import ConfirmationModal from "@/components/ui/ConfirmationModal";
-import ActionButton from "@/components/ui/ActionButton";
+import { ConfirmationModal, ActionButton } from "@/components/ui";
 import { useInstanceActions } from "@/hooks/useInstanceActions";
 import { useInstances } from "@/hooks/useInstances";
 import { instanceService } from "@/services/instanceService";
@@ -194,7 +193,7 @@ export function InstanceList({ isSuperAdmin, isAdmin, tenantId }: InstanceListPr
                             <ActionButton
                               icon={Power}
                               onClick={() => dispatchModal({ type: 'OPEN_DISCONNECT', payload: inst })}
-                              variant="warning"
+                              variant="secondary"
                               disabled={isLoading}
                               loading={isLoading}
                               title="Desconectar"
@@ -204,7 +203,7 @@ export function InstanceList({ isSuperAdmin, isAdmin, tenantId }: InstanceListPr
                             <ActionButton
                               icon={Power}
                               onClick={() => handleConnect(inst.instanceName)}
-                              variant="success"
+                              variant="primary"
                               disabled={isLoading}
                               loading={isLoading}
                               title="Conectar"
@@ -214,7 +213,7 @@ export function InstanceList({ isSuperAdmin, isAdmin, tenantId }: InstanceListPr
                             <ActionButton
                               icon={RefreshCw}
                               onClick={() => handleConnect(inst.instanceName, true)}
-                              variant="warning"
+                              variant="secondary"
                               disabled={isLoading}
                               loading={isLoading}
                               title="Forçar Regeneração"
@@ -243,7 +242,7 @@ export function InstanceList({ isSuperAdmin, isAdmin, tenantId }: InstanceListPr
                           <ActionButton
                             icon={Trash2}
                             onClick={() => dispatchModal({ type: 'OPEN_DELETE', payload: inst })}
-                            variant="danger"
+                            variant="destructive"
                             disabled={isLoading}
                             loading={isLoading}
                             title="Deletar"

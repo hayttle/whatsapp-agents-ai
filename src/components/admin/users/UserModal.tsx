@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import Modal, { ModalBody, ModalFooter, ModalHeader } from '@/components/ui/Modal';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@/components/ui';
 import { Input, Select, Button, Alert } from '@/components/brand';
 import { User, Mail, Lock, Briefcase, Building } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";

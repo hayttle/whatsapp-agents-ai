@@ -13,11 +13,11 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', loading = false, leftIcon, children, disabled, ...props }, ref) => {
-    const baseClasses = 'inline-flex items-center justify-center font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+    const baseClasses = 'inline-flex items-center justify-center font-semibold transition-all duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed';
     
     const variants = {
       primary: 'bg-brand-green-light hover:bg-brand-green-medium text-white focus:ring-brand-green-light shadow-sm',
-      secondary: 'bg-brand-gray-dark hover:bg-brand-gray-deep text-white focus:ring-brand-gray-dark shadow-sm',
+      secondary: 'bg-blue-100 hover:bg-blue-200 text-blue-900 focus:ring-blue-200 shadow-sm',
       outline: 'border-2 border-brand-green-light text-brand-green-light hover:bg-brand-green-light hover:text-white focus:ring-brand-green-light',
       ghost: 'text-brand-gray-dark hover:bg-brand-gray-dark hover:text-white focus:ring-brand-gray-dark',
       destructive: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-600 shadow-sm',
@@ -48,7 +48,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           </svg>
         )}
         {leftIcon && !loading && (
-          <span className="mr-2">{leftIcon}</span>
+          <span className={children ? "mr-2" : undefined}>{leftIcon}</span>
         )}
         {children}
       </button>

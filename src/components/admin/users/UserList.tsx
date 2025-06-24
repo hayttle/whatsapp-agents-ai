@@ -2,8 +2,8 @@
 import React, { useReducer, useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { UserModal } from "./UserModal";
-import ConfirmationModal from "@/components/ui/ConfirmationModal";
-import ActionButton from "@/components/ui/ActionButton";
+import { ConfirmationModal } from "@/components/ui";
+import { ActionButton } from "@/components/ui";
 import { useActions } from "@/hooks/useActions";
 import { tenantService } from "@/services/tenantService";
 import { Users, Plus, Edit, Trash2, Mail, User, Shield, Building } from "lucide-react";
@@ -215,14 +215,14 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
                             <ActionButton
                               icon={Edit}
                               onClick={() => dispatchModal({ type: 'OPEN_EDIT', payload: user })}
-                              variant="primary"
+                              variant="secondary"
                               disabled={isLoading}
                               title="Editar"
                             />
                             <ActionButton
                               icon={Trash2}
                               onClick={() => dispatchModal({ type: 'OPEN_DELETE', payload: user })}
-                              variant="danger"
+                              variant="destructive"
                               disabled={isLoading}
                               loading={isLoading}
                               title="Deletar"

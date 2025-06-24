@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Instance } from './types';
 type EmpresaDropdown = { id: string; name: string };
-import Modal, { ModalBody, ModalFooter, ModalHeader } from '@/components/ui/Modal';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@/components/ui';
 import { Button, Alert } from '@/components/brand';
 import GeneralSettings from './modal-parts/GeneralSettings';
 import WebhookSettings from './modal-parts/WebhookSettings';

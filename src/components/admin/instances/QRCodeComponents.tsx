@@ -1,5 +1,5 @@
 import React from 'react';
-import Modal, { ModalHeader, ModalBody } from '@/components/ui/Modal';
+import { Modal, ModalHeader, ModalBody } from '@/components/ui';
 import Image from 'next/image';
 
 interface RenderQrCodeProps {

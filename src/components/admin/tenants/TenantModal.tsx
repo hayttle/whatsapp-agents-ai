@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import Modal, { ModalBody, ModalFooter, ModalHeader } from '@/components/ui/Modal';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@/components/ui';
 import { Button, Alert, Input } from '@/components/brand';
 import { Building2, Mail, Phone, FileText } from "lucide-react";
 import { TenantModalProps } from './types';
