@@ -186,7 +186,7 @@ export function InstanceList({ isSuperAdmin, isAdmin, tenantId }: InstanceListPr
                           )}
                           {inst.status === 'close' && (
                             <ActionButton
-                              icon={Play}
+                              icon={Power}
                               onClick={() => handleConnect(inst.instanceName)}
                               variant="warning"
                               disabled={isLoading}
