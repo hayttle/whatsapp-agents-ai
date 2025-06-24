@@ -8,7 +8,7 @@ import { ConfirmationModal, ActionButton } from "@/components/ui";
 import { useInstanceActions } from "@/hooks/useInstanceActions";
 import { useInstances } from "@/hooks/useInstances";
 import { instanceService } from "@/services/instanceService";
-import { Power, Edit, Trash2, Plus, Bug, RefreshCw } from "lucide-react";
+import { Power, Edit, Trash2, Plus, RefreshCw } from "lucide-react";
 
 interface InstanceListProps {
   isSuperAdmin: boolean;
@@ -80,21 +80,6 @@ export function InstanceList({ isSuperAdmin, isAdmin, tenantId }: InstanceListPr
     }
     setRefreshKey(k => k + 1);
   }, instanceName);
-
-  const handleTestConnection = async (instanceName: string) => {
-    try {
-      const response = await fetch(`/api/whatsapp-instances/test-connection?instanceName=${encodeURIComponent(instanceName)}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        toast.success('Teste de conexão realizado com sucesso. Verifique os logs do console.');
-      } else {
-        toast.error(`Erro no teste: ${data.error}`);
-      }
-    } catch {
-      toast.error('Erro ao realizar teste de conexão');
-    }
-  };
 
   const handleDisconnect = (instanceName: string) => handleAction(async () => {
     await instanceService.disconnectInstance(instanceName);
@@ -222,22 +207,15 @@ export function InstanceList({ isSuperAdmin, isAdmin, tenantId }: InstanceListPr
                           <ActionButton
                             icon={RefreshCw}
                             onClick={() => handleUpdateStatus(inst.instanceName)}
-                            variant="secondary"
+                            variant="ghost"
                             title="Atualizar Status"
                           />
                           <ActionButton
                             icon={Edit}
                             onClick={() => dispatchModal({ type: 'OPEN_EDIT', payload: inst })}
-                            variant="primary"
-                            disabled={isLoading}
-                            title="Editar"
-                          />
-                          <ActionButton
-                            icon={Bug}
-                            onClick={() => handleTestConnection(inst.instanceName)}
                             variant="secondary"
                             disabled={isLoading}
-                            title="Testar Conexão"
+                            title="Editar"
                           />
                           <ActionButton
                             icon={Trash2}
