@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Input, Button, Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/brand";
+import { Input, Button } from "@/components/brand";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Mail, Lock } from "lucide-react";
@@ -52,44 +52,56 @@ export function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md">
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Bem-vindo de volta!</CardTitle>
-          <CardDescription>Faça login para continuar</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input
-              label="E-mail"
-              type="email"
-              placeholder="Digite seu e-mail"
-              leftIcon={<Mail className="h-4 w-4" />}
-              error={errors.email?.message}
-              autoComplete="email"
-              {...register("email")}
-            />
-            <Input
-              label="Senha"
-              type="password"
-              placeholder="Digite sua senha"
-              leftIcon={<Lock className="h-4 w-4" />}
-              error={errors.senha?.message}
-              autoComplete="current-password"
-              {...register("senha")}
-            />
-            <Button 
-              type="submit" 
-              loading={loading} 
-              disabled={loading} 
-              className="w-full"
-              size="lg"
-            >
-              {loading ? "Entrando..." : "Entrar"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+    <div className="w-full max-w-md flex flex-col items-center">
+      <h1 className="text-2xl md:text-3xl font-bold text-brand-gray-dark mb-2 mt-2 w-full text-left">Entre na sua conta</h1>
+      <p className="text-brand-gray-medium text-base mb-8 w-full text-left">Entre com seus dados de acesso</p>
+      <form onSubmit={handleSubmit(onSubmit)} className="w-full flex flex-col gap-4">
+        <Input
+          label="E-mail do usuário"
+          type="email"
+          placeholder="E-mail do usuário"
+          leftIcon={<Mail className="h-4 w-4" />}
+          error={errors.email?.message}
+          autoComplete="email"
+          {...register("email")}
+        />
+        <Input
+          label="Senha de acesso"
+          type="password"
+          placeholder="Senha de acesso"
+          leftIcon={<Lock className="h-4 w-4" />}
+          error={errors.senha?.message}
+          autoComplete="current-password"
+          {...register("senha")}
+        />
+        <Button
+          type="submit"
+          loading={loading}
+          disabled={loading}
+          className="w-full rounded-full mt-2"
+          size="lg"
+        >
+          {loading ? "Entrando..." : "Entrar"}
+        </Button>
+      </form>
+      <div className="w-full flex flex-col items-center mt-4">
+        <a
+          href="#"
+          className="text-brand-gray-dark text-sm underline hover:text-brand-green-light mb-6"
+        >
+          Esqueci minha senha
+        </a>
+        <hr className="w-full border-t border-gray-200 mb-6" />
+        <Button
+          type="button"
+          variant="primary"
+          className="w-full max-w-xs rounded-md"
+          onClick={() => router.push('/signup')}
+        >
+          Crie uma conta grátis
+        </Button>
+      </div>
+      <p className="text-xs text-brand-gray-medium mt-8 text-center w-full">Copyright © 2025 | Whatsapp Agent AI</p>
     </div>
   );
 } 
