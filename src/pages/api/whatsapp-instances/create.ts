@@ -20,6 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { tenantId, instanceName, integration, webhookByEvents, webhookBase64, webhookUrl, webhookEvents, msgCall, rejectCall, groupsIgnore, alwaysOnline, readMessages, readStatus, syncFullHistory } = req.body;
+    const finalWebhookUrl = webhookUrl || process.env.WEBHOOK_AGENT_URL || '';
     if (!tenantId) {
       return res.status(400).json({ error: 'tenantId é obrigatório' });
     }
@@ -51,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       readStatus,
       syncFullHistory,
       webhook: {
-        url: webhookUrl,
+        url: finalWebhookUrl,
         byEvents: webhookByEvents ?? false,
         base64: webhookBase64 ?? true,
         events: webhookEvents || [],
@@ -93,7 +94,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       qrcode: data.qrcode || null,
       apikey: data.apikey || null,
       tenant_id: tenantId,
-      webhookUrl,
+      webhookUrl: finalWebhookUrl,
       webhookEvents,
       webhookByEvents: webhookByEvents ?? false,
       webhookBase64: webhookBase64 ?? true,

@@ -206,13 +206,13 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
             </Switch>
           </div>
           <Select
-            label="Instância vinculada"
+            label="Instância"
             value={instanceId}
             onChange={e => setInstanceId(e.target.value)}
-            required
+            className="w-full"
           >
-            <option value="">Selecione uma instância ativa</option>
-            {(instances || []).filter(inst => inst.status === 'open').map((inst) => (
+            <option value="">Selecione a instância (opcional)</option>
+            {(instances || []).map((inst) => (
               <option key={inst.id} value={inst.id}>{inst.instanceName}</option>
             ))}
           </Select>
