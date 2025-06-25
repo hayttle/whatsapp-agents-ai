@@ -195,16 +195,19 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   ) : null;
 
   // Sidebar classes
-  const sidebarClass = `fixed z-40 top-0 left-0 h-screen bg-brand-gray-deep text-white flex flex-col transition-all duration-300
-    ${isMobile ? (drawerOpen ? 'w-64' : 'w-0') : (isCollapsed ? 'w-16' : 'w-64')}`;
+  const sidebarClass = `fixed z-40 top-0 left-0 h-screen bg-brand-gray-deep text-white flex flex-col transition-all duration-300 shadow-2xl
+    ${isMobile ? (drawerOpen ? 'w-[90vw] max-w-xs' : 'w-0 -translate-x-full') : (isCollapsed ? 'w-16' : 'w-64')}`;
 
   // Renderização condicional de texto
-  const showText = !isCollapsed && !isMobile;
+  const showText = !isCollapsed || isMobile;
 
   return (
     <>
       {overlay}
-      <aside className={sidebarClass} style={{ minWidth: isMobile && !drawerOpen ? 0 : undefined }}>
+      <aside className={sidebarClass} style={{ 
+        minWidth: isMobile && !drawerOpen ? 0 : undefined,
+        transform: isMobile && !drawerOpen ? 'translateX(-100%)' : undefined
+      }}>
         {/* Botão de colapso/abrir Drawer */}
         <div className="h-16 flex items-center justify-between px-2 border-b border-brand-gray-dark relative z-40">
           <div className="flex items-center gap-2">
@@ -238,7 +241,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                   <div className="relative">
                     <Link
                       href={hasChildren ? '#' : item.href}
-                      onClick={hasChildren ? (e) => { e.preventDefault(); toggleExpanded(item.href); } : undefined}
+                      onClick={hasChildren ? (e) => { e.preventDefault(); toggleExpanded(item.href); } : (isMobile ? () => setDrawerOpen(false) : undefined)}
                       className={`flex items-center gap-3 p-3 rounded-lg transition-colors duration-200 select-none
                         ${isItemActive ? 'bg-brand-green-light text-white font-semibold' : 'text-gray-300 hover:bg-brand-gray-dark hover:text-white'}
                       `}
@@ -269,6 +272,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                             <li key={child.href}>
                               <Link
                                 href={child.href}
+                                onClick={isMobile ? () => setDrawerOpen(false) : undefined}
                                 className={`flex items-center gap-2 p-2 rounded-lg transition-colors duration-200 text-sm
                                   ${isChildActive ? 'bg-brand-green-light/20 text-brand-green-light font-medium' : 'text-gray-400 hover:bg-brand-gray-dark hover:text-white'}
                                 `}
@@ -288,9 +292,9 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
           </ul>
         </nav>
 
-        {/* User Profile Section */}
-        <div className={`p-2 border-t border-brand-gray-dark transition-all duration-300 ${isCollapsed || isMobile ? 'flex flex-col items-center' : ''}`}>
-          <div className="flex items-center gap-3 mb-3">
+        {/* User Profile Section - sempre visível no rodapé do sidebar no mobile */}
+        <div className={`p-4 border-t border-brand-gray-dark transition-all duration-300 mt-auto ${isCollapsed && !isMobile ? 'flex flex-col items-center' : ''}`}>
+          <div className="flex items-center gap-3 mb-3 w-full">
             <div className="w-10 h-10 rounded-full bg-brand-green-light flex items-center justify-center text-white font-bold">
               {userName ? userName.charAt(0).toUpperCase() : userEmail.charAt(0).toUpperCase()}
             </div>
@@ -316,7 +320,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
             onClick={handleLogout}
             variant="outline"
             size="sm"
-            className="w-full"
+            className="w-full flex items-center gap-2 justify-center"
             leftIcon={<LogOut className="w-4 h-4" />}
           >
             {showText ? 'Sair' : ''}

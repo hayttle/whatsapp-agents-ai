@@ -20,6 +20,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // No mobile, não aplicar margem lateral
   const mainMargin = isMobile ? '' : isCollapsed ? 'ml-16' : 'ml-64';
 
   return (
@@ -28,12 +29,12 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
       
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${mainMargin}`}>
+      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${mainMargin} ${isMobile ? 'w-full' : ''}`}>
         {/* Navbar */}
         <Navbar />
         
         {/* Page Content */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto w-full">
           {children}
         </main>
       </div>

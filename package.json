@@ -12,8 +12,6 @@
     "@hookform/resolvers": "^5.1.1",
     "@radix-ui/react-switch": "^1.2.5",
     "@radix-ui/react-tooltip": "^1.2.7",
-    "@supabase/auth-helpers-react": "^0.5.0",
-    "@supabase/auth-helpers-shared": "^0.7.0",
     "@supabase/auth-ui-react": "^0.4.7",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.50.0",
