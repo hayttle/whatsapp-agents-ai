@@ -195,8 +195,8 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   ) : null;
 
   // Sidebar classes
-  const sidebarClass = `fixed z-40 top-0 left-0 h-screen bg-brand-gray-deep text-white flex flex-col transition-all duration-300 shadow-2xl
-    ${isMobile ? (drawerOpen ? 'w-[90vw] max-w-xs' : 'w-0 -translate-x-full') : (isCollapsed ? 'w-16' : 'w-64')}`;
+  const sidebarClass = `fixed z-40 top-0 left-0 h-screen bg-brand-gray-deep text-white flex flex-col shadow-2xl transition-transform duration-300
+    ${isMobile ? (drawerOpen ? 'translate-x-0 w-[90vw] max-w-xs' : '-translate-x-full w-[90vw] max-w-xs') : (isCollapsed ? 'w-16' : 'w-64')}`;
 
   // Renderização condicional de texto
   const showText = !isCollapsed || isMobile;
@@ -204,10 +204,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   return (
     <>
       {overlay}
-      <aside className={sidebarClass} style={{ 
-        minWidth: isMobile && !drawerOpen ? 0 : undefined,
-        transform: isMobile && !drawerOpen ? 'translateX(-100%)' : undefined
-      }}>
+      <aside className={sidebarClass} style={{ minWidth: isMobile ? 0 : undefined }}>
         {/* Botão de colapso/abrir Drawer */}
         <div className="h-16 flex items-center justify-between px-2 border-b border-brand-gray-dark relative z-40">
           <div className="flex items-center gap-2">
@@ -224,7 +221,6 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
             </button>
           )}
         </div>
-
         {/* Navigation */}
         <nav className="flex-grow p-2 overflow-y-auto">
           <ul className="space-y-1">
@@ -291,7 +287,6 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
             })}
           </ul>
         </nav>
-
         {/* User Profile Section - sempre visível no rodapé do sidebar no mobile */}
         <div className={`p-4 border-t border-brand-gray-dark transition-all duration-300 mt-auto ${isCollapsed && !isMobile ? 'flex flex-col items-center' : ''}`}>
           <div className="flex items-center gap-3 mb-3 w-full">
