@@ -167,3 +167,11 @@ const TestimonialCard = ({ name, company, text }: { name: string, company: strin
     </CardContent>
   </Card>
 );
+
+export const metadata = {
+  title: 'Whatsapp Agents AI',
+  description: 'Automatize o atendimento do seu negócio no WhatsApp com agentes de IA personalizados, disponíveis 24/7, sem complicação técnica.',
+  keywords: [
+    'whatsapp', 'landing page', 'chatbot', 'agente inteligente', 'automação', 'suporte', 'vendas', 'IA', 'bot', 'empresa'
+  ]
+};

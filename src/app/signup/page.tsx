@@ -21,4 +21,12 @@ export default function SignupPage() {
       </section>
     </main>
   );
-} 
+}
+
+export const metadata = {
+  title: 'Whatsapp Agents AI',
+  description: 'Cadastre-se e crie agentes inteligentes para automatizar o atendimento da sua empresa no WhatsApp em minutos.',
+  keywords: [
+    'whatsapp', 'cadastro', 'chatbot', 'agente inteligente', 'automação', 'suporte', 'vendas', 'IA', 'bot', 'empresa'
+  ]
+}; 

@@ -101,7 +101,7 @@ export function LoginForm() {
           Crie uma conta grátis
         </Button>
       </div>
-      <p className="text-xs text-brand-gray-medium mt-8 text-center w-full">Copyright © 2025 | Whatsapp Agent AI</p>
+      <p className="text-xs text-brand-gray-medium mt-8 text-center w-full">Copyright © 2025 | Whatsapp Agents AI</p>
     </div>
   );
 } 

@@ -133,7 +133,7 @@ export function SignupForm() {
         </a>
         <hr className="w-full border-t border-gray-200 mb-6" />
       </div>
-      <p className="text-xs text-brand-gray-medium mt-8 text-center w-full">Copyright © 2025 | Whatsapp Agent AI</p>
+      <p className="text-xs text-brand-gray-medium mt-8 text-center w-full">Copyright © 2025 | Whatsapp Agents AI</p>
     </div>
   );
 } 

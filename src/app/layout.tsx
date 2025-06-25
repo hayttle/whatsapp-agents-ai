@@ -4,8 +4,8 @@ import "./globals.css";
 import { Toaster } from 'sonner';
 
 export const metadata = {
-  title: "AI-Powered WhatsApp Agent",
-  description: "Gerencie instâncias de WhatsApp com agentes de IA",
+  title: "Whatsapp Agents AI",
+  description: "Automatize o atendimento da sua empresa no WhatsApp com agentes inteligentes de IA, personalizados e fáceis de configurar.",
 };
 
 export default function RootLayout({

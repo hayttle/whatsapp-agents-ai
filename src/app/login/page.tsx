@@ -51,4 +51,12 @@ export default function LoginPage() {
       </section>
     </main>
   );
-} 
+}
+
+export const metadata = {
+  title: 'Whatsapp Agents AI',
+  description: 'Automatize o atendimento da sua empresa no WhatsApp com agentes inteligentes, personalizados e fáceis de configurar.',
+  keywords: [
+    'whatsapp', 'atendimento', 'chatbot', 'agente inteligente', 'automação', 'suporte', 'vendas', 'IA', 'bot', 'empresa'
+  ]
+}; 
