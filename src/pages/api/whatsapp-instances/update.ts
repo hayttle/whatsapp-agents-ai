@@ -12,8 +12,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const apikey = process.env.EVOLUTION_API_KEY;
+  const evolutionApiUrl = process.env.EVOLUTION_API_URL;
   if (!apikey) {
     return res.status(500).json({ error: 'API key not configured' });
+  }
+  if (!evolutionApiUrl) {
+    return res.status(500).json({ error: 'EVOLUTION_API_URL not configured' });
   }
 
   const { id, integration, msgCall, webhookUrl, webhookEvents, webhookByEvents, webhookBase64, rejectCall, groupsIgnore, alwaysOnline, readMessages, readStatus, syncFullHistory } = req.body;
@@ -36,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const instanceName = instanceData.instanceName;
 
     // 1. Atualizar configurações na API externa
-    const settingsResponse = await fetch(`https://evolution.hayttle.dev/settings/set/${encodeURIComponent(instanceName)}`, {
+    const settingsResponse = await fetch(`${evolutionApiUrl}/settings/set/${encodeURIComponent(instanceName)}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -61,7 +65,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // 2. Atualizar webhook na API externa
-    const webhookResponse = await fetch(`https://evolution.hayttle.dev/webhook/set/${encodeURIComponent(instanceName)}`, {
+    const webhookResponse = await fetch(`${evolutionApiUrl}/webhook/set/${encodeURIComponent(instanceName)}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -69,14 +73,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
       body: JSON.stringify({
         webhook: {
-          enabled: !!webhookUrl,
-          url: webhookUrl || "",
+          enabled: true,
+          url: process.env.WEBHOOK_AGENT_URL || "",
           headers: {
             "Content-Type": "application/json"
           },
           byEvents: webhookByEvents ?? false,
           base64: webhookBase64 ?? true,
-          events: webhookEvents || []
+          events: Array.isArray(webhookEvents) ? webhookEvents : [],
         }
       }),
     });

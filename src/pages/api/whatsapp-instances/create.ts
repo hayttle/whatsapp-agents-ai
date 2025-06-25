@@ -52,10 +52,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       readStatus,
       syncFullHistory,
       webhook: {
-        url: finalWebhookUrl,
+        enabled: true,
+        url: process.env.WEBHOOK_AGENT_URL || '',
         byEvents: webhookByEvents ?? false,
         base64: webhookBase64 ?? true,
-        events: webhookEvents || [],
+        events: Array.isArray(webhookEvents) ? webhookEvents : [],
       },
     };
     // Remover campos undefined

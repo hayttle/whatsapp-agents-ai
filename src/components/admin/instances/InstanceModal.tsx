@@ -31,7 +31,6 @@ interface InstanceModalProps {
 const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, instance, tenants, tenantId }) => {
   const [instanceName, setInstanceName] = useState("");
   const [integration, setIntegration] = useState(INTEGRATION_OPTIONS[0]);
-  const [webhookUrl, setWebhookUrl] = useState("");
   const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
   const [webhookByEvents, setWebhookByEvents] = useState(false);
   const [webhookBase64, setWebhookBase64] = useState(true);
@@ -51,7 +50,6 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
     if (instance) {
       setInstanceName(instance.instanceName || "");
       setIntegration(instance.integration || INTEGRATION_OPTIONS[0]);
-      setWebhookUrl(instance.webhookUrl || "");
       setWebhookEvents(instance.webhookEvents || []);
       setWebhookByEvents(instance.webhookByEvents ?? false);
       setWebhookBase64(instance.webhookBase64 ?? true);
@@ -66,7 +64,6 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
     } else {
       setInstanceName("");
       setIntegration(INTEGRATION_OPTIONS[0]);
-      setWebhookUrl("");
       setWebhookEvents([]);
       setWebhookByEvents(false);
       setWebhookBase64(true);
@@ -93,6 +90,10 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!webhookEvents || webhookEvents.length === 0) {
+      setError("Selecione pelo menos um evento para o webhook.");
+      return;
+    }
     setLoading(true);
     setMsg("");
     setError("");
@@ -100,7 +101,6 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
     const payload = {
       instanceName,
       integration,
-      webhookUrl,
       webhookEvents,
       webhookByEvents,
       webhookBase64,
@@ -112,12 +112,6 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
       readStatus,
       syncFullHistory,
       tenantId: tenants.length > 0 ? selectedTenant : tenantId,
-      webhook: {
-        url: webhookUrl,
-        byEvents: webhookByEvents,
-        base64: webhookBase64,
-        events: webhookEvents,
-      },
       ...(instance && { id: instance.id })
     };
 
@@ -176,8 +170,6 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
             setSelectedTenant={setSelectedTenant}
           />
           <WebhookSettings
-            webhookUrl={webhookUrl}
-            setWebhookUrl={setWebhookUrl}
             webhookEvents={webhookEvents}
             handleEventChange={handleEventChange}
             EVENT_OPTIONS={EVENT_OPTIONS}
