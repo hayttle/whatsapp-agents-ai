@@ -26,7 +26,6 @@ export function SignupForm() {
     register,
     handleSubmit,
     formState: { errors },
-    watch,
   } = useForm<SignupData>({
     resolver: zodResolver(signupSchema.refine((data) => data.senha === data.confirmSenha, {
       message: "As senhas não coincidem",
