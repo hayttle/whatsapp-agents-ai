@@ -239,18 +239,14 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                     <Link
                       href={hasChildren ? '#' : item.href}
                       onClick={hasChildren ? (e) => { e.preventDefault(); toggleExpanded(item.href); } : undefined}
-                      className={`flex items-center justify-between p-3 rounded-lg transition-colors duration-200 ${
-                        isItemActive
-                          ? 'bg-brand-green-light text-white font-semibold'
-                          : 'text-gray-300 hover:bg-brand-gray-dark hover:text-white'
-                      }`}
+                      className={`flex items-center gap-3 p-3 rounded-lg transition-colors duration-200 select-none
+                        ${isItemActive ? 'bg-brand-green-light text-white font-semibold' : 'text-gray-300 hover:bg-brand-gray-dark hover:text-white'}
+                      `}
                     >
-                      <div className="flex items-center justify-center w-full">
-                        <item.icon className="w-5 h-5 mr-0" />
-                        {showText && <span className="ml-3">{item.label}</span>}
-                      </div>
+                      <item.icon className="w-5 h-5 flex-shrink-0" />
+                      {showText && <span className="ml-0 flex-1 text-left">{item.label}</span>}
                       {hasChildren && showText && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 ml-auto">
                           {filteredChildren.length > 0 && (
                             <Badge variant="default" className="text-xs">
                               {filteredChildren.length}
@@ -266,21 +262,19 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                     </Link>
                     {/* Submenu */}
                     {hasChildren && isExpanded && showText && (
-                      <ul className="ml-6 mt-1 space-y-1">
+                      <ul className="ml-7 mt-1 space-y-1">
                         {filteredChildren.map((child: SidebarItem) => {
                           const isChildActive = pathname === child.href;
                           return (
                             <li key={child.href}>
                               <Link
                                 href={child.href}
-                                className={`flex items-center p-2 rounded-lg transition-colors duration-200 text-sm ${
-                                  isChildActive
-                                    ? 'bg-brand-green-light/20 text-brand-green-light font-medium'
-                                    : 'text-gray-400 hover:bg-brand-gray-dark hover:text-white'
-                                }`}
+                                className={`flex items-center gap-2 p-2 rounded-lg transition-colors duration-200 text-sm
+                                  ${isChildActive ? 'bg-brand-green-light/20 text-brand-green-light font-medium' : 'text-gray-400 hover:bg-brand-gray-dark hover:text-white'}
+                                `}
                               >
-                                <child.icon className="w-4 h-4 mr-2" />
-                                {showText && <span>{child.label}</span>}
+                                <child.icon className="w-4 h-4 flex-shrink-0" />
+                                <span>{child.label}</span>
                               </Link>
                             </li>
                           );

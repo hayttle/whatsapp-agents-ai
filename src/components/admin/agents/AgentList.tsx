@@ -8,7 +8,6 @@ import { ConfirmationModal } from "@/components/ui";
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Select, StatusIndicator, Alert } from "@/components/brand";
 import { Bot, Plus, Edit, Trash2, Power, PowerOff, Building } from "lucide-react";
 import { Tooltip } from '@/components/ui';
-import { ActionButton } from "@/components/ui";
 
 interface AgentListProps {
   isSuperAdmin: boolean;

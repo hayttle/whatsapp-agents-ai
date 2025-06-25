@@ -8,7 +8,7 @@ import { ConfirmationModal, ActionButton } from "@/components/ui";
 import { useInstanceActions } from "@/hooks/useInstanceActions";
 import { useInstances } from "@/hooks/useInstances";
 import { instanceService } from "@/services/instanceService";
-import { Power, Edit, Trash2, Plus, RefreshCw, PowerOff, Play } from "lucide-react";
+import { Power, Edit, Trash2, Plus, RefreshCw, PowerOff } from "lucide-react";
 
 interface InstanceListProps {
   isSuperAdmin: boolean;
@@ -188,7 +188,7 @@ export function InstanceList({ isSuperAdmin, isAdmin, tenantId }: InstanceListPr
                             <ActionButton
                               icon={Power}
                               onClick={() => handleConnect(inst.instanceName)}
-                              variant="warning"
+                              variant="primary"
                               disabled={isLoading}
                               loading={isLoading}
                               title="Conectar"

@@ -119,6 +119,7 @@ export default function DesignSystemPage() {
               <div className="flex flex-wrap gap-4">
                 <Button variant="primary">Primário</Button>
                 <Button variant="secondary">Secundário</Button>
+                <Button variant="warning">Warning</Button>
                 <Button variant="outline">Outline</Button>
                 <Button variant="ghost">Ghost</Button>
                 <Button variant="destructive">Destructive</Button>

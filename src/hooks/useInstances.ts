@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Instance } from '@/components/admin/instances/types';
 import { instanceService } from '@/services/instanceService';
 import { tenantService } from '@/services/tenantService';
@@ -23,7 +23,6 @@ export const useInstances = ({ isSuperAdmin, tenantId, refreshKey }: UseInstance
   const [empresas, setEmpresas] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchInstances = useCallback(async () => {
     setLoading(true);

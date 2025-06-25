@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { UserProfileModal } from "@/components/admin/users/UserProfileModal";
 import { Button, Badge, Card, CardContent } from "@/components/brand";
 import { 

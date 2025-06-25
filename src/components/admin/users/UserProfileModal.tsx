@@ -13,12 +13,10 @@ export function UserProfileModal({ isOpen, onClose, user }: UserProfileModalProp
   };
 
   const [empresaNome, setEmpresaNome] = useState<string | null>(null);
-  const [empresaLoading, setEmpresaLoading] = useState(false);
 
   useEffect(() => {
     async function fetchEmpresa() {
       if (user.tenant_id && user.role !== 'super_admin') {
-        setEmpresaLoading(true);
         try {
           const res = await fetch(`/api/tenants/${user.tenant_id}`);
           const data = await res.json();
@@ -27,14 +25,11 @@ export function UserProfileModal({ isOpen, onClose, user }: UserProfileModalProp
           } else {
             setEmpresaNome(null);
           }
-        } catch (e) {
+        } catch {
           setEmpresaNome(null);
-        } finally {
-          setEmpresaLoading(false);
         }
       } else {
         setEmpresaNome(null);
-        setEmpresaLoading(false);
       }
     }
     fetchEmpresa();
