@@ -6,7 +6,7 @@ import { useActions } from "@/hooks/useActions";
 import { Agent } from "./types";
 import { ConfirmationModal } from "@/components/ui";
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Select, StatusIndicator, Alert } from "@/components/brand";
-import { Bot, Plus, Edit, Trash2, Power, PowerOff, Building } from "lucide-react";
+import { Bot, Plus, Edit, Trash2, Power, PowerOff, Building, AlertTriangle } from "lucide-react";
 import { Tooltip } from '@/components/ui';
 
 interface AgentListProps {
@@ -102,9 +102,11 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {agentesFiltrados.map((agente: Agent) => {
             const isLoading = actionLoading?.startsWith(`toggle-${agente.id}`) || actionLoading?.startsWith(`delete-${agente.id}`);
-            const instanceName = agente.instance_id && instancias[agente.instance_id]
+            const instanceObj = agente.instance_id && instancias[agente.instance_id]
               ? instancias[agente.instance_id]
-              : "Não definida";
+              : null;
+            const instanceName = instanceObj ? instanceObj.instanceName : "Não definida";
+            const instanceStatus = instanceObj ? instanceObj.status : null;
             return (
               <Card key={agente.id} className="flex flex-col p-4">
                 <CardHeader>
@@ -116,7 +118,13 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                     <StatusIndicator status={agente.active ? 'online' : 'offline'} />
                   </CardTitle>
                   <CardDescription>
-                    <span className="font-bold">Instância: {instanceName}</span>
+                    <span className="font-bold">Instância: {instanceName}
+                      {instanceObj && instanceStatus !== 'open' && (
+                        <Tooltip content="Instância não conectada">
+                          <AlertTriangle className="inline w-4 h-4 text-yellow-500 ml-1 align-text-bottom" />
+                        </Tooltip>
+                      )}
+                    </span>
                     {isSuperAdmin && empresas[agente.tenant_id] && (
                       <span className="flex items-center gap-1 text-xs mt-1">
                         <Building className="w-3 h-3"/>

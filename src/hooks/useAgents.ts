@@ -21,7 +21,7 @@ interface AgentFormData {
 export const useAgents = ({ isSuperAdmin, tenantId }: UseAgentsProps) => {
   const [agentes, setAgentes] = useState<Agent[]>([]);
   const [empresas, setEmpresas] = useState<Record<string, string>>({});
-  const [instancias, setInstancias] = useState<Record<string, string>>({});
+  const [instancias, setInstancias] = useState<Record<string, Instance>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,8 +53,8 @@ export const useAgents = ({ isSuperAdmin, tenantId }: UseAgentsProps) => {
         // TODO: Criar instanceService.listInstancesByIds quando necessário
         // Por enquanto, vamos manter a lógica atual
         const insts = await fetch('/api/whatsapp-instances/list').then(res => res.json());
-        const instMap: Record<string, string> = {};
-        (insts?.instances || []).forEach((i: Instance) => { instMap[i.id] = i.instanceName; });
+        const instMap: Record<string, Instance> = {};
+        (insts?.instances || []).forEach((i: Instance) => { instMap[i.id] = i; });
         setInstancias(instMap);
       }
     } catch (err) {
