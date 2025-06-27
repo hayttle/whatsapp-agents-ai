@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, ModalHeader, ModalBody } from '@/components/ui';
 import Image from 'next/image';
 
@@ -76,12 +76,52 @@ interface ConnectionModalProps {
   qr: string | null;
   code: string | null;
   onClose: () => void;
+  instanceName?: string;
+  onStatusUpdate?: () => void;
 }
 
-export const ConnectionModal: React.FC<ConnectionModalProps> = ({ qr, code, onClose }) => {
+export const ConnectionModal: React.FC<ConnectionModalProps> = ({ 
+  qr, 
+  code, 
+  onClose, 
+  instanceName,
+  onStatusUpdate 
+}) => {
+  const [countdown, setCountdown] = useState(10);
+
+  useEffect(() => {
+    if (countdown <= 0) {
+      // Quando o timer chegar a zero, fechar o modal e atualizar status
+      if (onStatusUpdate) {
+        onStatusUpdate();
+      }
+      onClose();
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCountdown(countdown - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [countdown, onClose, onStatusUpdate]);
+
   return (
     <Modal isOpen={true} onClose={onClose} className="w-full max-w-sm">
-      <ModalHeader>Conectar Instância</ModalHeader>
+      <ModalHeader>
+        <div className="flex justify-between items-center">
+          <span>Conectar Instância</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">Fechando em:</span>
+            <span className={`text-lg font-bold ${
+              countdown <= 3 ? 'text-red-500' : 
+              countdown <= 5 ? 'text-yellow-500' : 'text-green-500'
+            }`}>
+              {countdown}s
+            </span>
+          </div>
+        </div>
+      </ModalHeader>
       <ModalBody>
         <div className="flex flex-col items-center">
           <p className="text-sm text-gray-600 mb-4 text-center">
@@ -103,6 +143,12 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ qr, code, onCl
               <p className="text-gray-500 text-sm">Carregando dados de conexão...</p>
             </div>
           )}
+
+          <div className="mt-4 text-center">
+            <p className="text-xs text-gray-400">
+              O modal fechará automaticamente em {countdown} segundos
+            </p>
+          </div>
         </div>
       </ModalBody>
     </Modal>

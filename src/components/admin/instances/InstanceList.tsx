@@ -28,14 +28,14 @@ type ModalState =
   | { type: 'EDIT', payload: Instance }
   | { type: 'DELETE', payload: Instance }
   | { type: 'DISCONNECT', payload: Instance }
-  | { type: 'CONNECT', payload: { qr: string | null; code: string | null } };
+  | { type: 'CONNECT', payload: { qr: string | null; code: string | null; instanceName: string } };
 
 type ModalAction = 
   | { type: 'OPEN_CREATE' }
   | { type: 'OPEN_EDIT', payload: Instance }
   | { type: 'OPEN_DELETE', payload: Instance }
   | { type: 'OPEN_DISCONNECT', payload: Instance }
-  | { type: 'OPEN_CONNECT', payload: { qr: string | null; code: string | null } }
+  | { type: 'OPEN_CONNECT', payload: { qr: string | null; code: string | null; instanceName: string } }
   | { type: 'CLOSE' };
 
 const modalReducer = (state: ModalState, action: ModalAction): ModalState => {
@@ -73,7 +73,7 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
     const data = await instanceService.connectInstance(instanceName, forceRegenerate);
     
     if (data && (data.base64 || data.pairingCode)) {
-      dispatchModal({ type: 'OPEN_CONNECT', payload: { qr: data.base64 || null, code: data.pairingCode || null } });
+      dispatchModal({ type: 'OPEN_CONNECT', payload: { qr: data.base64 || null, code: data.pairingCode || null, instanceName } });
     } else {
       toast.error('Não foi possível obter os dados de conexão.');
     }
@@ -255,6 +255,12 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
               qr={modalState.payload.qr}
               code={modalState.payload.code}
               onClose={closeModal}
+              onStatusUpdate={() => {
+                // Atualizar o status da instância quando o modal fechar
+                if (modalState.payload.instanceName) {
+                  handleUpdateStatus(modalState.payload.instanceName);
+                }
+              }}
             />
           )}
 
