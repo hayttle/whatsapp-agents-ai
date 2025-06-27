@@ -11,6 +11,7 @@ import { useInstances } from "@/hooks/useInstances";
 import { instanceService } from "@/services/instanceService";
 import { Power, Trash2, Plus, RefreshCw, PowerOff, Clipboard } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/brand';
+import { useAgents } from '@/hooks/useAgents';
 
 interface InstanceListProps {
   isSuperAdmin: boolean;
@@ -70,6 +71,7 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
     tenantId,
     refreshKey,
   });
+  const { agentes } = useAgents({ isSuperAdmin, tenantId });
 
   const handleConnect = (instanceName: string, forceRegenerate = false) => handleAction(async () => {
     const data = await instanceService.connectInstance(instanceName, forceRegenerate);
@@ -138,10 +140,15 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
           {instances.length > 0 ? (
             instances.map((inst) => {
               const isLoading = actionLoading === inst.instanceName;
+              const agenteVinculado = agentes.find(a => a.instance_id === inst.id);
               return (
                 <Card key={inst.id} className="">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base font-semibold mb-1">Status da Conexão: <span className={normalizeStatus(inst.status) === 'open' ? 'text-green-600' : 'text-red-600'}>{statusDisplay[normalizeStatus(inst.status)]}</span></CardTitle>
+                    <CardDescription className="mt-1">
+                      <span className="font-semibold">Agente vinculado: </span>
+                      {agenteVinculado ? agenteVinculado.title : <span className="text-gray-500">Nenhum agente vinculado</span>}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex items-center gap-2 p-3 bg-gray-50 rounded">
