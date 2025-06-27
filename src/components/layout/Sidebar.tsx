@@ -44,6 +44,11 @@ const navItems: SidebarItem[] = [
     label: 'Agentes', 
     icon: Bot
   },
+  {
+    href: '/admin/whatsapp-api',
+    label: 'Whatsapp API',
+    icon: MessageSquare
+  },
   { 
     href: '/admin/usuarios', 
     label: 'Usuários', 
