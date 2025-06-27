@@ -23,14 +23,6 @@ export interface CreateInstanceData {
   status?: string;
 }
 
-export interface UpdateInstanceData {
-  instanceName?: string;
-  descricao?: string;
-  webhook_url?: string;
-  behavior_settings?: Record<string, unknown>;
-  status?: string;
-}
-
 class InstanceService {
   private async makeRequest<T>(url: string, options?: RequestInit): Promise<T> {
     const response = await fetch(url, {
@@ -86,13 +78,6 @@ class InstanceService {
     return this.makeRequest<ApiResponse>("/api/whatsapp-instances/create", {
       method: "POST",
       body: JSON.stringify(instanceData),
-    });
-  }
-
-  async updateInstance(instanceName: string, instanceData: UpdateInstanceData): Promise<ApiResponse> {
-    return this.makeRequest<ApiResponse>("/api/whatsapp-instances/update", {
-      method: "PUT",
-      body: JSON.stringify({ instanceName, ...instanceData }),
     });
   }
 }

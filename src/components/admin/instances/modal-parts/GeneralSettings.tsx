@@ -1,13 +1,11 @@
 import React from 'react';
 import { Input, Select } from '@/components/brand';
-import { Instance } from '../types';
 
 type EmpresaDropdown = { id: string; name: string };
 
 interface GeneralSettingsProps {
   instanceName: string;
   handleInstanceNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  instance?: Instance | null;
   tenants: EmpresaDropdown[];
   selectedTenant: string;
   setSelectedTenant: (value: string) => void;
@@ -17,7 +15,6 @@ interface GeneralSettingsProps {
 const GeneralSettings: React.FC<GeneralSettingsProps> = ({
   instanceName,
   handleInstanceNameChange,
-  instance,
   tenants,
   selectedTenant,
   setSelectedTenant,
@@ -44,8 +41,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
         placeholder="Nome da instância (apenas letras, números e hífens)"
         value={instanceName}
         onChange={handleInstanceNameChange}
-        disabled={!!instance}
-        required={!instance}
+        required
       />
     </div>
   );

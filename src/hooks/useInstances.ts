@@ -77,16 +77,6 @@ export const useInstances = ({ isSuperAdmin, tenantId, refreshKey }: UseInstance
     }
   }, [fetchInstances]);
 
-  const updateInstance = useCallback(async (instanceName: string, instanceData: Partial<InstanceFormData>) => {
-    try {
-      await instanceService.updateInstance(instanceName, instanceData);
-      await fetchInstances();
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
-      throw new Error(errorMessage);
-    }
-  }, [fetchInstances]);
-
   const deleteInstance = useCallback(async (instanceName: string) => {
     try {
       await instanceService.deleteInstance(instanceName);
@@ -125,7 +115,6 @@ export const useInstances = ({ isSuperAdmin, tenantId, refreshKey }: UseInstance
     error,
     refetch: fetchInstances,
     createInstance,
-    updateInstance,
     deleteInstance,
     connectInstance,
     disconnectInstance,

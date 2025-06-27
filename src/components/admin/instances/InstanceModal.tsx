@@ -12,13 +12,12 @@ interface InstanceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (instance: Instance) => void;
-  instance?: Instance | null;
   tenants: EmpresaDropdown[];
   tenantId?: string;
   isSuperAdmin?: boolean;
 }
 
-const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, instance, tenants, tenantId, isSuperAdmin = false }) => {
+const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, tenants, tenantId, isSuperAdmin = false }) => {
   const [instanceName, setInstanceName] = useState("");
   const [selectedTenant, setSelectedTenant] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,14 +25,9 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (instance) {
-      setInstanceName(instance.instanceName || "");
-      setSelectedTenant(instance.tenant_id || "");
-    } else {
-      setInstanceName("");
-      setSelectedTenant(tenantId || "");
-    }
-  }, [instance, isOpen, tenantId]);
+    setInstanceName("");
+    setSelectedTenant(tenantId || "");
+  }, [isOpen, tenantId]);
 
   const handleInstanceNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -61,15 +55,11 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
       readStatus: false,
       syncFullHistory: false,
       tenantId: isSuperAdmin && tenants.length > 0 ? selectedTenant : tenantId,
-      ...(instance && { id: instance.id })
     };
 
-    const url = instance ? "/api/whatsapp-instances/update" : "/api/whatsapp-instances/create";
-    const method = instance ? "PUT" : "POST";
-
     try {
-      const res = await fetch(url, {
-        method: method,
+      const res = await fetch("/api/whatsapp-instances/create", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -77,7 +67,7 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
       if (!res.ok) {
         setError(data.error || "Ocorreu um erro.");
       } else {
-        setMsg(`Instância ${instance ? 'atualizada' : 'criada'} com sucesso!`);
+        setMsg("Instância criada com sucesso!");
         setTimeout(() => {
           setMsg("");
           setError("");
@@ -94,7 +84,7 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="w-full max-w-2xl">
-      <ModalHeader>{instance ? 'Editar Instância' : 'Nova Instância de WhatsApp'}</ModalHeader>
+      <ModalHeader>Nova Instância de WhatsApp</ModalHeader>
       <form onSubmit={handleSubmit}>
         <ModalBody className="space-y-6">
           {msg && (
@@ -110,7 +100,6 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
           <GeneralSettings
             instanceName={instanceName}
             handleInstanceNameChange={handleInstanceNameChange}
-            instance={instance}
             tenants={tenants}
             selectedTenant={selectedTenant}
             setSelectedTenant={setSelectedTenant}
@@ -131,7 +120,7 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
             loading={loading}
             disabled={loading}
           >
-            {instance ? 'Salvar Alterações' : 'Criar Instância'}
+            Criar Instância
           </Button>
         </ModalFooter>
       </form>

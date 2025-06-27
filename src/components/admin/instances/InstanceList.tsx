@@ -8,7 +8,7 @@ import { ConfirmationModal, ActionButton } from "@/components/ui";
 import { useInstanceActions } from "@/hooks/useInstanceActions";
 import { useInstances } from "@/hooks/useInstances";
 import { instanceService } from "@/services/instanceService";
-import { Power, Edit, Trash2, Plus, RefreshCw, PowerOff } from "lucide-react";
+import { Power, Trash2, Plus, RefreshCw, PowerOff } from "lucide-react";
 
 interface InstanceListProps {
   isSuperAdmin: boolean;
@@ -29,14 +29,12 @@ const normalizeStatus = (status: string): 'open' | 'close' => {
 type ModalState = 
   | { type: 'NONE' }
   | { type: 'CREATE' }
-  | { type: 'EDIT', payload: Instance }
   | { type: 'DELETE', payload: Instance }
   | { type: 'DISCONNECT', payload: Instance }
   | { type: 'CONNECT', payload: { qr: string | null; code: string | null; instanceName: string } };
 
 type ModalAction = 
   | { type: 'OPEN_CREATE' }
-  | { type: 'OPEN_EDIT', payload: Instance }
   | { type: 'OPEN_DELETE', payload: Instance }
   | { type: 'OPEN_DISCONNECT', payload: Instance }
   | { type: 'OPEN_CONNECT', payload: { qr: string | null; code: string | null; instanceName: string } }
@@ -46,8 +44,6 @@ const modalReducer = (state: ModalState, action: ModalAction): ModalState => {
   switch (action.type) {
     case 'OPEN_CREATE':
       return { type: 'CREATE' };
-    case 'OPEN_EDIT':
-      return { type: 'EDIT', payload: action.payload };
     case 'OPEN_DELETE':
       return { type: 'DELETE', payload: action.payload };
     case 'OPEN_DISCONNECT':
@@ -198,14 +194,7 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
                           title="Atualizar Status"
                         />
                         
-                        {/* Ações de edição e exclusão - disponível para todos */}
-                        <ActionButton
-                          icon={Edit}
-                          onClick={() => dispatchModal({ type: 'OPEN_EDIT', payload: inst })}
-                          variant="secondary"
-                          disabled={isLoading}
-                          title="Editar"
-                        />
+                        {/* Ações de exclusão - disponível para todos */}
                         <ActionButton
                           icon={Trash2}
                           onClick={() => dispatchModal({ type: 'OPEN_DELETE', payload: inst })}
@@ -214,7 +203,6 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
                           loading={isLoading}
                           title="Deletar"
                         />
-                        
                         
                       </td>
                     </tr>
@@ -229,10 +217,10 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
           </table>
 
           <InstanceModal
-            isOpen={modalState.type === 'CREATE' || modalState.type === 'EDIT'}
+            isOpen={modalState.type === 'CREATE'}
             onClose={closeModal}
             onSave={handleSave}
-            instance={modalState.type === 'EDIT' ? modalState.payload : undefined}
+            instance={undefined}
             tenants={isSuperAdmin ? Object.entries(empresas).map(([id, name]) => ({ id, name })) : []}
             tenantId={tenantId}
             isSuperAdmin={isSuperAdmin}
