@@ -20,10 +20,9 @@ export default async function AgentesAdminPage() {
     .single();
 
   const isSuperAdmin = userData?.role === 'super_admin';
-  const isAdmin = userData?.role === 'admin';
-  const tenantId = userData?.tenant_id;
+  const isUser = userData?.role === 'user';
   
-  if (!isSuperAdmin && !isAdmin) {
+  if (!isSuperAdmin && !isUser) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
         <Card className="max-w-md w-full">
@@ -42,6 +41,8 @@ export default async function AgentesAdminPage() {
     );
   }
 
+  const tenantId = userData?.tenant_id;
+
   return (
     <div className="max-w-6xl mx-auto">
       <div className="mb-8">
@@ -50,9 +51,14 @@ export default async function AgentesAdminPage() {
             <Bot className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-brand-gray-dark">Agentes de IA</h1>
+            <h1 className="text-3xl font-bold text-brand-gray-dark">
+              {isSuperAdmin ? 'Gerenciar Agentes' : 'Meus Agentes'}
+            </h1>
             <p className="text-gray-600">
-              {isSuperAdmin ? "Gerencie todos os agentes do sistema" : "Gerencie os agentes da sua empresa"}
+              {isSuperAdmin 
+                ? 'Gerencie todos os agentes de IA do sistema'
+                : 'Gerencie seus agentes de IA'
+              }
             </p>
           </div>
         </div>
@@ -60,11 +66,13 @@ export default async function AgentesAdminPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Agentes de Inteligência Artificial</CardTitle>
+          <CardTitle>
+            {isSuperAdmin ? 'Agentes de IA' : 'Meus Agentes'}
+          </CardTitle>
           <CardDescription>
             {isSuperAdmin 
-              ? "Crie e gerencie agentes de IA para todas as empresas" 
-              : "Crie e gerencie agentes de IA para automatizar respostas"
+              ? 'Visualize e gerencie todos os agentes de inteligência artificial do sistema'
+              : 'Visualize e gerencie seus agentes de inteligência artificial'
             }
           </CardDescription>
         </CardHeader>

@@ -23,7 +23,6 @@ interface SidebarItem {
   label: string;
   href: string;
   icon: React.ElementType;
-  adminOnly?: boolean;
   superAdminOnly?: boolean;
   children?: SidebarItem[];
 }
@@ -33,21 +32,17 @@ const navItems: SidebarItem[] = [
     href: '/dashboard', 
     label: 'Dashboard', 
     icon: Home, 
-    adminOnly: true,
     superAdminOnly: true
   },
   { 
     href: '/admin/instancias', 
     label: 'Instâncias', 
-    icon: MessageSquare, 
-    adminOnly: true,
-    superAdminOnly: true
+    icon: MessageSquare
   },
   { 
     href: '/admin/agentes', 
     label: 'Agentes', 
-    icon: Bot, 
-    superAdminOnly: true
+    icon: Bot
   },
   { 
     href: '/admin/usuarios', 
@@ -65,7 +60,6 @@ const navItems: SidebarItem[] = [
     href: '/admin', 
     label: 'Administração', 
     icon: Settings, 
-    adminOnly: true,
     superAdminOnly: true,
     children: [
       { href: '/admin/configuracoes', label: 'Configurações', icon: Settings, superAdminOnly: true },
@@ -118,7 +112,6 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
           const data = await response.json();
           
           if (data.user) {
-            // console.log('✅ Sidebar: Usuário carregado:', data.user);
             setUserRole(data.user.role || 'user');
             setUserName(data.user.name || '');
             setUserEmail(data.user.email || '');
@@ -144,7 +137,16 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
     setExpandedItems(newExpanded);
   };
 
-  const filteredNavItems = navItems.filter(item => item.adminOnly === true || item.superAdminOnly === true);
+  // Filtrar itens baseado no role do usuário
+  const filteredNavItems = navItems.filter(item => {
+    // Se o item é apenas para super admin, verificar se o usuário é super admin
+    if (item.superAdminOnly) {
+      return userRole === 'super_admin';
+    }
+    
+    // Se não tem restrições, mostrar para todos (super_admin e user)
+    return true;
+  });
 
   const handleLogout = async () => {
     try {
@@ -229,9 +231,20 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
               const isChildActive = hasChildren && item.children!.some(child => pathname === child.href);
               const isItemActive = (pathname === item.href) || isChildActive;
               const isExpanded = expandedItems.has(item.href);
+              
+              // Filtrar itens filhos baseado no role do usuário
               const filteredChildren = hasChildren 
-                ? item.children!.filter(child => child.adminOnly === true || child.superAdminOnly === true)
+                ? item.children!.filter(child => {
+                    // Se o item filho é apenas para super admin, verificar se o usuário é super admin
+                    if (child.superAdminOnly) {
+                      return userRole === 'super_admin';
+                    }
+                    
+                    // Se não tem restrições, mostrar para todos
+                    return true;
+                  })
                 : [];
+              
               return (
                 <li key={item.href}>
                   <div className="relative">
@@ -305,8 +318,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                   variant="success" 
                   className="text-xs mt-1"
                 >
-                  {userRole === 'super_admin' ? 'Super Admin' : 
-                  userRole === 'admin' ? 'Admin' : 'Usuário'}
+                  {userRole === 'super_admin' ? 'Super Admin' : 'Usuário'}
                 </Badge>
               </div>
             )}

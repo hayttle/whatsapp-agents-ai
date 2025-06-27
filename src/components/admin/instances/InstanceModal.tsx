@@ -26,9 +26,10 @@ interface InstanceModalProps {
   instance?: Instance | null;
   tenants: EmpresaDropdown[];
   tenantId?: string;
+  isSuperAdmin?: boolean;
 }
 
-const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, instance, tenants, tenantId }) => {
+const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, instance, tenants, tenantId, isSuperAdmin = false }) => {
   const [instanceName, setInstanceName] = useState("");
   const [integration, setIntegration] = useState(INTEGRATION_OPTIONS[0]);
   const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
@@ -111,7 +112,7 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
       readMessages,
       readStatus,
       syncFullHistory,
-      tenantId: tenants.length > 0 ? selectedTenant : tenantId,
+      tenantId: isSuperAdmin && tenants.length > 0 ? selectedTenant : tenantId,
       ...(instance && { id: instance.id })
     };
 
@@ -168,6 +169,7 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
             tenants={tenants}
             selectedTenant={selectedTenant}
             setSelectedTenant={setSelectedTenant}
+            isSuperAdmin={isSuperAdmin}
           />
           <WebhookSettings
             webhookEvents={webhookEvents}

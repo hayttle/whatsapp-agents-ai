@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import { authenticateUser, createApiClient } from '@/lib/supabase/api';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,17 +12,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const apikey = process.env.EVOLUTION_API_KEY;
-  if (!apikey) {
-    return res.status(500).json({ error: 'API key not configured' });
-  }
-
-  const instanceName = req.query.instanceName || req.body?.instanceName;
-  if (!instanceName || typeof instanceName !== 'string') {
-    return res.status(400).json({ error: 'instanceName é obrigatório' });
-  }
-
   try {
+    // Autenticar usuário via cookies
+    const auth = await authenticateUser(req, res);
+    
+    if (!auth) {
+      return res.status(401).json({ error: 'Unauthorized - User not authenticated' });
+    }
+
+    const { userData } = auth;
+    const apiSupabase = createApiClient(req, res);
+
+    const apikey = process.env.EVOLUTION_API_KEY;
+    if (!apikey) {
+      return res.status(500).json({ error: 'API key not configured' });
+    }
+
+    const instanceName = req.query.instanceName || req.body?.instanceName;
+    if (!instanceName || typeof instanceName !== 'string') {
+      return res.status(400).json({ error: 'instanceName é obrigatório' });
+    }
+
+    // Verificar se a instância existe e se o usuário tem permissão
+    const { data: existingInstance } = await supabase
+      .from('whatsapp_instances')
+      .select('tenant_id')
+      .eq('instanceName', instanceName)
+      .single();
+
+    if (!existingInstance) {
+      return res.status(404).json({ error: 'Instance not found' });
+    }
+
+    if (userData.role !== 'super_admin' && existingInstance.tenant_id !== userData.tenant_id) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+
     const url = `${process.env.EVOLUTION_API_URL}/instance/connectionState/${encodeURIComponent(instanceName)}`;
     const response = await fetch(url, {
       method: 'GET',

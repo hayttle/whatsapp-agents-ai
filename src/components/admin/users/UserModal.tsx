@@ -71,7 +71,7 @@ export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantI
       }
       
       // Validação de role
-      const validRoles = isSuperAdmin ? ['super_admin', 'admin', 'user'] : ['admin', 'user'];
+      const validRoles = isSuperAdmin ? ['super_admin', 'user'] : ['user'];
       if (!validRoles.includes(role)) {
         throw new Error('Papel inválido');
       }
@@ -84,9 +84,9 @@ export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantI
         }
       }
       
-      // Validação de tenant para admin
+      // Validação de tenant para user
       if (!isSuperAdmin && !tenantId) {
-        throw new Error('Tenant ID é obrigatório para admins');
+        throw new Error('Tenant ID é obrigatório para usuários');
       }
       
       // Validação final do formulário
@@ -175,7 +175,7 @@ export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantI
         toast.success("Usuário cadastrado com sucesso!");
       }
 
-      onSave(user || { id: '', name, email, role: role as 'user' | 'admin' | 'super_admin', tenant_id: empresa, created_at: new Date().toISOString() });
+      onSave(user || { id: '', name, email, role: role as 'user' | 'super_admin', tenant_id: empresa, created_at: new Date().toISOString() });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao salvar usuário';
       setError(errorMessage);
@@ -233,7 +233,6 @@ export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantI
             leftIcon={<Briefcase className="h-4 w-4" />}
           >
             {isSuperAdmin && <option value="super_admin">Super Admin</option>}
-            <option value="admin">Admin</option>
             <option value="user">Usuário</option>
           </Select>
           

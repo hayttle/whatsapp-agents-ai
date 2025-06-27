@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import { authenticateUser, createApiClient } from '@/lib/supabase/api';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,30 +12,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const apikey = process.env.EVOLUTION_API_KEY;
-  const evolutionApiUrl = process.env.EVOLUTION_API_URL;
-  if (!apikey) {
-    return res.status(500).json({ error: 'API key not configured' });
-  }
-  if (!evolutionApiUrl) {
-    return res.status(500).json({ error: 'EVOLUTION_API_URL not configured' });
-  }
-
-  const { id, integration, msgCall, webhookUrl, webhookEvents, webhookByEvents, webhookBase64, rejectCall, groupsIgnore, alwaysOnline, readMessages, readStatus, syncFullHistory } = req.body;
-  if (!id) {
-    return res.status(400).json({ error: 'id é obrigatório' });
-  }
-
   try {
+    // Autenticar usuário via cookies
+    const auth = await authenticateUser(req, res);
+    
+    if (!auth) {
+      return res.status(401).json({ error: 'Unauthorized - User not authenticated' });
+    }
+
+    const { userData } = auth;
+    const apiSupabase = createApiClient(req, res);
+
+    const apikey = process.env.EVOLUTION_API_KEY;
+    const evolutionApiUrl = process.env.EVOLUTION_API_URL;
+    if (!apikey) {
+      return res.status(500).json({ error: 'API key not configured' });
+    }
+    if (!evolutionApiUrl) {
+      return res.status(500).json({ error: 'EVOLUTION_API_URL not configured' });
+    }
+
+    const { id, integration, msgCall, webhookUrl, webhookEvents, webhookByEvents, webhookBase64, rejectCall, groupsIgnore, alwaysOnline, readMessages, readStatus, syncFullHistory } = req.body;
+    if (!id) {
+      return res.status(400).json({ error: 'id é obrigatório' });
+    }
+
     // Buscar o nome da instância no banco
     const { data: instanceData, error: fetchError } = await supabase
       .from('whatsapp_instances')
-      .select('instanceName')
+      .select('instanceName, tenant_id')
       .eq('id', id)
       .single();
     
     if (fetchError || !instanceData) {
       return res.status(404).json({ error: 'Instância não encontrada' });
+    }
+
+    // Verificar permissões
+    if (userData.role !== 'super_admin' && instanceData.tenant_id !== userData.tenant_id) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
     }
 
     const instanceName = instanceData.instanceName;

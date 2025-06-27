@@ -15,6 +15,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const { userData } = auth;
+    
+    // Apenas super_admin pode deletar usuários
+    if (userData.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Insufficient permissions - Only super_admin can delete users' });
+    }
+
     const supabase = createApiClient(req, res);
 
     // Permitir id via body (JSON) ou query
@@ -25,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'User ID is required' });
     }
 
-    // Verificar permissões
+    // Verificar se o usuário existe
     const { data: targetUser, error: userError } = await supabase
       .from('users')
       .select('role, tenant_id')
@@ -34,12 +40,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (userError || !targetUser) {
       return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Apenas super_admin pode deletar qualquer usuário
-    // Admin pode deletar apenas usuários do mesmo tenant
-    if (userData.role !== 'super_admin' && targetUser.tenant_id !== userData.tenant_id) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
     }
 
     // Deletar usuário
@@ -56,7 +56,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({ success: true });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    console.error('Error in user delete API:', error);
     return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
   }
 } 

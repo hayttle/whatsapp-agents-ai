@@ -27,20 +27,19 @@ export const useUsers = ({ isSuperAdmin, tenantId }: UseUsersProps) => {
       setCurrentUser(currentUserData.user);
 
       // Buscar lista de usuários
-      const data = await userService.listUsers(isSuperAdmin ? undefined : tenantId);
+      const data = await userService.listUsers();
       setUsers(data.users || []);
       
-      if (isSuperAdmin) {
-        const tenantsData = await tenantService.listTenants();
-        setEmpresas((tenantsData.tenants || []).map((t: Tenant) => ({ ...t, name: t.name })));
-      }
+      // Buscar empresas para super admin
+      const tenantsData = await tenantService.listTenants();
+      setEmpresas((tenantsData.tenants || []).map((t: Tenant) => ({ ...t, name: t.name })));
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [isSuperAdmin, tenantId]);
+  }, []);
 
   useEffect(() => {
     fetchUsers();

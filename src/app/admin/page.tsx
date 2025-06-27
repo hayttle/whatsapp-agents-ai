@@ -18,9 +18,8 @@ export default async function AdminPage() {
     .single();
 
   const isSuperAdmin = userData?.role === 'super_admin';
-  const isAdmin = userData?.role === 'admin';
   
-  if (!isSuperAdmin && !isAdmin) {
+  if (!isSuperAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
         <Card className="max-w-md w-full">
@@ -31,7 +30,7 @@ export default async function AdminPage() {
           </CardHeader>
           <CardContent>
             <Alert variant="error" title="Permissão Insuficiente">
-              Entre em contato com o administrador do sistema para solicitar acesso.
+              Apenas super administradores podem acessar o painel administrativo.
             </Alert>
           </CardContent>
         </Card>
@@ -45,8 +44,7 @@ export default async function AdminPage() {
         <h1 className="text-3xl font-bold text-brand-gray-dark mb-2">Painel Administrativo</h1>
         <p className="text-gray-600">
           Bem-vindo, {user.email} 
-          {isSuperAdmin && <span className="ml-2 text-brand-green-dark font-medium">(Super Admin)</span>}
-          {isAdmin && <span className="ml-2 text-brand-green-dark font-medium">(Admin)</span>}
+          <span className="ml-2 text-brand-green-dark font-medium">(Super Admin)</span>
         </p>
       </div>
 
@@ -139,29 +137,27 @@ export default async function AdminPage() {
           </CardContent>
         </Card>
 
-        {isSuperAdmin && (
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-brand-gray-dark rounded-lg flex items-center justify-center">
-                  <Settings className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <CardTitle>Configurações</CardTitle>
-                  <CardDescription>Configurações do sistema</CardDescription>
-                </div>
+        <Card className="hover:shadow-md transition-shadow">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-brand-gray-dark rounded-lg flex items-center justify-center">
+                <Settings className="w-5 h-5 text-white" />
               </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 mb-4">
-                Configure parâmetros globais do sistema.
-              </p>
-              <Button variant="secondary" className="w-full">
-                <a href="/admin/configuracoes">Configurações</a>
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+              <div>
+                <CardTitle>Configurações</CardTitle>
+                <CardDescription>Configurações do sistema</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600 mb-4">
+              Configure parâmetros globais do sistema.
+            </p>
+            <Button variant="secondary" className="w-full">
+              <a href="/admin/configuracoes">Configurações</a>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="mt-8">

@@ -20,9 +20,8 @@ export default async function UsuariosAdminPage() {
     .single();
 
   const isSuperAdmin = userData?.role === 'super_admin';
-  const isAdmin = userData?.role === 'admin';
   
-  if (!isSuperAdmin && !isAdmin) {
+  if (!isSuperAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
         <Card className="max-w-md w-full">
@@ -33,7 +32,7 @@ export default async function UsuariosAdminPage() {
           </CardHeader>
           <CardContent>
             <Alert variant="error" title="Permissão Insuficiente">
-              Entre em contato com o administrador do sistema para solicitar acesso.
+              Apenas super administradores podem gerenciar usuários do sistema.
             </Alert>
           </CardContent>
         </Card>
@@ -53,7 +52,7 @@ export default async function UsuariosAdminPage() {
           <div>
             <h1 className="text-3xl font-bold text-brand-gray-dark">Gerenciar Usuários</h1>
             <p className="text-gray-600">
-              {isSuperAdmin ? "Gerencie todos os usuários do sistema" : "Gerencie os usuários da sua empresa"}
+              Gerencie todos os usuários do sistema
             </p>
           </div>
         </div>
@@ -63,10 +62,7 @@ export default async function UsuariosAdminPage() {
         <CardHeader>
           <CardTitle>Usuários do Sistema</CardTitle>
           <CardDescription>
-            {isSuperAdmin 
-              ? "Visualize e gerencie todos os usuários de todas as empresas" 
-              : "Visualize e gerencie os usuários da sua empresa"
-            }
+            Visualize e gerencie todos os usuários de todas as empresas
           </CardDescription>
         </CardHeader>
         <CardContent>

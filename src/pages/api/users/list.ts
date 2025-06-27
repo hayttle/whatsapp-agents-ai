@@ -15,18 +15,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const { userData } = auth;
-    const supabase = createApiClient(req, res);
-
-    let query = supabase
-      .from('users')
-      .select('*');
-
-    // Filtrar por tenant se não for super_admin
+    
+    // Apenas super_admin pode listar usuários
     if (userData.role !== 'super_admin') {
-      query = query.eq('tenant_id', userData.tenant_id);
+      return res.status(403).json({ error: 'Insufficient permissions - Only super_admin can list users' });
     }
 
-    const { data: users, error } = await query;
+    const supabase = createApiClient(req, res);
+
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('*');
 
     if (error) {
       return res.status(500).json({ error: 'Internal server error: ' + error.message });

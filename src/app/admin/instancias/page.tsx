@@ -20,11 +20,9 @@ export default async function InstanciasAdminPage() {
     .single();
 
   const isSuperAdmin = userData?.role === 'super_admin';
-  const isAdmin = userData?.role === 'admin';
   const isUser = userData?.role === 'user';
-  const tenantId = userData?.tenant_id;
   
-  if (!isSuperAdmin && !isAdmin && !isUser) {
+  if (!isSuperAdmin && !isUser) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
         <Card className="max-w-md w-full">
@@ -43,6 +41,8 @@ export default async function InstanciasAdminPage() {
     );
   }
 
+  const tenantId = userData?.tenant_id;
+
   return (
     <div className="max-w-6xl mx-auto">
       <div className="mb-8">
@@ -51,13 +51,13 @@ export default async function InstanciasAdminPage() {
             <MessageSquare className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-brand-gray-dark">Instâncias de WhatsApp</h1>
+            <h1 className="text-3xl font-bold text-brand-gray-dark">
+              {isSuperAdmin ? 'Gerenciar Instâncias' : 'Minhas Instâncias'}
+            </h1>
             <p className="text-gray-600">
               {isSuperAdmin 
-                ? "Gerencie todas as instâncias do sistema" 
-                : isAdmin 
-                  ? "Gerencie as instâncias da sua empresa" 
-                  : "Visualize as instâncias da sua empresa"
+                ? 'Gerencie todas as instâncias do WhatsApp do sistema'
+                : 'Gerencie suas instâncias do WhatsApp'
               }
             </p>
           </div>
@@ -66,18 +66,18 @@ export default async function InstanciasAdminPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Instâncias do WhatsApp Business</CardTitle>
+          <CardTitle>
+            {isSuperAdmin ? 'Instâncias do WhatsApp' : 'Minhas Instâncias'}
+          </CardTitle>
           <CardDescription>
             {isSuperAdmin 
-              ? "Configure e gerencie todas as instâncias do WhatsApp Business" 
-              : isAdmin 
-                ? "Configure e gerencie as instâncias do WhatsApp Business da sua empresa" 
-                : "Visualize as instâncias do WhatsApp Business da sua empresa"
+              ? 'Visualize e gerencie todas as instâncias do WhatsApp Business do sistema'
+              : 'Visualize e gerencie suas instâncias do WhatsApp Business'
             }
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <InstanceList isSuperAdmin={isSuperAdmin} isAdmin={isAdmin} tenantId={tenantId} />
+          <InstanceList isSuperAdmin={isSuperAdmin} tenantId={tenantId} />
         </CardContent>
       </Card>
     </div>

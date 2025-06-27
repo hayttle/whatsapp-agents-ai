@@ -15,6 +15,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const { userData } = auth;
+    
+    // Apenas super_admin pode atualizar usuários
+    if (userData.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Insufficient permissions - Only super_admin can update users' });
+    }
+
     const supabase = createApiClient(req, res);
 
     const { id, email, name, role, tenant_id } = req.body;
@@ -26,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Usuários que não são super_admin devem ter uma empresa associada.' });
     }
 
-    // Verificar se o usuário existe e se o usuário atual tem permissão
+    // Verificar se o usuário existe
     const { data: existingUser } = await supabase
       .from('users')
       .select('tenant_id')
@@ -37,12 +43,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'User not found' });
     }
 
-    if (userData.role !== 'super_admin' && existingUser.tenant_id !== userData.tenant_id) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
-    }
-
     // Verificar permissões para mudança de role
-    if (userData.role !== 'super_admin' && role === 'super_admin') {
+    if (role === 'super_admin' && userData.role !== 'super_admin') {
       return res.status(403).json({ error: 'Insufficient permissions to assign super_admin role' });
     }
 
@@ -51,8 +53,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (name !== undefined) updateData.name = name;
     if (email !== undefined) updateData.email = email;
     if (role !== undefined) updateData.role = role;
-    if (tenant_id !== undefined) updateData.tenant_id = tenant_id;
+    if (tenant_id !== undefined) updateData.tenant_id = role === 'super_admin' ? null : tenant_id;
 
+    // Atualizar usuário
     const { data: updatedUser, error } = await supabase
       .from('users')
       .update(updateData)
@@ -68,7 +71,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({ success: true, user: updatedUser });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    console.error('Error in user update API:', error);
     return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
   }
 } 

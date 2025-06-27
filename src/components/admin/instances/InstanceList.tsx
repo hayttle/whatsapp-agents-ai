@@ -12,7 +12,6 @@ import { Power, Edit, Trash2, Plus, RefreshCw, PowerOff } from "lucide-react";
 
 interface InstanceListProps {
   isSuperAdmin: boolean;
-  isAdmin: boolean;
   tenantId?: string;
 }
 
@@ -59,7 +58,7 @@ const modalReducer = (state: ModalState, action: ModalAction): ModalState => {
 };
 // --- End of Step 4 ---
 
-export function InstanceList({ isSuperAdmin, isAdmin, tenantId }: InstanceListProps) {
+export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [modalState, dispatchModal] = useReducer(modalReducer, { type: 'NONE' });
   const { actionLoading, handleAction } = useInstanceActions();
@@ -122,17 +121,15 @@ export function InstanceList({ isSuperAdmin, isAdmin, tenantId }: InstanceListPr
 
   return (
     <div className="overflow-x-auto">
-      {(isSuperAdmin || isAdmin) && (
-        <div className="mb-4 flex justify-end">
-          <button 
-            className="px-4 py-2 text-sm font-semibold text-white bg-brand-gray-dark rounded-md hover:bg-brand-gray-deep transition-colors flex items-center gap-2"
-            onClick={() => dispatchModal({ type: 'OPEN_CREATE' })}
-          >
-            <Plus className="w-4 h-4" />
-            Nova Instância
-          </button>
-        </div>
-      )}
+      <div className="mb-4 flex justify-end">
+        <button 
+          className="px-4 py-2 text-sm font-semibold text-white bg-brand-gray-dark rounded-md hover:bg-brand-gray-deep transition-colors flex items-center gap-2"
+          onClick={() => dispatchModal({ type: 'OPEN_CREATE' })}
+        >
+          <Plus className="w-4 h-4" />
+          Nova Instância
+        </button>
+      </div>
       {loading ? (
         <div>Carregando instâncias...</div>
       ) : (
@@ -145,7 +142,7 @@ export function InstanceList({ isSuperAdmin, isAdmin, tenantId }: InstanceListPr
                 <th className="px-2 py-1 border">Status</th>
                 <th className="px-2 py-1 border">QR Code</th>
                 {isSuperAdmin && <th className="px-2 py-1 border">Empresa</th>}
-                {(isSuperAdmin || isAdmin) && <th className="px-2 py-1 border">Ações</th>}
+                <th className="px-2 py-1 border">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -172,67 +169,72 @@ export function InstanceList({ isSuperAdmin, isAdmin, tenantId }: InstanceListPr
                       {isSuperAdmin && (
                         <td className="px-2 py-1 border">{inst.tenant_id ? empresas[inst.tenant_id] || inst.tenant_id : '-'}</td>
                       )}
-                      {(isSuperAdmin || isAdmin) && (
-                        <td className="px-2 py-1 border flex gap-2 items-center">
-                          {inst.status === 'open' && (
-                            <ActionButton
-                              icon={PowerOff}
-                              onClick={() => dispatchModal({ type: 'OPEN_DISCONNECT', payload: inst })}
-                              variant="warning"
-                              disabled={isLoading}
-                              loading={isLoading}
-                              title="Desconectar"
-                            />
-                          )}
-                          {inst.status === 'close' && (
-                            <ActionButton
-                              icon={Power}
-                              onClick={() => handleConnect(inst.instanceName)}
-                              variant="primary"
-                              disabled={isLoading}
-                              loading={isLoading}
-                              title="Conectar"
-                            />
-                          )}
-                          {inst.status === 'connecting' && (
-                            <ActionButton
-                              icon={RefreshCw}
-                              onClick={() => handleConnect(inst.instanceName, true)}
-                              variant="warning"
-                              disabled={isLoading}
-                              loading={isLoading}
-                              title="Forçar Regeneração"
-                            />
-                          )}
+                      <td className="px-2 py-1 border flex gap-2 items-center">
+                        {/* Ações para conectar/desconectar - disponível para todos */}
+                        {inst.status === 'open' && (
                           <ActionButton
-                            icon={RefreshCw}
-                            onClick={() => handleUpdateStatus(inst.instanceName)}
-                            variant="ghost"
-                            title="Atualizar Status"
-                          />
-                          <ActionButton
-                            icon={Edit}
-                            onClick={() => dispatchModal({ type: 'OPEN_EDIT', payload: inst })}
-                            variant="secondary"
-                            disabled={isLoading}
-                            title="Editar"
-                          />
-                          <ActionButton
-                            icon={Trash2}
-                            onClick={() => dispatchModal({ type: 'OPEN_DELETE', payload: inst })}
-                            variant="destructive"
+                            icon={PowerOff}
+                            onClick={() => dispatchModal({ type: 'OPEN_DISCONNECT', payload: inst })}
+                            variant="warning"
                             disabled={isLoading}
                             loading={isLoading}
-                            title="Deletar"
+                            title="Desconectar"
                           />
-                        </td>
-                      )}
+                        )}
+                        {inst.status === 'close' && (
+                          <ActionButton
+                            icon={Power}
+                            onClick={() => handleConnect(inst.instanceName)}
+                            variant="primary"
+                            disabled={isLoading}
+                            loading={isLoading}
+                            title="Conectar"
+                          />
+                        )}
+                        {inst.status === 'connecting' && (
+                          <ActionButton
+                            icon={RefreshCw}
+                            onClick={() => handleConnect(inst.instanceName, true)}
+                            variant="warning"
+                            disabled={isLoading}
+                            loading={isLoading}
+                            title="Forçar Regeneração"
+                          />
+                        )}
+
+                        {/* Atualizar status - disponível para todos */}
+                        <ActionButton
+                          icon={RefreshCw}
+                          onClick={() => handleUpdateStatus(inst.instanceName)}
+                          variant="ghost"
+                          title="Atualizar Status"
+                        />
+                        
+                        {/* Ações de edição e exclusão - disponível para todos */}
+                        <ActionButton
+                          icon={Edit}
+                          onClick={() => dispatchModal({ type: 'OPEN_EDIT', payload: inst })}
+                          variant="secondary"
+                          disabled={isLoading}
+                          title="Editar"
+                        />
+                        <ActionButton
+                          icon={Trash2}
+                          onClick={() => dispatchModal({ type: 'OPEN_DELETE', payload: inst })}
+                          variant="destructive"
+                          disabled={isLoading}
+                          loading={isLoading}
+                          title="Deletar"
+                        />
+                        
+                        
+                      </td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={isSuperAdmin ? 6 : (isAdmin ? 5 : 4)} className="text-center py-2">Nenhuma instância encontrada.</td>
+                  <td colSpan={isSuperAdmin ? 6 : 5} className="text-center py-2">Nenhuma instância encontrada.</td>
                 </tr>
               )}
             </tbody>
@@ -245,6 +247,7 @@ export function InstanceList({ isSuperAdmin, isAdmin, tenantId }: InstanceListPr
             instance={modalState.type === 'EDIT' ? modalState.payload : undefined}
             tenants={isSuperAdmin ? Object.entries(empresas).map(([id, name]) => ({ id, name })) : []}
             tenantId={tenantId}
+            isSuperAdmin={isSuperAdmin}
           />
 
           {modalState.type === 'CONNECT' && (

@@ -2,7 +2,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'super_admin' | 'admin' | 'user';
+  role: 'super_admin' | 'user';
   tenant_id?: string;
   created_at?: string;
   updated_at?: string;
@@ -41,13 +41,8 @@ class UserService {
     return data;
   }
 
-  async listUsers(tenantId?: string): Promise<UserListResponse> {
-    let url = "/api/users/list";
-    if (tenantId) {
-      url += `?tenantId=${tenantId}`;
-    }
-    
-    return this.makeRequest<UserListResponse>(url);
+  async listUsers(): Promise<UserListResponse> {
+    return this.makeRequest<UserListResponse>("/api/users/list");
   }
 
   async getCurrentUser(): Promise<CurrentUserResponse> {

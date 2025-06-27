@@ -61,7 +61,7 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await userService.listUsers(tenantId);
+      const response = await userService.listUsers();
       const usersWithTenants = response.users.map((user) => ({
         ...user,
         nome: user.name,
@@ -69,19 +69,17 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
       }));
       setUsers(usersWithTenants);
       
-      // Buscar empresas se for super admin
-      if (isSuperAdmin) {
-        try {
-          const tenantsData = await tenantService.listTenants();
-          const empresasMap: {[key: string]: string} = {};
-          (tenantsData.tenants || []).forEach((tenant) => {
-            empresasMap[tenant.id] = tenant.name;
-          });
-          setEmpresas(empresasMap);
-        } catch (empresasError) {
-          console.error('Error fetching empresas:', empresasError);
-          // Não falhar se não conseguir buscar empresas
-        }
+      // Buscar empresas para super admin
+      try {
+        const tenantsData = await tenantService.listTenants();
+        const empresasMap: {[key: string]: string} = {};
+        (tenantsData.tenants || []).forEach((tenant) => {
+          empresasMap[tenant.id] = tenant.name;
+        });
+        setEmpresas(empresasMap);
+      } catch (empresasError) {
+        console.error('Error fetching empresas:', empresasError);
+        // Não falhar se não conseguir buscar empresas
       }
       
       setError(null);
@@ -90,11 +88,11 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
     } finally {
       setLoading(false);
     }
-  }, [tenantId, isSuperAdmin]);
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, [refreshKey, isSuperAdmin, tenantId, fetchData]);
+  }, [refreshKey, fetchData]);
 
   const handleDelete = (userId: string) => handleAction(async () => {
     // Deletar usuário usando a API
@@ -130,9 +128,6 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
     setRefreshKey(k => k + 1);
   };
 
-  // Filtrar usuários por tenant se não for super admin
-  const filteredUsers = isSuperAdmin ? users : users.filter((u) => u.tenant_id === tenantId);
-
   // Converter empresas para o formato esperado pelo UserModal
   const empresasForModal: Empresa[] = Object.entries(empresas).map(([id, name]) => ({
     id,
@@ -141,17 +136,15 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
 
   return (
     <div className="overflow-x-auto">
-      {(isSuperAdmin || tenantId) && (
-        <div className="mb-4 flex justify-end">
-          <button 
-            className="px-4 py-2 text-sm font-semibold text-white bg-brand-gray-dark rounded-md hover:bg-brand-gray-deep transition-colors flex items-center gap-2"
-            onClick={() => dispatchModal({ type: 'OPEN_CREATE' })}
-          >
-            <Plus className="w-4 h-4" />
-            Novo Usuário
-          </button>
-        </div>
-      )}
+      <div className="mb-4 flex justify-end">
+        <button 
+          className="px-4 py-2 text-sm font-semibold text-white bg-brand-gray-dark rounded-md hover:bg-brand-gray-deep transition-colors flex items-center gap-2"
+          onClick={() => dispatchModal({ type: 'OPEN_CREATE' })}
+        >
+          <Plus className="w-4 h-4" />
+          Novo Usuário
+        </button>
+      </div>
       
       {loading ? (
         <div className="flex justify-center items-center py-8">
@@ -167,13 +160,13 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
                 <th className="px-4 py-3 border text-left">Nome</th>
                 <th className="px-4 py-3 border text-left">E-mail</th>
                 <th className="px-4 py-3 border text-left">Papel</th>
-                {isSuperAdmin && <th className="px-4 py-3 border text-left">Empresa</th>}
-                {(isSuperAdmin || tenantId) && <th className="px-4 py-3 border text-left">Ações</th>}
+                <th className="px-4 py-3 border text-left">Empresa</th>
+                <th className="px-4 py-3 border text-left">Ações</th>
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => {
+              {users.length > 0 ? (
+                users.map((user) => {
                   const isLoading = actionLoading === user.id;
                   return (
                     <tr key={user.id} className="border-t hover:bg-gray-50">
@@ -201,41 +194,37 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
                           </span>
                         </div>
                       </td>
-                      {isSuperAdmin && (
-                        <td className="px-4 py-3 border">
-                          <div className="flex items-center gap-2">
-                            <Building className="w-4 h-4 text-gray-400" />
-                            <span>{empresas[user.tenant_id || ''] || '-'}</span>
-                          </div>
-                        </td>
-                      )}
-                      {(isSuperAdmin || tenantId) && (
-                        <td className="px-4 py-3 border">
-                          <div className="flex gap-2 items-center">
-                            <ActionButton
-                              icon={Edit}
-                              onClick={() => dispatchModal({ type: 'OPEN_EDIT', payload: user })}
-                              variant="secondary"
-                              disabled={isLoading}
-                              title="Editar"
-                            />
-                            <ActionButton
-                              icon={Trash2}
-                              onClick={() => dispatchModal({ type: 'OPEN_DELETE', payload: user })}
-                              variant="destructive"
-                              disabled={isLoading}
-                              loading={isLoading}
-                              title="Deletar"
-                            />
-                          </div>
-                        </td>
-                      )}
+                      <td className="px-4 py-3 border">
+                        <div className="flex items-center gap-2">
+                          <Building className="w-4 h-4 text-gray-400" />
+                          <span>{empresas[user.tenant_id || ''] || '-'}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 border">
+                        <div className="flex gap-2 items-center">
+                          <ActionButton
+                            icon={Edit}
+                            onClick={() => dispatchModal({ type: 'OPEN_EDIT', payload: user })}
+                            variant="secondary"
+                            disabled={isLoading}
+                            title="Editar"
+                          />
+                          <ActionButton
+                            icon={Trash2}
+                            onClick={() => dispatchModal({ type: 'OPEN_DELETE', payload: user })}
+                            variant="destructive"
+                            disabled={isLoading}
+                            loading={isLoading}
+                            title="Deletar"
+                          />
+                        </div>
+                      </td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={(isSuperAdmin || tenantId) ? (isSuperAdmin ? 5 : 4) : 3} className="text-center py-8 text-gray-500">
+                  <td colSpan={5} className="text-center py-8 text-gray-500">
                     <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                     <p className="font-medium">Nenhum usuário encontrado</p>
                     <p className="text-sm">Use o botão &quot;Novo Usuário&quot; para criar o primeiro.</p>

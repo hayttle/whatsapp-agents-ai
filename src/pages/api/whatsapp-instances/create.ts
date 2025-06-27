@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import { authenticateUser, createApiClient } from '@/lib/supabase/api';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,21 +12,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const apikey = process.env.EVOLUTION_API_KEY;
-  const evolutionUrl = `${process.env.EVOLUTION_API_URL}/instance/create`;
-
-  if (!apikey) {
-    return res.status(500).json({ error: 'API key not configured' });
-  }
-
   try {
+    // Autenticar usuário via cookies
+    const auth = await authenticateUser(req, res);
+    
+    if (!auth) {
+      return res.status(401).json({ error: 'Unauthorized - User not authenticated' });
+    }
+
+    const { userData } = auth;
+    const apiSupabase = createApiClient(req, res);
+
     const { tenantId, instanceName, integration, webhookByEvents, webhookBase64, webhookUrl, webhookEvents, msgCall, rejectCall, groupsIgnore, alwaysOnline, readMessages, readStatus, syncFullHistory } = req.body;
     const finalWebhookUrl = webhookUrl || process.env.WEBHOOK_AGENT_URL || '';
+    
     if (!tenantId) {
       return res.status(400).json({ error: 'tenantId é obrigatório' });
     }
     if (!instanceName) {
       return res.status(400).json({ error: 'instanceName é obrigatório' });
+    }
+
+    // Verificar permissões
+    if (userData.role !== 'super_admin' && tenantId !== userData.tenant_id) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+
+    const apikey = process.env.EVOLUTION_API_KEY;
+    if (!apikey) {
+      return res.status(500).json({ error: 'API key not configured' });
     }
 
     // Verificar duplicidade de nome na plataforma inteira (todas empresas)
@@ -73,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Criar na API externa
-    const response = await fetch(evolutionUrl, {
+    const response = await fetch(process.env.EVOLUTION_API_URL + '/instance/create', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

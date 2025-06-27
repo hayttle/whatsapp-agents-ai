@@ -14,6 +14,7 @@ interface GeneralSettingsProps {
   tenants: EmpresaDropdown[];
   selectedTenant: string;
   setSelectedTenant: (value: string) => void;
+  isSuperAdmin?: boolean;
 }
 
 const GeneralSettings: React.FC<GeneralSettingsProps> = ({
@@ -26,10 +27,11 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
   tenants,
   selectedTenant,
   setSelectedTenant,
+  isSuperAdmin = false,
 }) => {
   return (
     <div className="space-y-4">
-      {tenants.length > 0 && (
+      {isSuperAdmin && tenants.length > 0 && (
         <Select
           label="Empresa"
           value={selectedTenant}

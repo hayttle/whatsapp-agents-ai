@@ -16,6 +16,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const { userData } = auth;
+    
+    // Apenas super_admin pode criar usuários
+    if (userData.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Insufficient permissions - Only super_admin can create users' });
+    }
+
     const supabase = createApiClient(req, res);
     const adminClient = createAdminClient();
 
@@ -28,13 +34,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Usuários que não são super_admin devem ter uma empresa associada.' });
     }
 
-    // Verificar permissões
-    if (userData.role !== 'super_admin' && role === 'super_admin') {
+    // Verificar permissões para criar super_admin
+    if (role === 'super_admin' && userData.role !== 'super_admin') {
       return res.status(403).json({ error: 'Insufficient permissions to create super_admin' });
     }
-
-    // Se não for super_admin, só pode criar usuários para o mesmo tenant
-    const targetTenantId = userData.role === 'super_admin' ? tenant_id : userData.tenant_id;
 
     // 1. Criar usuário no Supabase Auth
     const { data: authUser, error: authError } = await adminClient.auth.admin.createUser({
@@ -47,26 +50,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Erro ao criar usuário no Auth: ' + (authError?.message || 'Erro desconhecido') });
     }
 
-    // 2. Inserir usuário na tabela users, usando o mesmo id do Auth
-    const { data: user, error } = await supabase
+    // 2. Inserir dados do usuário na tabela users
+    const { error: insertError } = await supabase
       .from('users')
       .insert({
         id: authUser.user.id,
-        name,
         email,
+        name,
         role,
-        tenant_id: targetTenantId
-      })
-      .select()
-      .single();
+        tenant_id: role === 'super_admin' ? null : tenant_id,
+      });
 
-    if (error) {
-      // Se falhar aqui, idealmente remover o usuário do Auth para não ficar "órfão"
+    if (insertError) {
+      // Se falhar ao inserir na tabela users, deletar o usuário do Auth
       await adminClient.auth.admin.deleteUser(authUser.user.id);
-      return res.status(500).json({ error: 'Erro ao criar usuário na tabela users: ' + error.message });
+      return res.status(500).json({ error: 'Erro ao criar usuário: ' + insertError.message });
     }
 
-    return res.status(201).json({ success: true, user });
+    return res.status(201).json({ 
+      success: true, 
+      user: {
+        id: authUser.user.id,
+        email,
+        name,
+        role,
+        tenant_id: role === 'super_admin' ? null : tenant_id,
+      }
+    });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
