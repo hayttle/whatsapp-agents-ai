@@ -58,8 +58,8 @@ export function UserProfileModal({ isOpen, onClose, user }: UserProfileModalProp
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-gray-400" />
             <span className={`px-2 py-1 rounded text-xs font-medium ${
-              user.role === 'super_admin' ? 'bg-purple-100 text-purple-800' :
-              user.role === 'admin' ? 'bg-blue-100 text-blue-800' :
+              (user.role as string) === 'super_admin' ? 'bg-purple-100 text-purple-800' :
+              (user.role as string) === 'admin' ? 'bg-blue-100 text-blue-800' :
               'bg-gray-100 text-gray-800'
             }`}>
               {roleDisplay[user.role] || user.role}
