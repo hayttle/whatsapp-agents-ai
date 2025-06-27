@@ -20,11 +20,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       { cookies: { getAll() { return []; }, setAll() {} } }
     );
 
-    // Buscar provedores do tenant
-    const { data, error } = await supabase
-      .from('whatsapp_providers')
-      .select('*')
-      .eq('tenant_id', userData.tenant_id);
+    // Buscar todos os provedores do tenant ou todos se super_admin
+    let query = supabase.from('whatsapp_providers').select('*');
+    if (userData.role !== 'super_admin') {
+      query = query.eq('tenant_id', userData.tenant_id);
+    }
+    const { data, error } = await query;
 
     if (error) {
       return res.status(500).json({ error: error.message });

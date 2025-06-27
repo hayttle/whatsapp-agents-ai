@@ -31,8 +31,7 @@ const navItems: SidebarItem[] = [
   { 
     href: '/dashboard', 
     label: 'Dashboard', 
-    icon: Home, 
-    superAdminOnly: true
+    icon: Home
   },
   { 
     href: '/admin/instancias', 

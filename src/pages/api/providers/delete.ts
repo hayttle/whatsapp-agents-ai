@@ -20,17 +20,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       { cookies: { getAll() { return []; }, setAll() {} } }
     );
 
-    const { provider_type } = req.body;
-    if (!provider_type) {
-      return res.status(400).json({ error: 'Tipo de provedor não informado.' });
+    const { id } = req.body;
+    if (!id) {
+      return res.status(400).json({ error: 'ID do provedor não informado.' });
     }
 
-    // Deletar provedor do tenant
+    // Deletar provedor do tenant por id
     const { error } = await supabase
       .from('whatsapp_providers')
       .delete()
       .eq('tenant_id', userData.tenant_id)
-      .eq('provider_type', provider_type);
+      .eq('id', id);
 
     if (error) {
       return res.status(500).json({ error: error.message });

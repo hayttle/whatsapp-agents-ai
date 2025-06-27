@@ -20,10 +20,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       { cookies: { getAll() { return []; }, setAll() {} } }
     );
 
-    const { name, provider_type, server_url, api_key } = req.body;
+    const { name, provider_type, server_url, api_key, tenant_id } = req.body;
     if (!name || !provider_type || !server_url || !api_key) {
       return res.status(400).json({ error: 'Campos obrigatórios não preenchidos.' });
     }
+    const isSuperAdmin = userData.role === 'super_admin';
 
     // Validação: checar se a URL base responde
     try {
@@ -31,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!urlCheck.ok) {
         return res.status(400).json({ error: 'URL do servidor inválida ou inacessível.' });
       }
-    } catch (e) {
+    } catch {
       return res.status(400).json({ error: 'Não foi possível conectar ao servidor informado. Verifique se a URL está correta e acessível via HTTPS.' });
     }
 
@@ -50,23 +51,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Erro ao validar API Key no servidor.' });
     }
 
-    // Salvar no banco (upsert por tenant_id + provider_type)
-    const { error } = await supabase
-      .from('whatsapp_providers')
-      .upsert({
-        tenant_id: userData.tenant_id,
-        name,
-        provider_type,
-        server_url,
-        api_key,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'tenant_id,provider_type' });
-
-    if (error) {
-      return res.status(500).json({ error: error.message });
+    // Se id for enviado, fazer update; senão, insert
+    if (req.body.id) {
+      const { id, ...updateData } = req.body;
+      let query = supabase
+        .from('whatsapp_providers')
+        .update({ ...updateData, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (!isSuperAdmin) {
+        query = query.eq('tenant_id', userData.tenant_id);
+        updateData.tenant_id = userData.tenant_id; // Garante que usuário comum não troque tenant
+      }
+      const { error } = await query;
+      if (error) {
+        if (error.message && error.message.includes('whatsapp_providers_tenant_id_name_key')) {
+          return res.status(400).json({ error: 'Já existe um provedor com esse nome. Escolha outro nome.' });
+        }
+        return res.status(500).json({ error: error.message });
+      }
+      return res.status(200).json({ success: true });
+    } else {
+      const { error } = await supabase
+        .from('whatsapp_providers')
+        .insert({
+          tenant_id: isSuperAdmin ? (tenant_id || userData.tenant_id) : userData.tenant_id,
+          name,
+          provider_type,
+          server_url,
+          api_key,
+          updated_at: new Date().toISOString(),
+        });
+      if (error) {
+        if (error.message && error.message.includes('whatsapp_providers_tenant_id_name_key')) {
+          return res.status(400).json({ error: 'Já existe um provedor com esse nome. Escolha outro nome.' });
+        }
+        return res.status(500).json({ error: error.message });
+      }
+      return res.status(200).json({ success: true });
     }
-
-    return res.status(200).json({ success: true });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
     return res.status(500).json({ error: errorMessage });
