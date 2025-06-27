@@ -21,11 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     let query = supabase
       .from('agents')
-      .select(`
-        *,
-        whatsapp_instances(instanceName),
-        tenants(name)
-      `);
+      .select(`*, tenants(name)`);
 
     // Filtrar por tenant se não for super_admin
     if (userData.role !== 'super_admin') {

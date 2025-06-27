@@ -4,7 +4,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'warning';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'warning' | 'add';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   leftIcon?: React.ReactNode;
@@ -22,6 +22,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       ghost: 'bg-white border border-gray-200 shadow-sm text-brand-gray-dark hover:bg-gray-50 hover:border-gray-300',
       destructive: 'border-2 border-red-600 bg-red-600 hover:bg-red-700 text-white focus:ring-red-600 shadow-sm',
       warning: 'border-2 border-yellow-400 bg-yellow-50 hover:bg-yellow-100 text-yellow-800 shadow-sm',
+      add: 'bg-brand-gray-dark hover:bg-brand-gray-deep text-white font-semibold px-4 py-2 text-sm rounded-md',
     };
     
     const sizes = {
@@ -58,6 +59,13 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 );
 
 Button.displayName = 'Button';
+
+/**
+ * Variant 'add':
+ * Botão de ação primária para adição/criação de itens (ex: Nova Instância, Novo Provedor).
+ * Visual: fundo brand-gray-dark, texto branco, fonte semibold, hover brand-gray-deep, padding e borda arredondada.
+ * Use variant="add" para todos os botões de adição do sistema para garantir padronização visual.
+ */
 
 export { Button };
 export type { ButtonProps }; 

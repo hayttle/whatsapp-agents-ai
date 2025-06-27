@@ -4,11 +4,12 @@ export interface Agent {
   prompt: string;
   fallback_message: string;
   active: boolean;
-  instance_id: string | null;
+  instance_id?: string | null;
   tenant_id: string;
   personality?: string;
   custom_personality?: string;
   tone?: string;
+  webhookUrl?: string | null;
 }
 
 export interface Instance {

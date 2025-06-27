@@ -21,4 +21,5 @@ export interface Instance {
   updated_at?: string;
   public_hash?: string;
   phone_number?: string | null;
+  agent_id?: string | null;
 } 

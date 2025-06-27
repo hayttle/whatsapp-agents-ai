@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Card, CardContent, Button, Alert } from '@/components/brand';
+import { Card, CardContent, Alert } from '@/components/brand';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { ProviderModal } from '@/components/admin/providers/ProviderModal';
 import { ProviderType } from '@/components/admin/providers/ProviderSettings';
@@ -29,8 +29,6 @@ export default function WhatsappApiPage() {
   const [showModal, setShowModal] = useState(false);
   const [empresas, setEmpresas] = useState<Record<string, string>>({});
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [selectedTenant, setSelectedTenant] = useState<string>('');
-  const [selectedProviderType, setSelectedProviderType] = useState<string>('');
 
   const fetchProvider = async () => {
     setLoading(true);
@@ -81,12 +79,6 @@ export default function WhatsappApiPage() {
     }
   };
 
-  const filteredProviders = providers.filter(p => {
-    if (isSuperAdmin && selectedTenant && p.tenant_id !== selectedTenant) return false;
-    if (selectedProviderType && p.provider_type !== selectedProviderType) return false;
-    return true;
-  });
-
   return (
     <div className="max-w-6xl mx-auto mt-8">
       <div className="mb-8">
@@ -105,35 +97,6 @@ export default function WhatsappApiPage() {
             </p>
           </div>
         </div>
-        <div className="flex flex-col md:flex-row gap-4 mt-4">
-          {isSuperAdmin && (
-            <select
-              className="w-full md:w-60 border rounded px-3 py-2 text-sm"
-              value={selectedTenant}
-              onChange={e => setSelectedTenant(e.target.value)}
-            >
-              <option value="">Todas as empresas</option>
-              {Object.entries(empresas).map(([id, name]) => (
-                <option key={id} value={id}>{name}</option>
-              ))}
-            </select>
-          )}
-          <select
-            className="w-full md:w-60 border rounded px-3 py-2 text-sm"
-            value={selectedProviderType}
-            onChange={e => setSelectedProviderType(e.target.value)}
-          >
-            <option value="">Todos os tipos</option>
-            <option value="evolution">Evolution</option>
-            <option value="zapi">Z-API</option>
-          </select>
-          <Button
-            className="px-4 py-2 text-sm font-semibold text-white bg-brand-gray-dark rounded-md hover:bg-brand-gray-deep transition-colors flex items-center gap-2 whitespace-nowrap md:ml-auto"
-            onClick={() => { setProvider(null); setShowModal(true); }}
-          >
-            <span className="text-lg">+</span> Novo Provedor
-          </Button>
-        </div>
       </div>
       <Card>
         <CardContent>
@@ -141,11 +104,12 @@ export default function WhatsappApiPage() {
             <div>Carregando...</div>
           ) : !editMode ? (
             <ProviderList
-              providers={filteredProviders.map(p => ({ ...p, tenantName: isSuperAdmin ? empresas[p.tenant_id || ''] : undefined }))}
+              providers={providers.map(p => ({ ...p, tenantName: isSuperAdmin ? empresas[p.tenant_id || ''] : undefined, active: false }))}
               onEdit={(prov: ProviderListItem) => { setEditMode(true); setProvider({ ...prov, provider_type: prov.provider_type as ProviderType }); setShowModal(true); }}
               onDelete={(id: string) => setDeleteId(id)}
               loading={loading}
               isSuperAdmin={isSuperAdmin}
+              onCreate={() => { setProvider(null); setShowModal(true); }}
             />
           ) : null}
           {success && <Alert variant="success" className="mt-4">{success}</Alert>}

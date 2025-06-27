@@ -80,6 +80,13 @@ class InstanceService {
       body: JSON.stringify(instanceData),
     });
   }
+
+  async updateInstance(id: string, updateData: Partial<Instance>): Promise<ApiResponse> {
+    return this.makeRequest<ApiResponse>("/api/whatsapp-instances/update", {
+      method: "PUT",
+      body: JSON.stringify({ id, ...updateData }),
+    });
+  }
 }
 
 export const instanceService = new InstanceService(); 

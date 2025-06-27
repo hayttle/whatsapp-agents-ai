@@ -12,6 +12,9 @@ import { instanceService } from "@/services/instanceService";
 import { Power, Trash2, Plus, RefreshCw, PowerOff, Clipboard } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/brand';
 import { useAgents } from '@/hooks/useAgents';
+import { Modal } from '@/components/ui';
+import { agentService } from "@/services/agentService";
+import type { Agent } from '@/services/agentService';
 
 interface InstanceListProps {
   isSuperAdmin: boolean;
@@ -72,6 +75,12 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
     refreshKey,
   });
   const { agentes } = useAgents({ isSuperAdmin, tenantId });
+  const [selectAgentModal, setSelectAgentModal] = useState<{ open: boolean; instanceId: string }>({ open: false, instanceId: "" });
+  const [selectedAgentId, setSelectedAgentId] = useState<string>("");
+  const [savingAgent, setSavingAgent] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [empresaFilter, setEmpresaFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleConnect = (instanceName: string, forceRegenerate = false) => handleAction(async () => {
     const data = await instanceService.connectInstance(instanceName, forceRegenerate);
@@ -122,9 +131,106 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
     }
   };
 
+  const handleOpenSelectAgent = (instanceId: string) => {
+    setSelectAgentModal({ open: true, instanceId });
+    setSelectedAgentId("");
+  };
+
+  const handleCloseSelectAgent = () => {
+    setSelectAgentModal({ open: false, instanceId: "" });
+    setSelectedAgentId("");
+  };
+
+  const handleSaveAgent = async () => {
+    if (!selectAgentModal.instanceId || !selectedAgentId) return;
+    setSavingAgent(true);
+    try {
+      // Buscar instância atual
+      const inst = instances.find(i => i.id === selectAgentModal.instanceId);
+      if (!inst) throw new Error('Instância não encontrada');
+      // Desvincular agente anterior, se houver
+      const prevAgentId = inst.agent_id;
+      if (prevAgentId) {
+        await agentService.updateAgent(prevAgentId, { instance_id: null });
+      }
+      // Atualizar agent_id da instância
+      await instanceService.updateInstance(inst.id, { agent_id: selectedAgentId });
+      // Vincular novo agente
+      await agentService.updateAgent(selectedAgentId, { instance_id: inst.id });
+      toast.success('Agente vinculado com sucesso!');
+      setRefreshKey(k => k + 1);
+      handleCloseSelectAgent();
+    } catch {
+      toast.error('Erro ao vincular agente.');
+    } finally {
+      setSavingAgent(false);
+    }
+  };
+
+  const handleUnlinkAgent = async (inst: Instance, agenteVinculado: Agent) => {
+    setSavingAgent(true);
+    try {
+      await instanceService.updateInstance(inst.id, { agent_id: null });
+      await agentService.updateAgent(agenteVinculado.id, { instance_id: null });
+      toast.success('Agente desvinculado com sucesso!');
+      setRefreshKey(k => k + 1);
+    } catch {
+      toast.error('Erro ao desvincular agente.');
+    } finally {
+      setSavingAgent(false);
+    }
+  };
+
+  // Filtros
+  let filteredInstances = instances;
+  if (statusFilter !== 'all') {
+    filteredInstances = filteredInstances.filter(inst => normalizeStatus(inst.status) === statusFilter);
+  }
+  if (isSuperAdmin && empresaFilter !== 'all') {
+    filteredInstances = filteredInstances.filter(inst => inst.tenant_id === empresaFilter);
+  }
+  if (searchTerm.trim() !== '') {
+    filteredInstances = filteredInstances.filter(inst => inst.instanceName.toLowerCase().includes(searchTerm.trim().toLowerCase()));
+  }
+
   return (
     <div className="space-y-6">
-      <div className="mb-4 flex justify-end">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+        <div className="flex flex-wrap gap-2 items-center">
+          <label className="text-sm font-medium">Status:</label>
+          <select
+            className="border rounded px-2 py-1 text-sm"
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+          >
+            <option value="all">Todos</option>
+            <option value="open">Conectado</option>
+            <option value="close">Desconectado</option>
+          </select>
+          {isSuperAdmin && (
+            <>
+              <label className="text-sm font-medium ml-4">Empresa:</label>
+              <select
+                className="border rounded px-2 py-1 text-sm"
+                value={empresaFilter}
+                onChange={e => setEmpresaFilter(e.target.value)}
+              >
+                <option value="all">Todas</option>
+                {Object.entries(empresas).map(([id, name]) => (
+                  <option key={id} value={id}>{name}</option>
+                ))}
+              </select>
+            </>
+          )}
+          <input
+            type="text"
+            className="border rounded px-2 py-1 text-sm ml-4"
+            placeholder="Buscar por nome..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            style={{ minWidth: 180 }}
+          />
+        </div>
         <button
           className="px-4 py-2 text-sm font-semibold text-white bg-brand-gray-dark rounded-md hover:bg-brand-gray-deep transition-colors flex items-center gap-2 whitespace-nowrap self-end"
           onClick={() => dispatchModal({ type: 'OPEN_CREATE' })}
@@ -137,17 +243,40 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
         <div>Carregando instâncias...</div>
       ) : (
         <>
-          {instances.length > 0 ? (
-            instances.map((inst) => {
+          {filteredInstances.length > 0 ? (
+            filteredInstances.map((inst) => {
               const isLoading = actionLoading === inst.instanceName;
-              const agenteVinculado = agentes.find(a => a.instance_id === inst.id);
+              const agenteVinculado = agentes.find(a => a.id === inst.agent_id);
               return (
                 <Card key={inst.id} className="">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base font-semibold mb-1">Status da Conexão: <span className={normalizeStatus(inst.status) === 'open' ? 'text-green-600' : 'text-red-600'}>{statusDisplay[normalizeStatus(inst.status)]}</span></CardTitle>
                     <CardDescription className="mt-1">
                       <span className="font-semibold">Agente vinculado: </span>
-                      {agenteVinculado ? agenteVinculado.title : <span className="text-gray-500">Nenhum agente vinculado</span>}
+                      {agenteVinculado ? (
+                        <>
+                          {agenteVinculado.title}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="ml-2"
+                            onClick={() => handleUnlinkAgent(inst, agenteVinculado)}
+                            disabled={savingAgent}
+                          >
+                            Desvincular
+                          </Button>
+                        </>
+                      ) : (
+                        <span className="text-gray-500">Nenhum agente vinculado</span>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="ml-3"
+                        onClick={() => handleOpenSelectAgent(inst.id)}
+                      >
+                        {agenteVinculado ? 'Alterar' : 'Selecionar'}
+                      </Button>
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -293,6 +422,25 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
           Tem certeza que deseja desconectar a instância <span className="font-semibold">&quot;{modalState.payload.instanceName}&quot;</span>?
         </ConfirmationModal>
       )}
+      <Modal isOpen={selectAgentModal.open} onClose={handleCloseSelectAgent} className="w-full max-w-md">
+        <div className="p-6">
+          <h2 className="text-lg font-semibold mb-4">Selecionar Agente</h2>
+          <select
+            className="w-full border rounded px-3 py-2 text-sm mb-4"
+            value={selectedAgentId}
+            onChange={e => setSelectedAgentId(e.target.value)}
+          >
+            <option value="">Selecione o agente</option>
+            {agentes.filter(a => !a.instance_id || a.instance_id === selectAgentModal.instanceId).map(a => (
+              <option key={a.id} value={a.id}>{a.title}</option>
+            ))}
+          </select>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={handleCloseSelectAgent} disabled={savingAgent}>Cancelar</Button>
+            <Button variant="primary" onClick={handleSaveAgent} loading={savingAgent} disabled={!selectedAgentId}>Salvar</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 } 

@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { agentService } from "@/services/agentService";
-import { useInstances } from "@/hooks/useInstances";
 import { tenantService, Tenant } from "@/services/tenantService";
 import Modal, { ModalHeader, ModalBody, ModalFooter } from "@/components/ui/Modal";
 import { Input, Button, Select, Alert, Switch } from "@/components/brand";
@@ -13,7 +12,6 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
   const [prompt, setPrompt] = useState("");
   const [fallback, setFallback] = useState("");
   const [active, setActive] = useState(true);
-  const [instanceId, setInstanceId] = useState("");
   const [selectedTenant, setSelectedTenant] = useState("");
   const [empresas, setEmpresas] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(false);
@@ -22,11 +20,7 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
   const [personality, setPersonality] = useState('Friendly');
   const [customPersonality, setCustomPersonality] = useState('');
   const [tone, setTone] = useState('Empathetic');
-
-  const { instances } = useInstances({
-    isSuperAdmin: false,
-    tenantId: selectedTenant,
-  });
+  const [webhookUrl, setWebhookUrl] = useState("");
 
   // Resetar campos ao abrir/fechar ou mudar agente
   useEffect(() => {
@@ -35,21 +29,21 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
       setPrompt(agent.prompt || "");
       setFallback(agent.fallback_message || "");
       setActive(agent.active ?? true);
-      setInstanceId(agent.instance_id || "");
       setSelectedTenant(agent.tenant_id || tenantId || "");
       setPersonality(agent.personality || 'Friendly');
       setCustomPersonality(agent.personality === 'Custom' ? (agent.custom_personality || '') : '');
       setTone(agent.tone || 'Empathetic');
+      setWebhookUrl(agent.webhookUrl || "");
     } else {
       setTitle("");
       setPrompt("");
       setFallback("");
       setActive(true);
-      setInstanceId("");
       setSelectedTenant(tenantId || "");
       setPersonality('Friendly');
       setCustomPersonality('');
       setTone('Empathetic');
+      setWebhookUrl("");
     }
     setMsg("");
     setError("");
@@ -81,17 +75,17 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
         prompt,
         fallback_message: fallback,
         active,
-        instance_id: instanceId || "",
         tenant_id: selectedTenant,
         personality: personality,
         custom_personality: personality === 'Custom' ? customPersonality : undefined,
         tone: tone,
+        webhookUrl: webhookUrl || undefined,
       };
       if (agent) {
         await agentService.updateAgent(agent.id, agentData);
         setMsg("Agente atualizado com sucesso!");
       } else {
-        await agentService.createAgent(agentData);
+        await agentService.createAgent({ ...agentData, instance_id: null });
         setMsg("Agente criado com sucesso!");
       }
       setTimeout(() => {
@@ -205,17 +199,14 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
               Ativo
             </Switch>
           </div>
-          <Select
-            label="Instância"
-            value={instanceId}
-            onChange={e => setInstanceId(e.target.value)}
-            className="w-full"
-          >
-            <option value="">Selecione a instância (opcional)</option>
-            {(instances || []).map((inst) => (
-              <option key={inst.id} value={inst.id}>{inst.instanceName}</option>
-            ))}
-          </Select>
+          <Input
+            label="Webhook do agente (URL)"
+            placeholder="https://meusistema.com/webhook"
+            value={webhookUrl}
+            onChange={e => setWebhookUrl(e.target.value)}
+            type="url"
+            required={false}
+          />
         </ModalBody>
         <ModalFooter>
           <Button

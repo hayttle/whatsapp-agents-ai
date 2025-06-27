@@ -5,8 +5,16 @@ import { Button } from '@/components/brand/Button';
 import { Alert } from '@/components/brand/Alert';
 import { Instance } from './types';
 import GeneralSettings from './modal-parts/GeneralSettings';
+import { useAgents } from '@/hooks/useAgents';
+import { Agent } from '@/services/agentService';
 
 type EmpresaDropdown = { id: string; name: string };
+
+interface ProviderOption {
+  id: string;
+  name: string;
+  provider_type: string;
+}
 
 interface InstanceModalProps {
   isOpen: boolean;
@@ -20,14 +28,32 @@ interface InstanceModalProps {
 const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, tenants, tenantId, isSuperAdmin = false }) => {
   const [instanceName, setInstanceName] = useState("");
   const [selectedTenant, setSelectedTenant] = useState("");
+  const [providerType, setProviderType] = useState<'nativo' | 'externo'>('nativo');
+  const [providerId, setProviderId] = useState<string>("");
+  const [providers, setProviders] = useState<ProviderOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
+  const [agentId, setAgentId] = useState<string>("");
+  const { agentes, loading: loadingAgents } = useAgents({ isSuperAdmin: !!isSuperAdmin, tenantId: isSuperAdmin ? selectedTenant : tenantId });
 
   useEffect(() => {
     setInstanceName("");
     setSelectedTenant(tenantId || "");
+    setProviderType('nativo');
+    setProviderId("");
+    setAgentId("");
+    setMsg("");
+    setError("");
   }, [isOpen, tenantId]);
+
+  useEffect(() => {
+    if (providerType === 'externo') {
+      fetch('/api/providers/list')
+        .then(res => res.json())
+        .then(data => setProviders(data.providers || []));
+    }
+  }, [providerType]);
 
   const handleInstanceNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -41,7 +67,23 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
     setMsg("");
     setError("");
 
-    const payload = {
+    if (!instanceName) {
+      setError('Nome da instância é obrigatório.');
+      setLoading(false);
+      return;
+    }
+    if (isSuperAdmin && tenants.length > 0 && !selectedTenant) {
+      setError('Selecione a empresa.');
+      setLoading(false);
+      return;
+    }
+    if (providerType === 'externo' && !providerId) {
+      setError('Selecione o servidor WhatsApp externo.');
+      setLoading(false);
+      return;
+    }
+
+    const payload: Record<string, unknown> = {
       instanceName,
       integration: "WHATSAPP-BAILEYS",
       webhookEvents: ["MESSAGES_UPSERT"],
@@ -55,7 +97,12 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
       readStatus: false,
       syncFullHistory: false,
       tenantId: isSuperAdmin && tenants.length > 0 ? selectedTenant : tenantId,
+      provider_type: providerType,
     };
+    if (providerType === 'externo') {
+      payload.provider_id = providerId;
+      if (agentId) payload.agent_id = agentId;
+    }
 
     try {
       const res = await fetch("/api/whatsapp-instances/create", {
@@ -105,6 +152,50 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
             setSelectedTenant={setSelectedTenant}
             isSuperAdmin={isSuperAdmin}
           />
+          <div>
+            <label className="block text-sm font-medium mb-1">Tipo de Provedor *</label>
+            <select
+              className="w-full border rounded px-3 py-2 text-sm"
+              value={providerType}
+              onChange={e => setProviderType(e.target.value as 'nativo' | 'externo')}
+              required
+            >
+              <option value="nativo">Nativo</option>
+              <option value="externo">Externo</option>
+            </select>
+          </div>
+          {providerType === 'externo' && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Servidor WhatsApp *</label>
+              <select
+                className="w-full border rounded px-3 py-2 text-sm"
+                value={providerId}
+                onChange={e => setProviderId(e.target.value)}
+                required
+              >
+                <option value="">Selecione o servidor</option>
+                {providers.map(p => (
+                  <option key={p.id} value={p.id}>{p.name} ({p.provider_type})</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {providerType === 'externo' && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Agente</label>
+              <select
+                className="w-full border rounded px-3 py-2 text-sm"
+                value={agentId}
+                onChange={e => setAgentId(e.target.value)}
+                disabled={loadingAgents}
+              >
+                <option value="">Selecione o agente (opcional)</option>
+                {agentes.map((a: Agent) => (
+                  <option key={a.id} value={a.id}>{a.title}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </ModalBody>
         <ModalFooter>
           <Button

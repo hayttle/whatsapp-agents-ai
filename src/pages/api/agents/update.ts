@@ -28,6 +28,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       updateData.instance_id = null;
     }
 
+    // Se webhookUrl vier como string vazia, transformar em null
+    if ('webhookUrl' in updateData && updateData.webhookUrl === '') {
+      updateData.webhookUrl = null;
+    }
+
     // Verificar se o agente existe e se o usuário tem permissão
     const { data: existingAgent } = await supabase
       .from('agents')

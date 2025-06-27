@@ -1,7 +1,7 @@
 export interface Agent {
   id: string;
   tenant_id: string;
-  instance_id: string;
+  instance_id?: string | null;
   title: string;
   prompt: string;
   fallback_message: string;

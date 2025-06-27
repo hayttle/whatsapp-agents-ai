@@ -123,7 +123,9 @@ export default function DesignSystemPage() {
                 <Button variant="outline">Outline</Button>
                 <Button variant="ghost">Ghost</Button>
                 <Button variant="destructive">Destructive</Button>
+                <Button variant="add" leftIcon={<span className="text-lg font-bold">+</span>}>Novo (Add)</Button>
               </div>
+              <p className="text-sm text-gray-600 mt-2">Use <code>variant=&quot;add&quot;</code> para botões de adição, como &quot;Nova Instância&quot; ou &quot;Novo Provedor&quot;. Visual escuro, texto branco, fonte semibold, hover escurecido.</p>
             </div>
             <div>
               <h3 className="text-lg font-semibold text-brand-gray-dark mb-4">Tamanhos</h3>

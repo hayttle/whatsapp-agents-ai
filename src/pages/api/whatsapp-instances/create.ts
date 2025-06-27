@@ -23,8 +23,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { userData } = auth;
 
-    const { tenantId, instanceName } = req.body;
-    const finalWebhookUrl = process.env.WEBHOOK_AGENT_URL || '';
+    const { tenantId, instanceName, provider_type, provider_id } = req.body;
+    // Buscar webhook do agente vinculado
+    let agentWebhookUrl = null;
+    if (req.body.agent_id) {
+      const { data: agent, error: agentError } = await supabase
+        .from('agents')
+        .select('webhookUrl')
+        .eq('id', req.body.agent_id)
+        .single();
+      if (agentError) {
+        return res.status(400).json({ error: 'Erro ao buscar agente vinculado.' });
+      }
+      agentWebhookUrl = agent?.webhookUrl || null;
+    }
     
     if (!tenantId) {
       return res.status(400).json({ error: 'tenantId é obrigatório' });
@@ -43,18 +55,111 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'API key not configured' });
     }
 
-    // Verificar duplicidade de nome na plataforma inteira (todas empresas)
-    const { data: existingGlobal, error: checkErrorGlobal } = await supabase
+    // Validação de duplicidade: não permitir instância com mesmo nome para o mesmo servidor WhatsApp (nativo ou externo)
+    let dupQuery = supabase
       .from('whatsapp_instances')
       .select('id')
-      .ilike('instanceName', instanceName);
-    if (checkErrorGlobal) {
-      return res.status(500).json({ error: checkErrorGlobal.message || 'Erro ao verificar duplicidade global' });
+      .eq('tenant_id', tenantId)
+      .eq('instanceName', instanceName);
+    if (provider_type === 'externo' && provider_id) {
+      dupQuery = dupQuery.eq('provider_id', provider_id);
+    } else {
+      dupQuery = dupQuery.is('provider_id', null);
     }
-    if (existingGlobal && existingGlobal.length > 0) {
-      return res.status(409).json({ error: 'Já existe uma instância com este nome na plataforma. Por favor, escolha um nome diferente.' });
+    const { data: existingInstance, error: dupError } = await dupQuery;
+    if (dupError) {
+      return res.status(500).json({ error: dupError.message || 'Erro ao verificar duplicidade' });
+    }
+    if (existingInstance && existingInstance.length > 0) {
+      return res.status(409).json({ error: 'Já existe uma instância com este nome para este servidor Whatsapp. Por favor, escolha um nome diferente.' });
     }
 
+    let instanceData: Record<string, unknown> = {};
+    if (provider_type === 'externo' && provider_id) {
+      // Buscar provedor externo
+      const { data: provider, error: providerError } = await supabase
+        .from('whatsapp_providers')
+        .select('*')
+        .eq('id', provider_id)
+        .single();
+      if (providerError || !provider) {
+        return res.status(400).json({ error: 'Servidor WhatsApp externo não encontrado.' });
+      }
+      // Validar webhook do agente
+      if (!agentWebhookUrl) {
+        return res.status(400).json({ error: 'O agente vinculado deve possuir um webhook configurado para provedores externos.' });
+      }
+      // Montar payload igual ao nativo, mas usando dados do provedor externo
+      const externalPayload: Record<string, unknown> = {
+        instanceName,
+        integration: "WHATSAPP-BAILEYS",
+        msgCall: "",
+        rejectCall: false,
+        groupsIgnore: true,
+        alwaysOnline: false,
+        readMessages: false,
+        readStatus: false,
+        syncFullHistory: false,
+        webhook: {
+          enabled: true,
+          url: agentWebhookUrl,
+          byEvents: false,
+          base64: true,
+          events: ["MESSAGES_UPSERT"],
+        },
+      };
+      // Limpar undefined
+      Object.keys(externalPayload).forEach(key => {
+        if (externalPayload[key] === undefined) delete externalPayload[key];
+      });
+      if (externalPayload.webhook && typeof externalPayload.webhook === 'object') {
+        Object.keys(externalPayload.webhook as { [key: string]: unknown }).forEach(key => {
+          if ((externalPayload.webhook as { [key: string]: unknown })[key] === undefined) {
+            delete (externalPayload.webhook as { [key: string]: unknown })[key];
+          }
+        });
+      }
+      // Criar na API do provedor externo
+      const response = await fetch(provider.server_url.replace(/\/$/, '') + '/instance/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': provider.api_key,
+        },
+        body: JSON.stringify(externalPayload),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return res.status(response.status).json({ error: data.error || data.response?.message?.[0] || 'Erro ao criar instância no provedor externo' });
+    }
+      const rawStatus = data.status || data.instance?.status || 'close';
+      const normalizedStatus = rawStatus === 'open' ? 'open' : 'close';
+      instanceData = {
+        id: data.instanceId || data.id || randomUUID(),
+        instanceName,
+        integration: "WHATSAPP-BAILEYS",
+        status: normalizedStatus,
+        qrcode: data.qrcode || null,
+        apikey: data.apikey || null,
+        tenant_id: tenantId,
+        webhookEvents: ["MESSAGES_UPSERT"],
+        webhookByEvents: false,
+        webhookBase64: true,
+        msgCall: "",
+        rejectCall: false,
+        groupsIgnore: true,
+        alwaysOnline: false,
+        readMessages: false,
+        readStatus: false,
+        syncFullHistory: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        public_hash: randomUUID(),
+        provider_type: 'externo',
+        provider_id,
+        ...(req.body.agent_id ? { agent_id: req.body.agent_id } : {}),
+      };
+    } else {
     // Montar payload para Evolution com valores padrão
     const evolutionPayload: Record<string, unknown> = {
       instanceName,
@@ -106,7 +211,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Normalizar status - qualquer status diferente de 'open' é tratado como 'close'
     const normalizedStatus = rawStatus === 'open' ? 'open' : 'close';
     
-    const instanceData = {
+      instanceData = {
       id: data.instanceId || data.id, // id retornado pela API externa
       instanceName,
       integration: "WHATSAPP-BAILEYS",
@@ -114,7 +219,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       qrcode: data.qrcode || null,
       apikey: data.apikey || null,
       tenant_id: tenantId,
-      webhookUrl: finalWebhookUrl,
       webhookEvents: ["MESSAGES_UPSERT"],
       webhookByEvents: false,
       webhookBase64: true,
@@ -128,7 +232,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       public_hash: randomUUID(),
+      provider_type: 'nativo',
+      provider_id: null,
+      ...(req.body.agent_id ? { agent_id: req.body.agent_id } : {}),
     };
+    }
+    // Salvar no banco de dados
     const { error: dbError } = await supabase.from('whatsapp_instances').insert(instanceData);
     if (dbError) {
       return res.status(500).json({ error: dbError.message || 'Erro ao salvar instância no banco' });
