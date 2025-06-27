@@ -151,14 +151,14 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2 p-3 bg-gray-50 rounded">
+                    <div className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-md">
                       <span className="text-gray-500"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2.08a2 2 0 0 1 1.09-1.79l7-3.11a2 2 0 0 1 1.82 0l7 3.11A2 2 0 0 1 22 16.92z"/><circle cx="12" cy="7" r="4"/></svg></span>
                       <div>
                         <div className="font-semibold">Número</div>
                         <div className="text-gray-600 text-sm">Telefone não disponível</div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 p-3 bg-gray-50 rounded">
+                    <div className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-md">
                       <span className="text-gray-500"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a10 10 0 0 1 13 0"/></svg></span>
                       <div>
                         <div className="font-semibold">Nome</div>
@@ -168,40 +168,42 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
                   </CardContent>
                   {normalizeStatus(inst.status) === 'close' && inst.public_hash && (
                     <CardContent className="mt-2">
-                      <div className="bg-gray-50 p-4 rounded flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                      <div className="bg-gray-50 p-4 border border-gray-200 rounded-md flex flex-col h-full justify-between gap-2">
                         <div>
-                          <div className="font-semibold mb-1">URL do Cliente</div>
-                          <div className="text-gray-600 text-sm mb-2">Envie essa url para o seu cliente escanear o QRCode</div>
+                          <div className="font-semibold mb-1">URL pública para conectar instância</div>
+                          <div className="text-gray-600 text-sm">Envie essa url para o seu cliente escanear o QRCode</div>
+                        </div>
+                        <div className="flex items-center gap-2 w-full mt-2">
                           <input
                             type="text"
                             readOnly
                             value={`${window.location.origin}/qrcode/${inst.public_hash}`}
-                            className="text-xs bg-gray-100 rounded px-2 py-1 w-full md:w-96"
+                            className="text-base bg-gray-100 rounded px-2 py-2 flex-1 h-10"
                             onFocus={e => e.target.select()}
                           />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            leftIcon={<Clipboard className="w-4 h-4" />}
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/qrcode/${inst.public_hash}`);
+                              toast.success('Link copiado!');
+                            }}
+                          >
+                            Copiar link
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="mt-2 md:mt-0"
-                          leftIcon={<Clipboard className="w-4 h-4" />}
-                          onClick={() => {
-                            navigator.clipboard.writeText(`${window.location.origin}/qrcode/${inst.public_hash}`);
-                            toast.success('Link copiado!');
-                          }}
-                        >
-                          Copiar link
-                        </Button>
                       </div>
                     </CardContent>
                   )}
                   <CardFooter className="flex gap-2 justify-end">
                     {normalizeStatus(inst.status) === 'open' ? (
                       <Button
-                        variant="destructive"
+                        variant="warning"
                         size="sm"
                         onClick={() => dispatchModal({ type: 'OPEN_DISCONNECT', payload: inst })}
                         loading={isLoading}
+                        leftIcon={<PowerOff className="w-4 h-4" />}
                       >
                         Desconectar
                       </Button>
@@ -211,6 +213,7 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
                         size="sm"
                         onClick={() => handleConnect(inst.instanceName)}
                         loading={isLoading}
+                        leftIcon={<Power className="w-4 h-4" />}
                       >
                         Conectar
                       </Button>
@@ -219,6 +222,7 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
                       variant="outline"
                       size="sm"
                       onClick={() => handleUpdateStatus(inst.instanceName)}
+                      leftIcon={<RefreshCw className="w-4 h-4" />}
                     >
                       Atualizar Status
                     </Button>
@@ -227,6 +231,7 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
                       size="sm"
                       onClick={() => dispatchModal({ type: 'OPEN_DELETE', payload: inst })}
                       loading={isLoading}
+                      leftIcon={<Trash2 className="w-4 h-4" />}
                     >
                       Deletar
                     </Button>

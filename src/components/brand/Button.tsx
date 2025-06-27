@@ -20,8 +20,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       secondary: 'bg-blue-100 hover:bg-blue-200 text-blue-900 focus:ring-blue-200 shadow-sm',
       outline: 'border-2 border-brand-green-light text-brand-green-light hover:bg-brand-green-light hover:text-white focus:ring-brand-green-light',
       ghost: 'bg-white border border-gray-200 shadow-sm text-brand-gray-dark hover:bg-gray-50 hover:border-gray-300',
-      destructive: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-600 shadow-sm',
-      warning: 'bg-yellow-50 hover:bg-yellow-100 text-yellow-800 shadow-sm',
+      destructive: 'border-2 border-red-600 bg-red-600 hover:bg-red-700 text-white focus:ring-red-600 shadow-sm',
+      warning: 'border-2 border-yellow-400 bg-yellow-50 hover:bg-yellow-100 text-yellow-800 shadow-sm',
     };
     
     const sizes = {
