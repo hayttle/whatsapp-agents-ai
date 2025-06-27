@@ -85,6 +85,8 @@ export default function QrCodePage({ params }: { params: Promise<{ hash: string 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center">
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">Conectar Instância</h1>
+        <p className="text-gray-600 text-center mb-4">Abra o WhatsApp, vá em Aparelhos Conectados e escaneie o QR Code.</p>
         <RenderQrCode qrCode={qrcode} />
         <div className="mt-4 text-lg font-semibold text-gray-700">
           Essa janela será fechada em <span className="text-blue-600">{timer}s</span>.
