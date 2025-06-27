@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { userData } = auth;
     const apiSupabase = createApiClient(req, res);
 
-    const { tenantId, instanceName, integration, webhookByEvents, webhookBase64, webhookUrl, webhookEvents, msgCall, rejectCall, groupsIgnore, alwaysOnline, readMessages, readStatus, syncFullHistory } = req.body;
+    const { tenantId, instanceName, webhookByEvents, webhookBase64, webhookUrl, webhookEvents, msgCall, rejectCall, groupsIgnore, alwaysOnline, readMessages, readStatus, syncFullHistory } = req.body;
     const finalWebhookUrl = webhookUrl || process.env.WEBHOOK_AGENT_URL || '';
     
     if (!tenantId) {
@@ -58,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Montar payload para Evolution
     const evolutionPayload: Record<string, unknown> = {
       instanceName,
-      integration,
+      integration: "WHATSAPP-BAILEYS",
       msgCall,
       rejectCall,
       groupsIgnore,
@@ -109,7 +109,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const instanceData = {
       id: data.instanceId || data.id, // id retornado pela API externa
       instanceName,
-      integration,
+      integration: "WHATSAPP-BAILEYS",
       status: normalizedStatus,
       qrcode: data.qrcode || null,
       apikey: data.apikey || null,

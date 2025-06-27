@@ -141,7 +141,6 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
             <thead>
               <tr className="bg-gray-100">
                 <th className="px-2 py-1 border">Nome</th>
-                <th className="px-2 py-1 border">Integração</th>
                 <th className="px-2 py-1 border">Status</th>
                 <th className="px-2 py-1 border">QR Code</th>
                 {isSuperAdmin && <th className="px-2 py-1 border">Empresa</th>}
@@ -155,7 +154,6 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
                   return (
                     <tr key={inst.id} className="border-t">
                       <td className="px-2 py-1 border">{inst.instanceName}</td>
-                      <td className="px-2 py-1 border">{inst.integration || '-'}</td>
                       <td className="px-2 py-1 border">
                         <span className={`px-2 py-1 rounded text-xs font-medium ${
                           normalizeStatus(inst.status) === 'open' ? 'bg-green-100 text-brand-green-dark' : 'bg-red-100 text-red-800'

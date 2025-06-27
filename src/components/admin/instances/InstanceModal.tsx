@@ -17,8 +17,6 @@ const EVENT_OPTIONS = [
   "NEW_JWT_TOKEN", "TYPEBOT_START", "TYPEBOT_CHANGE_STATUS"
 ];
 
-const INTEGRATION_OPTIONS = ["WHATSAPP-BAILEYS", "WHATSAPP-BUSINESS"];
-
 interface InstanceModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -31,7 +29,6 @@ interface InstanceModalProps {
 
 const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, instance, tenants, tenantId, isSuperAdmin = false }) => {
   const [instanceName, setInstanceName] = useState("");
-  const [integration, setIntegration] = useState(INTEGRATION_OPTIONS[0]);
   const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
   const [webhookByEvents, setWebhookByEvents] = useState(false);
   const [webhookBase64, setWebhookBase64] = useState(true);
@@ -50,7 +47,6 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
   useEffect(() => {
     if (instance) {
       setInstanceName(instance.instanceName || "");
-      setIntegration(instance.integration || INTEGRATION_OPTIONS[0]);
       setWebhookEvents(instance.webhookEvents || []);
       setWebhookByEvents(instance.webhookByEvents ?? false);
       setWebhookBase64(instance.webhookBase64 ?? true);
@@ -64,7 +60,6 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
       setSelectedTenant(instance.tenant_id || "");
     } else {
       setInstanceName("");
-      setIntegration(INTEGRATION_OPTIONS[0]);
       setWebhookEvents([]);
       setWebhookByEvents(false);
       setWebhookBase64(true);
@@ -101,7 +96,7 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
 
     const payload = {
       instanceName,
-      integration,
+      integration: "WHATSAPP-BAILEYS",
       webhookEvents,
       webhookByEvents,
       webhookBase64,
@@ -162,9 +157,6 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
           <GeneralSettings
             instanceName={instanceName}
             handleInstanceNameChange={handleInstanceNameChange}
-            integration={integration}
-            setIntegration={setIntegration}
-            INTEGRATION_OPTIONS={INTEGRATION_OPTIONS}
             instance={instance}
             tenants={tenants}
             selectedTenant={selectedTenant}

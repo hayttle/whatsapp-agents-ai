@@ -32,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'EVOLUTION_API_URL not configured' });
     }
 
-    const { id, integration, msgCall, webhookUrl, webhookEvents, webhookByEvents, webhookBase64, rejectCall, groupsIgnore, alwaysOnline, readMessages, readStatus, syncFullHistory } = req.body;
+    const { id, msgCall, webhookUrl, webhookEvents, webhookByEvents, webhookBase64, rejectCall, groupsIgnore, alwaysOnline, readMessages, readStatus, syncFullHistory } = req.body;
     if (!id) {
       return res.status(400).json({ error: 'id é obrigatório' });
     }
@@ -124,7 +124,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // 3. Atualizar no banco local
     const { error: dbError } = await supabase.from('whatsapp_instances').update({
-      integration,
+      integration: "WHATSAPP-BAILEYS",
       msgCall,
       webhookUrl,
       webhookEvents,

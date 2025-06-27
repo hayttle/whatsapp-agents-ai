@@ -7,9 +7,6 @@ type EmpresaDropdown = { id: string; name: string };
 interface GeneralSettingsProps {
   instanceName: string;
   handleInstanceNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  integration: string;
-  setIntegration: (value: string) => void;
-  INTEGRATION_OPTIONS: string[];
   instance?: Instance | null;
   tenants: EmpresaDropdown[];
   selectedTenant: string;
@@ -20,9 +17,6 @@ interface GeneralSettingsProps {
 const GeneralSettings: React.FC<GeneralSettingsProps> = ({
   instanceName,
   handleInstanceNameChange,
-  integration,
-  setIntegration,
-  INTEGRATION_OPTIONS,
   instance,
   tenants,
   selectedTenant,
@@ -53,15 +47,6 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
         disabled={!!instance}
         required={!instance}
       />
-      <Select
-        label="Integração"
-        value={integration}
-        onChange={e => setIntegration(e.target.value)}
-      >
-        {INTEGRATION_OPTIONS.map(opt => (
-          <option key={opt} value={opt}>{opt}</option>
-        ))}
-      </Select>
     </div>
   );
 };
