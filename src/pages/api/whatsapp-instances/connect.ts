@@ -60,8 +60,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Erro ao buscar dados da instância.' });
     }
 
-    // Se a instância já está connecting, tentar obter dados do QR code existente primeiro
-    if (currentInstance.status === 'connecting' && currentInstance.qrcode && !forceRegenerate) {
+    // Se a instância já está open, tentar obter dados do QR code existente primeiro
+    if (currentInstance.status === 'open' && currentInstance.qrcode && !forceRegenerate) {
       try {
         const existingQrData = JSON.parse(currentInstance.qrcode);
         
@@ -152,7 +152,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // 2. Atualizar a instância no banco de dados com o novo QR Code e status
     const qrCodeString = JSON.stringify(data);
-    let statusToSet = 'connecting';
+    let statusToSet = 'close';
     if (
       data.status === 'open' ||
       (data.response && data.response.status === 'open') ||
@@ -160,11 +160,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ) {
       statusToSet = 'open';
     }
+    
+    // Normalizar status - qualquer status diferente de 'open' é tratado como 'close'
+    const normalizedStatus = statusToSet === 'open' ? 'open' : 'close';
+    
     const { error: dbError } = await supabase
       .from('whatsapp_instances')
       .update({ 
           qrcode: qrCodeString,
-          status: statusToSet,
+          status: normalizedStatus,
           updated_at: new Date().toISOString() 
         })
       .eq('instanceName', instanceName);

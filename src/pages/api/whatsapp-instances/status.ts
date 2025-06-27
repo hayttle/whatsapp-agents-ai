@@ -63,15 +63,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let status = data.status || data.state || (data.instance && (data.instance.status || data.instance.state));
     if (!status && typeof data === 'string') status = data;
 
+    // Normalizar status - qualquer status diferente de 'open' é tratado como 'close'
+    const normalizedStatus = status === 'open' ? 'open' : 'close';
+
     // Atualizar status no banco local, se encontrado
     if (status) {
       await supabase
         .from('whatsapp_instances')
-        .update({ status, updated_at: new Date().toISOString() })
+        .update({ status: normalizedStatus, updated_at: new Date().toISOString() })
         .eq('instanceName', instanceName);
     }
 
-    return res.status(200).json({ status, evolution: data });
+    return res.status(200).json({ status: normalizedStatus, evolution: data });
   } catch (err: unknown) {
     return res.status(500).json({ error: err instanceof Error ? err.message : 'Erro inesperado' });
   }

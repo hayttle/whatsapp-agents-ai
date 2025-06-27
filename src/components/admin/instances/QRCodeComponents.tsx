@@ -87,7 +87,7 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({
   instanceName,
   onStatusUpdate 
 }) => {
-  const [countdown, setCountdown] = useState(10);
+  const [countdown, setCountdown] = useState(20);
 
   useEffect(() => {
     if (countdown <= 0) {
@@ -108,24 +108,11 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({
 
   return (
     <Modal isOpen={true} onClose={onClose} className="w-full max-w-sm">
-      <ModalHeader>
-        <div className="flex justify-between items-center">
-          <span>Conectar Instância</span>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">Fechando em:</span>
-            <span className={`text-lg font-bold ${
-              countdown <= 3 ? 'text-red-500' : 
-              countdown <= 5 ? 'text-yellow-500' : 'text-green-500'
-            }`}>
-              {countdown}s
-            </span>
-          </div>
-        </div>
-      </ModalHeader>
+      <ModalHeader>Conectar Instância</ModalHeader>
       <ModalBody>
         <div className="flex flex-col items-center">
           <p className="text-sm text-gray-600 mb-4 text-center">
-            Abra o WhatsApp, vá em Aparelhos Conectados e use um dos métodos abaixo.
+            Abra o WhatsApp, vá em Aparelhos Conectados e escaneie o QR Code.
           </p>
           
           {qr && <RenderQrCode qrCode={qr} />}
@@ -144,10 +131,13 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({
             </div>
           )}
 
-          <div className="mt-4 text-center">
-            <p className="text-xs text-gray-400">
-              O modal fechará automaticamente em {countdown} segundos
-            </p>
+          <div className="mt-6 text-center">
+            <div className={`text-lg font-semibold ${
+              countdown <= 3 ? 'text-red-500' : 
+              countdown <= 5 ? 'text-yellow-500' : 'text-green-500'
+            }`}>
+              Essa janela será fechada em {countdown}s.
+            </div>
           </div>
         </div>
       </ModalBody>

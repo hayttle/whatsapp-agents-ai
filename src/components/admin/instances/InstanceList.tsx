@@ -17,8 +17,12 @@ interface InstanceListProps {
 
 const statusDisplay: { [key: string]: string } = {
   open: 'Conectado',
-  connecting: 'Conectando',
   close: 'Desconectado',
+};
+
+// Função para normalizar status - qualquer status diferente de 'open' é tratado como 'close'
+const normalizeStatus = (status: string): 'open' | 'close' => {
+  return status === 'open' ? 'open' : 'close';
 };
 
 // --- Step 4: Update State, Action, and Reducer ---
@@ -109,7 +113,6 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
       const response = await fetch(`/api/whatsapp-instances/status?instanceName=${encodeURIComponent(instanceName)}`);
       const data = await response.json();
       if (response.ok) {
-        toast.success(`Status atualizado: ${data.status}`);
         setRefreshKey(k => k + 1);
       } else {
         toast.error(data.error || 'Erro ao atualizar status');
@@ -155,23 +158,20 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
                       <td className="px-2 py-1 border">{inst.integration || '-'}</td>
                       <td className="px-2 py-1 border">
                         <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          inst.status === 'open' ? 'bg-green-100 text-brand-green-dark' :
-                          inst.status === 'connecting' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
+                          normalizeStatus(inst.status) === 'open' ? 'bg-green-100 text-brand-green-dark' : 'bg-red-100 text-red-800'
                         }`}>
-                          {statusDisplay[inst.status] || inst.status}
+                          {statusDisplay[normalizeStatus(inst.status)] || 'Desconectado'}
                         </span>
                       </td>
                       <td className="px-2 py-1 border">
-                        {inst.status === 'connecting' && <span className="text-gray-500 italic">Aguardando...</span>}
-                        {inst.status !== 'connecting' && <span className="text-gray-400">-</span>}
+                        <span className="text-gray-400">-</span>
                       </td>
                       {isSuperAdmin && (
                         <td className="px-2 py-1 border">{inst.tenant_id ? empresas[inst.tenant_id] || inst.tenant_id : '-'}</td>
                       )}
                       <td className="px-2 py-1 border flex gap-2 items-center">
                         {/* Ações para conectar/desconectar - disponível para todos */}
-                        {inst.status === 'open' && (
+                        {normalizeStatus(inst.status) === 'open' && (
                           <ActionButton
                             icon={PowerOff}
                             onClick={() => dispatchModal({ type: 'OPEN_DISCONNECT', payload: inst })}
@@ -181,7 +181,7 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
                             title="Desconectar"
                           />
                         )}
-                        {inst.status === 'close' && (
+                        {normalizeStatus(inst.status) === 'close' && (
                           <ActionButton
                             icon={Power}
                             onClick={() => handleConnect(inst.instanceName)}
@@ -189,16 +189,6 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
                             disabled={isLoading}
                             loading={isLoading}
                             title="Conectar"
-                          />
-                        )}
-                        {inst.status === 'connecting' && (
-                          <ActionButton
-                            icon={RefreshCw}
-                            onClick={() => handleConnect(inst.instanceName, true)}
-                            variant="warning"
-                            disabled={isLoading}
-                            loading={isLoading}
-                            title="Forçar Regeneração"
                           />
                         )}
 

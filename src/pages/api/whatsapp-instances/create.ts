@@ -102,11 +102,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Salvar no banco de dados
+    const rawStatus = data.status || data.instance?.status || 'close';
+    // Normalizar status - qualquer status diferente de 'open' é tratado como 'close'
+    const normalizedStatus = rawStatus === 'open' ? 'open' : 'close';
+    
     const instanceData = {
       id: data.instanceId || data.id, // id retornado pela API externa
       instanceName,
       integration,
-      status: data.status || data.instance?.status || 'close',
+      status: normalizedStatus,
       qrcode: data.qrcode || null,
       apikey: data.apikey || null,
       tenant_id: tenantId,
