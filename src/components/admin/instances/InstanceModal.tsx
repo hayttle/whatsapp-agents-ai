@@ -1,21 +1,12 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui';
+import { Button } from '@/components/brand/Button';
+import { Alert } from '@/components/brand/Alert';
 import { Instance } from './types';
-type EmpresaDropdown = { id: string; name: string };
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@/components/ui';
-import { Button, Alert } from '@/components/brand';
 import GeneralSettings from './modal-parts/GeneralSettings';
-import WebhookSettings from './modal-parts/WebhookSettings';
-import BehaviorSettings from './modal-parts/BehaviorSettings';
 
-const EVENT_OPTIONS = [
-  "APPLICATION_STARTUP", "QRCODE_UPDATED", "MESSAGES_SET", "MESSAGES_UPSERT", 
-  "MESSAGES_UPDATE", "MESSAGES_DELETE", "SEND_MESSAGE", "CONTACTS_SET", 
-  "CONTACTS_UPSERT", "CONTACTS_UPDATE", "PRESENCE_UPDATE", "CHATS_SET", 
-  "CHATS_UPSERT", "CHATS_UPDATE", "CHATS_DELETE", "GROUPS_UPSERT", 
-  "GROUP_UPDATE", "GROUP_PARTICIPANTS_UPDATE", "CONNECTION_UPDATE", "CALL", 
-  "NEW_JWT_TOKEN", "TYPEBOT_START", "TYPEBOT_CHANGE_STATUS"
-];
+type EmpresaDropdown = { id: string; name: string };
 
 interface InstanceModalProps {
   isOpen: boolean;
@@ -29,16 +20,6 @@ interface InstanceModalProps {
 
 const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, instance, tenants, tenantId, isSuperAdmin = false }) => {
   const [instanceName, setInstanceName] = useState("");
-  const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
-  const [webhookByEvents, setWebhookByEvents] = useState(false);
-  const [webhookBase64, setWebhookBase64] = useState(true);
-  const [msgCall, setMsgCall] = useState("");
-  const [rejectCall, setRejectCall] = useState(false);
-  const [groupsIgnore, setGroupsIgnore] = useState(true);
-  const [alwaysOnline, setAlwaysOnline] = useState(false);
-  const [readMessages, setReadMessages] = useState(false);
-  const [readStatus, setReadStatus] = useState(false);
-  const [syncFullHistory, setSyncFullHistory] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState("");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
@@ -47,36 +28,12 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
   useEffect(() => {
     if (instance) {
       setInstanceName(instance.instanceName || "");
-      setWebhookEvents(instance.webhookEvents || []);
-      setWebhookByEvents(instance.webhookByEvents ?? false);
-      setWebhookBase64(instance.webhookBase64 ?? true);
-      setMsgCall(instance.msgCall || "");
-      setRejectCall(instance.rejectCall ?? false);
-      setGroupsIgnore(instance.groupsIgnore ?? true);
-      setAlwaysOnline(instance.alwaysOnline ?? false);
-      setReadMessages(instance.readMessages ?? false);
-      setReadStatus(instance.readStatus ?? false);
-      setSyncFullHistory(instance.syncFullHistory ?? false);
       setSelectedTenant(instance.tenant_id || "");
     } else {
       setInstanceName("");
-      setWebhookEvents([]);
-      setWebhookByEvents(false);
-      setWebhookBase64(true);
-      setMsgCall("");
-      setRejectCall(false);
-      setGroupsIgnore(true);
-      setAlwaysOnline(false);
-      setReadMessages(false);
-      setReadStatus(false);
-      setSyncFullHistory(false);
       setSelectedTenant(tenantId || "");
     }
   }, [instance, isOpen, tenantId]);
-
-  const handleEventChange = (event: string) => {
-    setWebhookEvents(prev => prev.includes(event) ? prev.filter(e => e !== event) : [...prev, event]);
-  };
 
   const handleInstanceNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -86,10 +43,6 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!webhookEvents || webhookEvents.length === 0) {
-      setError("Selecione pelo menos um evento para o webhook.");
-      return;
-    }
     setLoading(true);
     setMsg("");
     setError("");
@@ -97,16 +50,16 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
     const payload = {
       instanceName,
       integration: "WHATSAPP-BAILEYS",
-      webhookEvents,
-      webhookByEvents,
-      webhookBase64,
-      msgCall,
-      rejectCall,
-      groupsIgnore,
-      alwaysOnline,
-      readMessages,
-      readStatus,
-      syncFullHistory,
+      webhookEvents: ["MESSAGES_UPSERT"],
+      webhookByEvents: false,
+      webhookBase64: true,
+      msgCall: "",
+      rejectCall: false,
+      groupsIgnore: true,
+      alwaysOnline: false,
+      readMessages: false,
+      readStatus: false,
+      syncFullHistory: false,
       tenantId: isSuperAdmin && tenants.length > 0 ? selectedTenant : tenantId,
       ...(instance && { id: instance.id })
     };
@@ -162,24 +115,6 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
             selectedTenant={selectedTenant}
             setSelectedTenant={setSelectedTenant}
             isSuperAdmin={isSuperAdmin}
-          />
-          <WebhookSettings
-            webhookEvents={webhookEvents}
-            handleEventChange={handleEventChange}
-            EVENT_OPTIONS={EVENT_OPTIONS}
-            webhookByEvents={webhookByEvents}
-            setWebhookByEvents={setWebhookByEvents}
-            webhookBase64={webhookBase64}
-            setWebhookBase64={setWebhookBase64}
-          />
-          <BehaviorSettings
-            msgCall={msgCall} setMsgCall={setMsgCall}
-            rejectCall={rejectCall} setRejectCall={setRejectCall}
-            groupsIgnore={groupsIgnore} setGroupsIgnore={setGroupsIgnore}
-            alwaysOnline={alwaysOnline} setAlwaysOnline={setAlwaysOnline}
-            readMessages={readMessages} setReadMessages={setReadMessages}
-            readStatus={readStatus} setReadStatus={setReadStatus}
-            syncFullHistory={syncFullHistory} setSyncFullHistory={setSyncFullHistory}
           />
         </ModalBody>
         <ModalFooter>

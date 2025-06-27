@@ -23,8 +23,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { userData } = auth;
     const apiSupabase = createApiClient(req, res);
 
-    const { tenantId, instanceName, webhookByEvents, webhookBase64, webhookUrl, webhookEvents, msgCall, rejectCall, groupsIgnore, alwaysOnline, readMessages, readStatus, syncFullHistory } = req.body;
-    const finalWebhookUrl = webhookUrl || process.env.WEBHOOK_AGENT_URL || '';
+    const { tenantId, instanceName } = req.body;
+    const finalWebhookUrl = process.env.WEBHOOK_AGENT_URL || '';
     
     if (!tenantId) {
       return res.status(400).json({ error: 'tenantId é obrigatório' });
@@ -55,23 +55,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(409).json({ error: 'Já existe uma instância com este nome na plataforma. Por favor, escolha um nome diferente.' });
     }
 
-    // Montar payload para Evolution
+    // Montar payload para Evolution com valores padrão
     const evolutionPayload: Record<string, unknown> = {
       instanceName,
       integration: "WHATSAPP-BAILEYS",
-      msgCall,
-      rejectCall,
-      groupsIgnore,
-      alwaysOnline,
-      readMessages,
-      readStatus,
-      syncFullHistory,
+      msgCall: "",
+      rejectCall: false,
+      groupsIgnore: true,
+      alwaysOnline: false,
+      readMessages: false,
+      readStatus: false,
+      syncFullHistory: false,
       webhook: {
         enabled: true,
         url: process.env.WEBHOOK_AGENT_URL || '',
-        byEvents: webhookByEvents ?? false,
-        base64: webhookBase64 ?? true,
-        events: Array.isArray(webhookEvents) ? webhookEvents : [],
+        byEvents: false,
+        base64: true,
+        events: ["MESSAGES_UPSERT"],
       },
     };
     // Remover campos undefined
@@ -115,16 +115,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       apikey: data.apikey || null,
       tenant_id: tenantId,
       webhookUrl: finalWebhookUrl,
-      webhookEvents,
-      webhookByEvents: webhookByEvents ?? false,
-      webhookBase64: webhookBase64 ?? true,
-      msgCall,
-      rejectCall: rejectCall ?? false,
-      groupsIgnore: groupsIgnore ?? true,
-      alwaysOnline: alwaysOnline ?? false,
-      readMessages: readMessages ?? false,
-      readStatus: readStatus ?? false,
-      syncFullHistory: syncFullHistory ?? false,
+      webhookEvents: ["MESSAGES_UPSERT"],
+      webhookByEvents: false,
+      webhookBase64: true,
+      msgCall: "",
+      rejectCall: false,
+      groupsIgnore: true,
+      alwaysOnline: false,
+      readMessages: false,
+      readStatus: false,
+      syncFullHistory: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };

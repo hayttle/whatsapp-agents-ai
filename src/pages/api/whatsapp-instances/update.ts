@@ -32,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'EVOLUTION_API_URL not configured' });
     }
 
-    const { id, msgCall, webhookUrl, webhookEvents, webhookByEvents, webhookBase64, rejectCall, groupsIgnore, alwaysOnline, readMessages, readStatus, syncFullHistory } = req.body;
+    const { id } = req.body;
     if (!id) {
       return res.status(400).json({ error: 'id é obrigatório' });
     }
@@ -55,7 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const instanceName = instanceData.instanceName;
 
-    // 1. Atualizar configurações na API externa
+    // 1. Atualizar configurações na API externa com valores padrão
     const settingsResponse = await fetch(`${evolutionApiUrl}/settings/set/${encodeURIComponent(instanceName)}`, {
       method: 'POST',
       headers: {
@@ -63,13 +63,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'apikey': apikey,
       },
       body: JSON.stringify({
-        rejectCall,
-        msgCall,
-        groupsIgnore,
-        alwaysOnline,
-        readMessages,
-        readStatus,
-        syncFullHistory
+        rejectCall: false,
+        msgCall: "",
+        groupsIgnore: true,
+        alwaysOnline: false,
+        readMessages: false,
+        readStatus: false,
+        syncFullHistory: false
       }),
     });
 
@@ -80,7 +80,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // 2. Atualizar webhook na API externa
+    // 2. Atualizar webhook na API externa com valores padrão
     const webhookResponse = await fetch(`${evolutionApiUrl}/webhook/set/${encodeURIComponent(instanceName)}`, {
       method: 'POST',
       headers: {
@@ -94,9 +94,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           headers: {
             "Content-Type": "application/json"
           },
-          byEvents: webhookByEvents ?? false,
-          base64: webhookBase64 ?? true,
-          events: Array.isArray(webhookEvents) ? webhookEvents : [],
+          byEvents: false,
+          base64: true,
+          events: ["MESSAGES_UPSERT"],
         }
       }),
     });
@@ -122,20 +122,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // 3. Atualizar no banco local
+    // 3. Atualizar no banco local com valores padrão
     const { error: dbError } = await supabase.from('whatsapp_instances').update({
       integration: "WHATSAPP-BAILEYS",
-      msgCall,
-      webhookUrl,
-      webhookEvents,
-      webhookByEvents: webhookByEvents ?? false,
-      webhookBase64: webhookBase64 ?? true,
-      rejectCall,
-      groupsIgnore,
-      alwaysOnline,
-      readMessages,
-      readStatus,
-      syncFullHistory,
+      msgCall: "",
+      webhookUrl: process.env.WEBHOOK_AGENT_URL || "",
+      webhookEvents: ["MESSAGES_UPSERT"],
+      webhookByEvents: false,
+      webhookBase64: true,
+      rejectCall: false,
+      groupsIgnore: true,
+      alwaysOnline: false,
+      readMessages: false,
+      readStatus: false,
+      syncFullHistory: false,
       updated_at: new Date().toISOString(),
     }).eq('id', id);
 
