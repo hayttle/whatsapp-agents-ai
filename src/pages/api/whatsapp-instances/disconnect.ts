@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
-import { authenticateUser, createApiClient } from '@/lib/supabase/api';
+import { authenticateUser } from '@/lib/supabase/api';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,7 +21,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const { userData } = auth;
-    const apiSupabase = createApiClient(req, res);
 
     const apikey = process.env.EVOLUTION_API_KEY;
     if (!apikey) {
@@ -65,6 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .update({ 
           status: 'close', 
           qrcode: null, // Limpar o QR code antigo
+          phone_number: null, // Limpar o número vinculado
           updated_at: new Date().toISOString() 
         })
       .eq('instanceName', instanceName);

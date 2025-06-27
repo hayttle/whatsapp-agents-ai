@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
-import { authenticateUser, createApiClient } from '@/lib/supabase/api';
+import { authenticateUser } from '@/lib/supabase/api';
 import { randomUUID } from 'crypto';
 
 const supabase = createClient(
@@ -22,7 +22,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const { userData } = auth;
-    const apiSupabase = createApiClient(req, res);
 
     const { tenantId, instanceName } = req.body;
     const finalWebhookUrl = process.env.WEBHOOK_AGENT_URL || '';

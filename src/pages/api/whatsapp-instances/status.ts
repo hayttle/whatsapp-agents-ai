@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
-import { authenticateUser, createApiClient } from '@/lib/supabase/api';
+import { authenticateUser } from '@/lib/supabase/api';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,7 +21,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const { userData } = auth;
-    const apiSupabase = createApiClient(req, res);
 
     const apikey = process.env.EVOLUTION_API_KEY;
     if (!apikey) {
@@ -72,6 +71,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .from('whatsapp_instances')
         .update({ status: normalizedStatus, updated_at: new Date().toISOString() })
         .eq('instanceName', instanceName);
+
+      // Se status open, buscar o número conectado e atualizar no banco
+      if (normalizedStatus === 'open') {
+        try {
+          const fetchUrl = `${process.env.EVOLUTION_API_URL}/instance/fetchInstances`;
+          const fetchRes = await fetch(fetchUrl, {
+            method: 'GET',
+            headers: { 'apikey': apikey },
+          });
+          const fetchData = await fetchRes.json();
+          if (Array.isArray(fetchData)) {
+            const found = fetchData.find((item) => item.name === instanceName);
+            let phoneNumber = null;
+            if (found?.ownerJid) {
+              phoneNumber = found.ownerJid.replace(/@s\.whatsapp\.net$/, '');
+            }
+            if (phoneNumber) {
+              await supabase
+                .from('whatsapp_instances')
+                .update({ phone_number: phoneNumber })
+                .eq('instanceName', instanceName);
+            }
+          }
+        } catch {
+          // Não interrompe o fluxo se falhar
+        }
+      }
     }
 
     return res.status(200).json({ status: normalizedStatus, evolution: data });

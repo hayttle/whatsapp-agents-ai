@@ -84,7 +84,6 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({
   qr, 
   code, 
   onClose, 
-  instanceName,
   onStatusUpdate 
 }) => {
   const [countdown, setCountdown] = useState(20);

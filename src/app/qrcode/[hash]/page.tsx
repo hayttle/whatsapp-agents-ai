@@ -5,6 +5,7 @@ import { RenderQrCode } from '@/components/admin/instances/QRCodeComponents';
 export default function QrCodePage({ params }: { params: Promise<{ hash: string }> }) {
   const { hash } = use(params);
   const [qrcode, setQrcode] = useState<string | null>(null);
+  const [instanceName, setInstanceName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [timer, setTimer] = useState(20);
   const [expired, setExpired] = useState(false);
@@ -17,6 +18,9 @@ export default function QrCodePage({ params }: { params: Promise<{ hash: string 
           if (prev <= 1) {
             setExpired(true);
             clearInterval(interval);
+            if (instanceName) {
+              fetch(`/api/whatsapp-instances/status?instanceName=${encodeURIComponent(instanceName)}`);
+            }
             return 0;
           }
           return prev - 1;
@@ -24,7 +28,7 @@ export default function QrCodePage({ params }: { params: Promise<{ hash: string 
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [qrcode, expired]);
+  }, [qrcode, expired, instanceName]);
 
   useEffect(() => {
     fetch('/api/public/whatsapp-instances/connect', {
@@ -35,6 +39,7 @@ export default function QrCodePage({ params }: { params: Promise<{ hash: string 
       .then(async (res) => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Erro desconhecido');
+        setInstanceName(data.instanceName || null);
         if (typeof data.qrcode === 'string' && data.qrcode.startsWith('data:image/')) {
           setQrcode(data.qrcode);
         } else {

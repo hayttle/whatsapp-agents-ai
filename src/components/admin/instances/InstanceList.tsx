@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Instance } from "./types";
 import InstanceModal from "./InstanceModal";
 import { ConnectionModal } from "./QRCodeComponents";
-import { ConfirmationModal, ActionButton } from "@/components/ui";
+import { ConfirmationModal } from "@/components/ui";
 import { Button } from '@/components/brand';
 import { useInstanceActions } from "@/hooks/useInstanceActions";
 import { useInstances } from "@/hooks/useInstances";
@@ -155,7 +155,9 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
                       <span className="text-gray-500"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2.08a2 2 0 0 1 1.09-1.79l7-3.11a2 2 0 0 1 1.82 0l7 3.11A2 2 0 0 1 22 16.92z"/><circle cx="12" cy="7" r="4"/></svg></span>
                       <div>
                         <div className="font-semibold">Número</div>
-                        <div className="text-gray-600 text-sm">Telefone não disponível</div>
+                        <div className="text-gray-600 text-sm">
+                          {inst.phone_number ? inst.phone_number : 'Telefone não disponível'}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-md">
@@ -163,6 +165,9 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
                       <div>
                         <div className="font-semibold">Nome</div>
                         <div className="text-gray-600 text-sm">{inst.instanceName}</div>
+                        {isSuperAdmin && inst.tenant_id && empresas[inst.tenant_id] && (
+                          <div className="text-xs text-gray-500 mt-1">Empresa: {empresas[inst.tenant_id]}</div>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -273,7 +278,7 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
           confirmText="Deletar"
           isLoading={actionLoading === modalState.payload.instanceName}
         >
-          Tem certeza que deseja deletar a instância <span className="font-semibold">"{modalState.payload.instanceName}"</span>? Essa ação não pode ser desfeita.
+          Tem certeza que deseja deletar a instância <span className="font-semibold">&quot;{modalState.payload.instanceName}&quot;</span>? Essa ação não pode ser desfeita.
         </ConfirmationModal>
       )}
       {modalState.type === 'DISCONNECT' && (
@@ -285,7 +290,7 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
           confirmText="Desconectar"
           isLoading={actionLoading === modalState.payload.instanceName}
         >
-          Tem certeza que deseja desconectar a instância <span className="font-semibold">"{modalState.payload.instanceName}"</span>?
+          Tem certeza que deseja desconectar a instância <span className="font-semibold">&quot;{modalState.payload.instanceName}&quot;</span>?
         </ConfirmationModal>
       )}
     </div>

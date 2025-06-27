@@ -20,4 +20,5 @@ export interface Instance {
   created_at?: string;
   updated_at?: string;
   public_hash?: string;
+  phone_number?: string | null;
 } 

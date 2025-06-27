@@ -3,9 +3,9 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 export default function TestAuthPage() {
-  const [authStatus, setAuthStatus] = useState<string>('Carregando...');
+  const [authStatus] = useState<string | null>(null);
   const [userData, setUserData] = useState<unknown>(null);
-  const [apiData, setApiData] = useState<unknown>(null);
+  const [apiData] = useState<unknown>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 

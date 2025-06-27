@@ -3,12 +3,7 @@ import { User } from '@/services/userService';
 import { userService } from '@/services/userService';
 import { tenantService, Tenant } from '@/services/tenantService';
 
-interface UseUsersProps {
-  isSuperAdmin: boolean;
-  tenantId?: string;
-}
-
-export const useUsers = ({ isSuperAdmin, tenantId }: UseUsersProps) => {
+export const useUsers = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [empresas, setEmpresas] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);

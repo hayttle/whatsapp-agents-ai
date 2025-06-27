@@ -62,5 +62,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
     .eq('public_hash', hash);
 
-  return res.status(200).json({ qrcode: qrCodeData });
+  return res.status(200).json({ qrcode: qrCodeData, instanceName: instance.instanceName });
 } 

@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
-import { authenticateUser, createApiClient } from '@/lib/supabase/api';
+import { authenticateUser } from '@/lib/supabase/api';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,7 +22,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const { userData } = auth;
-    const apiSupabase = createApiClient(req, res);
 
     const apikey = process.env.EVOLUTION_API_KEY;
     if (!apikey) {
@@ -164,6 +163,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Normalizar status - qualquer status diferente de 'open' é tratado como 'close'
     const normalizedStatus = statusToSet === 'open' ? 'open' : 'close';
     
+    // Atualizar status e qrcode normalmente
     const { error: dbError } = await supabase
       .from('whatsapp_instances')
       .update({ 
@@ -175,6 +175,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (dbError) {
         return res.status(500).json({ error: 'Erro ao salvar o novo QR Code no banco de dados.' });
+    }
+
+    // Se conectou, buscar o número conectado e atualizar no banco
+    if (normalizedStatus === 'open') {
+      try {
+        const fetchUrl = `${process.env.EVOLUTION_API_URL}/instance/fetchInstances`;
+        const fetchRes = await fetch(fetchUrl, {
+          method: 'GET',
+          headers: { 'apikey': apikey },
+        });
+        const fetchData = await fetchRes.json();
+        if (Array.isArray(fetchData)) {
+          const found = fetchData.find((item) => item.instance?.instanceName === instanceName);
+          const phoneNumber = found?.instance?.owner || null;
+          if (phoneNumber) {
+            await supabase
+              .from('whatsapp_instances')
+              .update({ phone_number: phoneNumber })
+              .eq('instanceName', instanceName);
+          }
+        }
+      } catch {
+        // Não interrompe o fluxo se falhar
+      }
     }
 
     // 3. Retornar os dados do QR code para o frontend para exibição imediata
