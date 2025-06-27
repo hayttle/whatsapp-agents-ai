@@ -19,7 +19,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       primary: 'bg-brand-green-light hover:bg-brand-green-medium text-white focus:ring-brand-green-light shadow-sm',
       secondary: 'bg-blue-100 hover:bg-blue-200 text-blue-900 focus:ring-blue-200 shadow-sm',
       outline: 'border-2 border-brand-green-light text-brand-green-light hover:bg-brand-green-light hover:text-white focus:ring-brand-green-light',
-      ghost: 'text-brand-gray-dark hover:bg-brand-gray-dark hover:text-white focus:ring-brand-gray-dark',
+      ghost: 'bg-white border border-gray-200 shadow-sm text-brand-gray-dark hover:bg-gray-50 hover:border-gray-300',
       destructive: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-600 shadow-sm',
       warning: 'bg-yellow-50 hover:bg-yellow-100 text-yellow-800 shadow-sm',
     };

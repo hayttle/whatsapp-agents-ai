@@ -5,10 +5,12 @@ import { Instance } from "./types";
 import InstanceModal from "./InstanceModal";
 import { ConnectionModal } from "./QRCodeComponents";
 import { ConfirmationModal, ActionButton } from "@/components/ui";
+import { Button } from '@/components/brand';
 import { useInstanceActions } from "@/hooks/useInstanceActions";
 import { useInstances } from "@/hooks/useInstances";
 import { instanceService } from "@/services/instanceService";
-import { Power, Trash2, Plus, RefreshCw, PowerOff } from "lucide-react";
+import { Power, Trash2, Plus, RefreshCw, PowerOff, Clipboard } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/brand';
 
 interface InstanceListProps {
   isSuperAdmin: boolean;
@@ -119,10 +121,10 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
   };
 
   return (
-    <div className="overflow-x-auto">
+    <div className="space-y-6">
       <div className="mb-4 flex justify-end">
-        <button 
-          className="px-4 py-2 text-sm font-semibold text-white bg-brand-gray-dark rounded-md hover:bg-brand-gray-deep transition-colors flex items-center gap-2"
+        <button
+          className="px-4 py-2 text-sm font-semibold text-white bg-brand-gray-dark rounded-md hover:bg-brand-gray-deep transition-colors flex items-center gap-2 whitespace-nowrap self-end"
           onClick={() => dispatchModal({ type: 'OPEN_CREATE' })}
         >
           <Plus className="w-4 h-4" />
@@ -133,159 +135,146 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
         <div>Carregando instâncias...</div>
       ) : (
         <>
-          <table className="min-w-full text-sm border">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="px-2 py-1 border">Nome</th>
-                <th className="px-2 py-1 border">Status</th>
-                <th className="px-2 py-1 border">QR Code</th>
-                {isSuperAdmin && <th className="px-2 py-1 border">Empresa</th>}
-                <th className="px-2 py-1 border">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {instances.length > 0 ? (
-                instances.map((inst) => {
-                  const isLoading = actionLoading === inst.instanceName;
-                  return (
-                    <tr key={inst.id} className="border-t">
-                      <td className="px-2 py-1 border">{inst.instanceName}</td>
-                      <td className="px-2 py-1 border">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          normalizeStatus(inst.status) === 'open' ? 'bg-green-100 text-brand-green-dark' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {statusDisplay[normalizeStatus(inst.status)] || 'Desconectado'}
-                        </span>
-                      </td>
-                      <td className="px-2 py-1 border">
-                        <span className="text-gray-400">-</span>
-                        {normalizeStatus(inst.status) === 'close' && inst.public_hash && (
-                          <div className="mt-2 flex items-center gap-2">
-                            <input
-                              type="text"
-                              readOnly
-                              value={`${window.location.origin}/qrcode/${inst.public_hash}`}
-                              className="text-xs bg-gray-100 rounded px-2 py-1 w-64"
-                              onFocus={e => e.target.select()}
-                            />
-                            <button
-                              className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
-                              onClick={() => {
-                                navigator.clipboard.writeText(`${window.location.origin}/qrcode/${inst.public_hash}`);
-                                toast.success('Link copiado!');
-                              }}
-                              type="button"
-                            >
-                              Copiar link
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                      {isSuperAdmin && (
-                        <td className="px-2 py-1 border">{inst.tenant_id ? empresas[inst.tenant_id] || inst.tenant_id : '-'}</td>
-                      )}
-                      <td className="px-2 py-1 border flex gap-2 items-center">
-                        {/* Ações para conectar/desconectar - disponível para todos */}
-                        {normalizeStatus(inst.status) === 'open' && (
-                          <ActionButton
-                            icon={PowerOff}
-                            onClick={() => dispatchModal({ type: 'OPEN_DISCONNECT', payload: inst })}
-                            variant="warning"
-                            disabled={isLoading}
-                            loading={isLoading}
-                            title="Desconectar"
+          {instances.length > 0 ? (
+            instances.map((inst) => {
+              const isLoading = actionLoading === inst.instanceName;
+              return (
+                <Card key={inst.id} className="">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-semibold mb-1">Status da Conexão: <span className={normalizeStatus(inst.status) === 'open' ? 'text-green-600' : 'text-red-600'}>{statusDisplay[normalizeStatus(inst.status)]}</span></CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2 p-3 bg-gray-50 rounded">
+                      <span className="text-gray-500"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2.08a2 2 0 0 1 1.09-1.79l7-3.11a2 2 0 0 1 1.82 0l7 3.11A2 2 0 0 1 22 16.92z"/><circle cx="12" cy="7" r="4"/></svg></span>
+                      <div>
+                        <div className="font-semibold">Número</div>
+                        <div className="text-gray-600 text-sm">Telefone não disponível</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 p-3 bg-gray-50 rounded">
+                      <span className="text-gray-500"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a10 10 0 0 1 13 0"/></svg></span>
+                      <div>
+                        <div className="font-semibold">Nome</div>
+                        <div className="text-gray-600 text-sm">{inst.instanceName}</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                  {normalizeStatus(inst.status) === 'close' && inst.public_hash && (
+                    <CardContent className="mt-2">
+                      <div className="bg-gray-50 p-4 rounded flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                        <div>
+                          <div className="font-semibold mb-1">URL do Cliente</div>
+                          <div className="text-gray-600 text-sm mb-2">Envie essa url para o seu cliente escanear o QRCode</div>
+                          <input
+                            type="text"
+                            readOnly
+                            value={`${window.location.origin}/qrcode/${inst.public_hash}`}
+                            className="text-xs bg-gray-100 rounded px-2 py-1 w-full md:w-96"
+                            onFocus={e => e.target.select()}
                           />
-                        )}
-                        {normalizeStatus(inst.status) === 'close' && (
-                          <ActionButton
-                            icon={Power}
-                            onClick={() => handleConnect(inst.instanceName)}
-                            variant="primary"
-                            disabled={isLoading}
-                            loading={isLoading}
-                            title="Conectar"
-                          />
-                        )}
-
-                        {/* Atualizar status - disponível para todos */}
-                        <ActionButton
-                          icon={RefreshCw}
-                          onClick={() => handleUpdateStatus(inst.instanceName)}
+                        </div>
+                        <Button
                           variant="ghost"
-                          title="Atualizar Status"
-                        />
-                        
-                        {/* Ações de exclusão - disponível para todos */}
-                        <ActionButton
-                          icon={Trash2}
-                          onClick={() => dispatchModal({ type: 'OPEN_DELETE', payload: inst })}
-                          variant="destructive"
-                          disabled={isLoading}
-                          loading={isLoading}
-                          title="Deletar"
-                        />
-                        
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={isSuperAdmin ? 6 : 5} className="text-center py-2">Nenhuma instância encontrada.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-
-          <InstanceModal
-            isOpen={modalState.type === 'CREATE'}
-            onClose={closeModal}
-            onSave={handleSave}
-            tenants={isSuperAdmin ? Object.entries(empresas).map(([id, name]) => ({ id, name })) : []}
-            tenantId={tenantId}
-            isSuperAdmin={isSuperAdmin}
-          />
-
-          {modalState.type === 'CONNECT' && (
-            <ConnectionModal
-              qr={modalState.payload.qr}
-              code={modalState.payload.code}
-              onClose={closeModal}
-              onStatusUpdate={() => {
-                // Atualizar o status da instância quando o modal fechar
-                if (modalState.payload.instanceName) {
-                  handleUpdateStatus(modalState.payload.instanceName);
-                }
-              }}
-            />
-          )}
-
-          {modalState.type === 'DELETE' && (
-            <ConfirmationModal
-              isOpen={true}
-              onClose={closeModal}
-              onConfirm={() => handleDelete(modalState.payload.instanceName)}
-              title="Confirmar exclusão"
-              confirmText="Deletar"
-              isLoading={actionLoading === modalState.payload.instanceName}
-            >
-              Tem certeza que deseja deletar a instância <span className="font-semibold">&quot;{modalState.payload.instanceName}&quot;</span>? Essa ação não pode ser desfeita.
-            </ConfirmationModal>
-          )}
-
-          {modalState.type === 'DISCONNECT' && (
-            <ConfirmationModal
-              isOpen={true}
-              onClose={closeModal}
-              onConfirm={() => handleDisconnect(modalState.payload.instanceName)}
-              title="Confirmar Desconexão"
-              confirmText="Desconectar"
-              isLoading={actionLoading === modalState.payload.instanceName}
-            >
-              Tem certeza que deseja desconectar a instância <span className="font-semibold">&quot;{modalState.payload.instanceName}&quot;</span>?
-            </ConfirmationModal>
+                          size="sm"
+                          className="mt-2 md:mt-0"
+                          leftIcon={<Clipboard className="w-4 h-4" />}
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${window.location.origin}/qrcode/${inst.public_hash}`);
+                            toast.success('Link copiado!');
+                          }}
+                        >
+                          Copiar link
+                        </Button>
+                      </div>
+                    </CardContent>
+                  )}
+                  <CardFooter className="flex gap-2 justify-end">
+                    {normalizeStatus(inst.status) === 'open' ? (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => dispatchModal({ type: 'OPEN_DISCONNECT', payload: inst })}
+                        loading={isLoading}
+                      >
+                        Desconectar
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleConnect(inst.instanceName)}
+                        loading={isLoading}
+                      >
+                        Conectar
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleUpdateStatus(inst.instanceName)}
+                    >
+                      Atualizar Status
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => dispatchModal({ type: 'OPEN_DELETE', payload: inst })}
+                      loading={isLoading}
+                    >
+                      Deletar
+                    </Button>
+                  </CardFooter>
+                </Card>
+              );
+            })
+          ) : (
+            <div className="text-center py-2">Nenhuma instância encontrada.</div>
           )}
         </>
+      )}
+      <InstanceModal
+        isOpen={modalState.type === 'CREATE'}
+        onClose={closeModal}
+        onSave={handleSave}
+        tenants={isSuperAdmin ? Object.entries(empresas).map(([id, name]) => ({ id, name })) : []}
+        tenantId={tenantId}
+        isSuperAdmin={isSuperAdmin}
+      />
+      {modalState.type === 'CONNECT' && (
+        <ConnectionModal
+          qr={modalState.payload.qr}
+          code={modalState.payload.code}
+          onClose={closeModal}
+          onStatusUpdate={() => {
+            if (modalState.payload.instanceName) {
+              handleUpdateStatus(modalState.payload.instanceName);
+            }
+          }}
+        />
+      )}
+      {modalState.type === 'DELETE' && (
+        <ConfirmationModal
+          isOpen={true}
+          onClose={closeModal}
+          onConfirm={() => handleDelete(modalState.payload.instanceName)}
+          title="Confirmar exclusão"
+          confirmText="Deletar"
+          isLoading={actionLoading === modalState.payload.instanceName}
+        >
+          Tem certeza que deseja deletar a instância <span className="font-semibold">"{modalState.payload.instanceName}"</span>? Essa ação não pode ser desfeita.
+        </ConfirmationModal>
+      )}
+      {modalState.type === 'DISCONNECT' && (
+        <ConfirmationModal
+          isOpen={true}
+          onClose={closeModal}
+          onConfirm={() => handleDisconnect(modalState.payload.instanceName)}
+          title="Confirmar Desconexão"
+          confirmText="Desconectar"
+          isLoading={actionLoading === modalState.payload.instanceName}
+        >
+          Tem certeza que deseja desconectar a instância <span className="font-semibold">"{modalState.payload.instanceName}"</span>?
+        </ConfirmationModal>
       )}
     </div>
   );
