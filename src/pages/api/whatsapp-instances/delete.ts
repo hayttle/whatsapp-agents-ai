@@ -22,16 +22,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { userData } = auth;
 
-    const apikey = process.env.EVOLUTION_API_KEY;
-    if (!apikey) {
-      return res.status(500).json({ error: 'API key not configured' });
-    }
+  const apikey = process.env.EVOLUTION_API_KEY;
+  if (!apikey) {
+    return res.status(500).json({ error: 'API key not configured' });
+  }
 
-    // instanceName pode vir do body (JSON) ou query
-    const instanceName = req.body?.instanceName || req.query.instanceName;
-    if (!instanceName) {
-      return res.status(400).json({ error: 'instanceName é obrigatório' });
-    }
+  // instanceName pode vir do body (JSON) ou query
+  const instanceName = req.body?.instanceName || req.query.instanceName;
+  if (!instanceName) {
+    return res.status(400).json({ error: 'instanceName é obrigatório' });
+  }
 
     // Verificar se a instância existe e se o usuário tem permissão
     const { data: existingInstance } = await supabase

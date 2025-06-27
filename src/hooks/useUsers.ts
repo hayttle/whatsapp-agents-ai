@@ -26,8 +26,8 @@ export const useUsers = () => {
       setUsers(data.users || []);
       
       // Buscar empresas para super admin
-      const tenantsData = await tenantService.listTenants();
-      setEmpresas((tenantsData.tenants || []).map((t: Tenant) => ({ ...t, name: t.name })));
+        const tenantsData = await tenantService.listTenants();
+        setEmpresas((tenantsData.tenants || []).map((t: Tenant) => ({ ...t, name: t.name })));
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
       setError(errorMessage);
