@@ -6,33 +6,37 @@ export default function TestAuthPage() {
   const [authStatus, setAuthStatus] = useState<string>('Carregando...');
   const [userData, setUserData] = useState<unknown>(null);
   const [apiData, setApiData] = useState<unknown>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     const testAuth = async () => {
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        setError(`Erro de autenticação: ${authError.message}`);
+        return;
+      }
+
+      if (!user) {
+        setError('Usuário não autenticado');
+        return;
+      }
+
       try {
-        console.log('🧪 Teste de autenticação iniciado');
-        
-        // Teste 1: Verificar autenticação no frontend
-        const supabase = createClient();
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
-        console.log('🔐 Teste 1 - Auth no frontend:', { user, authError });
-        setAuthStatus(`Auth: ${user ? 'OK' : 'Falhou'} - ${authError || 'Sem erro'}`);
-        
-        if (user) {
-          setUserData(user);
-          
-          // Teste 2: Chamar a API
-          console.log('📡 Teste 2 - Chamando API...');
-          const response = await fetch('/api/users/current');
-          const apiResponse = await response.json();
-          
-          console.log('📦 Teste 2 - Resposta da API:', { status: response.status, data: apiResponse });
-          setApiData(apiResponse);
+        const response = await fetch('/api/users/current');
+        const apiResponse = await response.json();
+
+        if (!response.ok) {
+          setError(`Erro na API: ${apiResponse.error || 'Erro desconhecido'}`);
+          return;
         }
-      } catch (error) {
-        console.error('❌ Erro no teste:', error);
-        setAuthStatus(`Erro: ${error}`);
+
+        setUserData(apiResponse);
+        setSuccess('Teste de autenticação bem-sucedido!');
+      } catch (err) {
+        setError(`Erro na requisição: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
       }
     };
 
@@ -58,6 +62,20 @@ export default function TestAuthPage() {
           <h2 className="font-bold">Dados da API:</h2>
           <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">{apiData ? JSON.stringify(apiData, null, 2) : 'Nenhum dado'}</pre>
         </div>
+
+        {error && (
+          <div className="mt-4 bg-red-100 p-4 rounded">
+            <h2 className="font-bold">Erro:</h2>
+            <p className="text-sm">{error}</p>
+          </div>
+        )}
+
+        {success && (
+          <div className="mt-4 bg-green-100 p-4 rounded">
+            <h2 className="font-bold">Sucesso:</h2>
+            <p className="text-sm">{success}</p>
+          </div>
+        )}
       </div>
     </div>
   );

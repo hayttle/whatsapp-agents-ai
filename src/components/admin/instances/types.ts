@@ -19,4 +19,5 @@ export interface Instance {
   syncFullHistory?: boolean;
   created_at?: string;
   updated_at?: string;
+  public_hash?: string;
 } 

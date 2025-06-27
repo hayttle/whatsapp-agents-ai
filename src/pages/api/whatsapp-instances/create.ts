@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { authenticateUser, createApiClient } from '@/lib/supabase/api';
+import { randomUUID } from 'crypto';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -127,6 +128,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       syncFullHistory: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      public_hash: randomUUID(),
     };
     const { error: dbError } = await supabase.from('whatsapp_instances').insert(instanceData);
     if (dbError) {

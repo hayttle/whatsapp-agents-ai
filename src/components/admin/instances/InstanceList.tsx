@@ -159,6 +159,27 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
                       </td>
                       <td className="px-2 py-1 border">
                         <span className="text-gray-400">-</span>
+                        {normalizeStatus(inst.status) === 'close' && inst.public_hash && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <input
+                              type="text"
+                              readOnly
+                              value={`${window.location.origin}/qrcode/${inst.public_hash}`}
+                              className="text-xs bg-gray-100 rounded px-2 py-1 w-64"
+                              onFocus={e => e.target.select()}
+                            />
+                            <button
+                              className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                              onClick={() => {
+                                navigator.clipboard.writeText(`${window.location.origin}/qrcode/${inst.public_hash}`);
+                                toast.success('Link copiado!');
+                              }}
+                              type="button"
+                            >
+                              Copiar link
+                            </button>
+                          </div>
+                        )}
                       </td>
                       {isSuperAdmin && (
                         <td className="px-2 py-1 border">{inst.tenant_id ? empresas[inst.tenant_id] || inst.tenant_id : '-'}</td>
@@ -220,7 +241,6 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
             isOpen={modalState.type === 'CREATE'}
             onClose={closeModal}
             onSave={handleSave}
-            instance={undefined}
             tenants={isSuperAdmin ? Object.entries(empresas).map(([id, name]) => ({ id, name })) : []}
             tenantId={tenantId}
             isSuperAdmin={isSuperAdmin}
