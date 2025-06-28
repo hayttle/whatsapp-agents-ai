@@ -85,40 +85,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (providerError || !provider) {
         return res.status(400).json({ error: 'Servidor WhatsApp externo não encontrado.' });
       }
-      // Validar webhook do agente
-      if (!agentWebhookUrl) {
-        return res.status(400).json({ error: 'O agente vinculado deve possuir um webhook configurado para provedores externos.' });
-      }
-      // Montar payload igual ao nativo, mas usando dados do provedor externo
+      // Montar payload mínimo para provedor externo
       const externalPayload: Record<string, unknown> = {
         instanceName,
-        integration: "WHATSAPP-BAILEYS",
-        msgCall: "",
-        rejectCall: false,
-        groupsIgnore: true,
-        alwaysOnline: false,
-        readMessages: false,
-        readStatus: false,
-        syncFullHistory: false,
-        webhook: {
-          enabled: true,
-          url: agentWebhookUrl,
-          byEvents: false,
-          base64: true,
-          events: ["MESSAGES_UPSERT"],
-        },
+        integration: "WHATSAPP-BAILEYS"
       };
-      // Limpar undefined
-      Object.keys(externalPayload).forEach(key => {
-        if (externalPayload[key] === undefined) delete externalPayload[key];
-      });
-      if (externalPayload.webhook && typeof externalPayload.webhook === 'object') {
-        Object.keys(externalPayload.webhook as { [key: string]: unknown }).forEach(key => {
-          if ((externalPayload.webhook as { [key: string]: unknown })[key] === undefined) {
-            delete (externalPayload.webhook as { [key: string]: unknown })[key];
-          }
-        });
-      }
       // Criar na API do provedor externo
       const response = await fetch(provider.server_url.replace(/\/$/, '') + '/instance/create', {
         method: 'POST',
@@ -129,6 +100,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         body: JSON.stringify(externalPayload),
       });
       const data = await response.json();
+      // LOG: Response recebido do provedor externo
+      console.log('[WHATSAPP-INSTANCE][EXTERNAL] Response status:', response.status);
+      console.log('[WHATSAPP-INSTANCE][EXTERNAL] Response body:', JSON.stringify(data));
       if (!response.ok) {
         return res.status(response.status).json({ error: data.error || data.response?.message?.[0] || 'Erro ao criar instância no provedor externo' });
     }
@@ -159,6 +133,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         provider_id,
         ...(req.body.agent_id ? { agent_id: req.body.agent_id } : {}),
       };
+      // LOG: Payload salvo no banco
+      console.log('[WHATSAPP-INSTANCE][EXTERNAL] instanceData salvo:', JSON.stringify(instanceData));
     } else {
     // Montar payload para Evolution com valores padrão
     const evolutionPayload: Record<string, unknown> = {

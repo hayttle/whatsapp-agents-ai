@@ -7,6 +7,7 @@ import { Instance } from './types';
 import GeneralSettings from './modal-parts/GeneralSettings';
 import { useAgents } from '@/hooks/useAgents';
 import { Agent } from '@/services/agentService';
+import { Save } from 'lucide-react';
 
 type EmpresaDropdown = { id: string; name: string };
 
@@ -182,14 +183,14 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
           )}
           {providerType === 'externo' && (
             <div>
-              <label className="block text-sm font-medium mb-1">Agente</label>
+              <label className="block text-sm font-medium mb-1">Agente IA</label>
               <select
                 className="w-full border rounded px-3 py-2 text-sm"
                 value={agentId}
                 onChange={e => setAgentId(e.target.value)}
                 disabled={loadingAgents}
-              >
-                <option value="">Selecione o agente (opcional)</option>
+              >ao
+                <option value="">Selecione o agente</option>
                 {agentes.map((a: Agent) => (
                   <option key={a.id} value={a.id}>{a.title}</option>
                 ))}
@@ -210,6 +211,7 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
             type="submit"
             loading={loading}
             disabled={loading}
+            leftIcon={<Save className="w-4 h-4" />}
           >
             Criar Instância
           </Button>

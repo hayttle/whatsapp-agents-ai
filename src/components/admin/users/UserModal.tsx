@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@/components/ui';
 import { Input, Select, Button, Alert } from '@/components/brand';
-import { User, Mail, Lock, Briefcase, Building } from "lucide-react";
+import { User, Mail, Lock, Briefcase, Building, Save } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { UserModalProps } from './types';
 
@@ -267,6 +267,7 @@ export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantI
             type="submit"
             loading={loading}
             disabled={loading}
+            leftIcon={<Save className="w-4 h-4" />}
           >
             {user ? 'Salvar Alterações' : 'Criar Usuário'}
           </Button>

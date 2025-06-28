@@ -2,6 +2,7 @@
 import React, { useEffect, useRef } from 'react';
 import Modal, { ModalHeader, ModalBody, ModalFooter } from './Modal';
 import { Button } from '@/components/brand';
+import { Trash2 } from 'lucide-react';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -82,6 +83,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             disabled={isLoading}
             variant="destructive"
             type="button"
+            leftIcon={<Trash2 className="w-4 h-4" />}
           >
             {confirmText}
           </Button>

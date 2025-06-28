@@ -4,7 +4,7 @@ import { agentService } from "@/services/agentService";
 import { tenantService, Tenant } from "@/services/tenantService";
 import Modal, { ModalHeader, ModalBody, ModalFooter } from "@/components/ui/Modal";
 import { Input, Button, Select, Alert, Switch } from "@/components/brand";
-import { Building } from "lucide-react";
+import { Building, Save } from "lucide-react";
 import { AgentModalProps } from "./types";
 
 export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdmin }: AgentModalProps) {
@@ -221,6 +221,7 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
             type="submit"
             loading={loading}
             disabled={loading}
+            leftIcon={<Save className="w-4 h-4" />}
           >
             {agent ? "Salvar Alterações" : "Criar Agente"}
           </Button>

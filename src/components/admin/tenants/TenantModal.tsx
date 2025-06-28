@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@/components/ui';
 import { Button, Alert, Input } from '@/components/brand';
-import { Building2, Mail, Phone, FileText } from "lucide-react";
+import { Building2, Mail, Phone, FileText, Save } from "lucide-react";
 import { TenantModalProps } from './types';
 
 const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tenant }) => {
@@ -160,6 +160,7 @@ const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tena
             type="submit"
             loading={loading}
             disabled={loading}
+            leftIcon={<Save className="w-4 h-4" />}
           >
             {tenant ? 'Salvar Alterações' : 'Criar Empresa'}
           </Button>

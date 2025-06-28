@@ -4,6 +4,7 @@ import { Button, Alert } from '@/components/brand';
 import ProviderSettings from './ProviderSettings';
 import { tenantService, Tenant } from '@/services/tenantService';
 import { userService } from '@/services/userService';
+import { Save } from 'lucide-react';
 
 export interface ProviderModalProps {
   open: boolean;
@@ -112,7 +113,7 @@ export function ProviderModal({ open, onClose, onSaved, provider }: ProviderModa
           isSuperAdmin={isSuperAdmin}
           renderFooter={() => (
             <div className="flex flex-row-reverse gap-2 w-full mt-6">
-              <Button type="submit" loading={loading} disabled={loading}>
+              <Button type="submit" loading={loading} disabled={loading} leftIcon={<Save className="w-4 h-4" />}>
                 Salvar
               </Button>
               <Button type="button" onClick={onClose} variant="outline" disabled={loading}>
