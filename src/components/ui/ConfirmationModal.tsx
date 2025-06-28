@@ -22,7 +22,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   onConfirm,
   title,
   children,
-  confirmText = 'Confirmar',
+  confirmText = 'Remover',
   cancelText = 'Cancelar',
   isLoading = false,
   error,

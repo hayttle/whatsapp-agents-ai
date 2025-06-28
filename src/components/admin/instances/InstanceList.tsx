@@ -456,7 +456,7 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
                       loading={isLoading}
                       leftIcon={<Trash2 className="w-4 h-4" />}
                     >
-                      Deletar
+                      Remover
                     </Button>
                   </CardFooter>
                 </Card>
@@ -507,14 +507,13 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
         isOpen={modalState.type === 'DELETE'}
         onClose={closeModal}
         onConfirm={() => handleDelete(modalState.type === 'DELETE' ? modalState.payload.instanceName : '')}
-        title="Confirmar Exclusão"
-        confirmText="Excluir"
+        title="Remover instância"
+        confirmText="Remover"
         cancelText="Cancelar"
         isLoading={actionLoading === (modalState.type === 'DELETE' ? modalState.payload.instanceName : '')}
       >
         <p>
-          Tem certeza que deseja excluir a instância <span className="font-semibold">&quot;{modalState.type === 'DELETE' ? modalState.payload.instanceName : ''}&quot;</span>? 
-          Esta ação não pode ser desfeita.
+          Tem certeza que deseja remover a instância <span className="font-semibold">&quot;{modalState.type === 'DELETE' ? modalState.payload.instanceName : ''}&quot;</span>? Esta ação não pode ser desfeita.
         </p>
       </ConfirmationModal>
       <ConfirmationModal
