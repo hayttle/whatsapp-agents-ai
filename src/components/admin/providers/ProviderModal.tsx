@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Modal, { ModalHeader, ModalBody } from '@/components/ui/Modal';
 import { Button, Alert } from '@/components/brand';
-import ProviderSettings, { ProviderType } from './ProviderSettings';
+import ProviderSettings from './ProviderSettings';
 import { tenantService, Tenant } from '@/services/tenantService';
 import { userService } from '@/services/userService';
 
@@ -12,7 +12,7 @@ export interface ProviderModalProps {
   provider?: {
     id?: string;
     name: string;
-    provider_type: ProviderType;
+    provider_type: 'evolution';
     server_url: string;
     api_key: string;
     tenant_id?: string;
@@ -44,7 +44,7 @@ export function ProviderModal({ open, onClose, onSaved, provider }: ProviderModa
     if (open) fetchUserAndTenants();
   }, [open]);
 
-  const handleSubmit = async (data: { name: string; provider_type: ProviderType; server_url: string; api_key: string; tenant_id?: string }) => {
+  const handleSubmit = async (data: { name: string; provider_type: 'evolution'; server_url: string; api_key: string; tenant_id?: string }) => {
     setLoading(true);
     setMsg('');
     setFocusField(null);

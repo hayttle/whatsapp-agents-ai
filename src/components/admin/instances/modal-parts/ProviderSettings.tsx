@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Input, Button, Select, Alert } from '@/components/brand';
+import { Input, Button, Alert } from '@/components/brand';
 import { Eye, EyeOff } from 'lucide-react';
 
-export type ProviderType = 'evolution' | 'zapi';
+export type ProviderType = 'evolution';
 
 export interface ProviderSettingsProps {
   initialData?: {
@@ -21,14 +21,8 @@ export interface ProviderSettingsProps {
   error?: string | null;
 }
 
-const PROVIDER_OPTIONS = [
-  { value: 'evolution', label: 'Evolution API' },
-  { value: 'zapi', label: 'Z-API' },
-];
-
 export default function ProviderSettings({ initialData, onSubmit, isLoading, error }: ProviderSettingsProps) {
   const [name, setName] = useState(initialData?.name || '');
-  const [providerType, setProviderType] = useState<ProviderType>(initialData?.provider_type || 'evolution');
   const [serverUrl, setServerUrl] = useState(initialData?.server_url || '');
   const [apiKey, setApiKey] = useState(initialData?.api_key || '');
   const [showApiKey, setShowApiKey] = useState(false);
@@ -44,7 +38,6 @@ export default function ProviderSettings({ initialData, onSubmit, isLoading, err
   useEffect(() => {
     if (initialData) {
       setName(initialData.name);
-      setProviderType(initialData.provider_type);
       setServerUrl(initialData.server_url);
       setApiKey(initialData.api_key);
     }
@@ -54,7 +47,7 @@ export default function ProviderSettings({ initialData, onSubmit, isLoading, err
     e.preventDefault();
     setFormError(null);
     setHttpsWarning(false);
-    if (!name || !providerType || !serverUrl || !apiKey) {
+    if (!name || !serverUrl || !apiKey) {
       setFormError('Preencha todos os campos obrigatórios.');
       return;
     }
@@ -66,7 +59,7 @@ export default function ProviderSettings({ initialData, onSubmit, isLoading, err
     }
     const result = await onSubmit({
       name,
-      provider_type: providerType,
+      provider_type: 'evolution',
       server_url: serverUrl,
       api_key: apiKey,
     });
@@ -86,12 +79,11 @@ export default function ProviderSettings({ initialData, onSubmit, isLoading, err
         <Input value={name} onChange={e => setName(e.target.value)} required disabled={isLoading} />
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">Tipo de Provedor *</label>
-        <Select value={providerType} onChange={e => setProviderType(e.target.value as ProviderType)} disabled={isLoading}>
-          {PROVIDER_OPTIONS.map(opt => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </Select>
+        <label className="block text-sm font-medium mb-1">Tipo de Provedor</label>
+        <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-600">
+          Evolution API
+        </div>
+        <p className="text-xs text-gray-500 mt-1">Este sistema utiliza exclusivamente a Evolution API para integração com WhatsApp.</p>
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">URL do Servidor *</label>

@@ -22,14 +22,8 @@ interface ProviderListProps {
   isSuperAdmin?: boolean;
 }
 
-const PROVIDER_TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  evolution: { label: 'Evolution', color: 'bg-green-100 text-green-800' },
-  zapi: { label: 'Z-API', color: 'bg-blue-100 text-blue-800' },
-};
-
 export default function ProviderList({ providers, onEdit, onDelete, onCreate, loading, isSuperAdmin }: ProviderListProps) {
   // Estados dos filtros
-  const [filterType, setFilterType] = useState<string>('');
   const [filterEmpresa, setFilterEmpresa] = useState<string>('');
   const [filterSearch, setFilterSearch] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
@@ -37,22 +31,20 @@ export default function ProviderList({ providers, onEdit, onDelete, onCreate, lo
   // Filtrar provedores
   const filteredProviders = useMemo(() => {
     return providers.filter(provider => {
-      const matchesType = !filterType || provider.provider_type === filterType;
       const matchesEmpresa = !filterEmpresa || provider.tenant_id === filterEmpresa;
       const matchesSearch = !filterSearch || provider.name.toLowerCase().includes(filterSearch.toLowerCase());
-      return matchesType && matchesEmpresa && matchesSearch;
+      return matchesEmpresa && matchesSearch;
     });
-  }, [providers, filterType, filterEmpresa, filterSearch]);
+  }, [providers, filterEmpresa, filterSearch]);
 
   // Limpar filtros
   const clearFilters = () => {
-    setFilterType('');
     setFilterEmpresa('');
     setFilterSearch('');
   };
 
   // Verificar se há filtros ativos
-  const hasActiveFilters = filterType || filterEmpresa || filterSearch;
+  const hasActiveFilters = filterEmpresa || filterSearch;
 
   if (loading) {
     return <div>Carregando...</div>;
@@ -77,7 +69,7 @@ export default function ProviderList({ providers, onEdit, onDelete, onCreate, lo
             Filtros
             {hasActiveFilters && (
               <span className="ml-1 px-2 py-0.5 text-xs bg-red-500 text-white rounded-full">
-                {[filterType, filterEmpresa, filterSearch].filter(Boolean).length}
+                {[filterEmpresa, filterSearch].filter(Boolean).length}
               </span>
             )}
           </button>
@@ -108,22 +100,7 @@ export default function ProviderList({ providers, onEdit, onDelete, onCreate, lo
       {/* Filtros */}
       {showFilters && (
         <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tipo
-              </label>
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
-              >
-                <option value="">Todos os tipos</option>
-                <option value="evolution">Evolution</option>
-                <option value="zapi">Z-API</option>
-              </select>
-            </div>
-            
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {isSuperAdmin && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -172,11 +149,6 @@ export default function ProviderList({ providers, onEdit, onDelete, onCreate, lo
           <div className="flex items-center gap-2 text-sm text-blue-800">
             <Filter className="w-4 h-4" />
             <span className="font-medium">Filtros ativos:</span>
-            {filterType && (
-              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
-                Tipo: {PROVIDER_TYPE_LABELS[filterType]?.label || filterType}
-              </span>
-            )}
             {filterEmpresa && (
               <span className="px-2 py-1 bg-blue-100 rounded text-xs">
                 Empresa: {providers.find(p => p.tenant_id === filterEmpresa)?.tenantName || filterEmpresa}
@@ -217,7 +189,7 @@ export default function ProviderList({ providers, onEdit, onDelete, onCreate, lo
                 <CardTitle className="flex items-center gap-2">
                   <Server className="w-5 h-5 text-brand-green-light" />
                   <span className="font-semibold">{provider.name}</span>
-                  <span className={`ml-2 px-2 py-0.5 rounded text-xs font-bold ${PROVIDER_TYPE_LABELS[provider.provider_type]?.color || 'bg-gray-200 text-gray-700'}`}>{PROVIDER_TYPE_LABELS[provider.provider_type]?.label || provider.provider_type}</span>
+                  <span className="ml-2 px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-800">Evolution API</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex-1 space-y-2">

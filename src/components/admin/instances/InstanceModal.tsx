@@ -175,7 +175,7 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
               >
                 <option value="">Selecione o servidor</option>
                 {providers.map(p => (
-                  <option key={p.id} value={p.id}>{p.name} ({p.provider_type})</option>
+                  <option key={p.id} value={p.id}>{p.name} (Evolution API)</option>
                 ))}
               </select>
             </div>

@@ -104,10 +104,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       { cookies: { getAll() { return []; }, setAll() {} } }
     );
 
-    const { name, provider_type, server_url, api_key, tenant_id } = req.body;
+    const { name, server_url, api_key, tenant_id } = req.body;
     
     // Validação dos campos obrigatórios
-    if (!name || !provider_type || !server_url || !api_key) {
+    if (!name || !server_url || !api_key) {
       return res.status(400).json({ error: 'Campos obrigatórios não preenchidos.' });
     }
 
@@ -130,7 +130,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { id, ...updateData } = req.body;
       let query = supabase
         .from('whatsapp_providers')
-        .update({ ...updateData, updated_at: new Date().toISOString() })
+        .update({ ...updateData, provider_type: 'evolution', updated_at: new Date().toISOString() })
         .eq('id', id);
       if (!isSuperAdmin) {
         query = query.eq('tenant_id', userData.tenant_id);
@@ -150,7 +150,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .insert({
           tenant_id: isSuperAdmin ? (tenant_id || userData.tenant_id) : userData.tenant_id,
           name,
-          provider_type,
+          provider_type: 'evolution',
           server_url,
           api_key,
           updated_at: new Date().toISOString(),

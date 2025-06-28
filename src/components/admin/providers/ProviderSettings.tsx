@@ -3,7 +3,7 @@ import { Input, Select, Alert } from '@/components/brand';
 import { Eye, EyeOff } from 'lucide-react';
 import { Tooltip } from '@/components/ui';
 
-export type ProviderType = 'evolution' | 'zapi';
+export type ProviderType = 'evolution';
 
 export interface ProviderSettingsProps {
   initialData?: {
@@ -27,14 +27,8 @@ export interface ProviderSettingsProps {
   isSuperAdmin?: boolean;
 }
 
-const PROVIDER_OPTIONS = [
-  { value: 'evolution', label: 'Evolution API' },
-  { value: 'zapi', label: 'Z-API' },
-];
-
 const ProviderSettings = forwardRef(function ProviderSettings({ initialData, onSubmit, isLoading, error, renderFooter, tenants = [], isSuperAdmin = false }: ProviderSettingsProps, ref) {
   const [name, setName] = useState(initialData?.name || '');
-  const [providerType, setProviderType] = useState<ProviderType>(initialData?.provider_type || 'evolution');
   const [serverUrl, setServerUrl] = useState(initialData?.server_url || '');
   const [apiKey, setApiKey] = useState(initialData?.api_key || '');
   const [showApiKey, setShowApiKey] = useState(false);
@@ -51,7 +45,6 @@ const ProviderSettings = forwardRef(function ProviderSettings({ initialData, onS
   useEffect(() => {
     if (initialData) {
       setName(initialData.name);
-      setProviderType(initialData.provider_type);
       setServerUrl(initialData.server_url);
       setApiKey(initialData.api_key);
       setTenantId(initialData.tenant_id || (tenants[0]?.id || ''));
@@ -62,7 +55,7 @@ const ProviderSettings = forwardRef(function ProviderSettings({ initialData, onS
     e.preventDefault();
     setFormError(null);
     setHttpsWarning(false);
-    if (!name || !providerType || !serverUrl || !apiKey || (isSuperAdmin && !tenantId)) {
+    if (!name || !serverUrl || !apiKey || (isSuperAdmin && !tenantId)) {
       setFormError('Preencha todos os campos obrigatórios.');
       return;
     }
@@ -74,7 +67,7 @@ const ProviderSettings = forwardRef(function ProviderSettings({ initialData, onS
     }
     const result = await onSubmit({
       name,
-      provider_type: providerType,
+      provider_type: 'evolution',
       server_url: serverUrl,
       api_key: apiKey,
       ...(isSuperAdmin ? { tenant_id: tenantId } : {}),
@@ -117,12 +110,11 @@ const ProviderSettings = forwardRef(function ProviderSettings({ initialData, onS
         </div>
       )}
       <div>
-        <label className="block text-sm font-medium mb-1">Tipo de Provedor *</label>
-        <Select value={providerType} onChange={e => setProviderType(e.target.value as ProviderType)} disabled={isLoading}>
-          {PROVIDER_OPTIONS.map(opt => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </Select>
+        <label className="block text-sm font-medium mb-1">Tipo de Provedor</label>
+        <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-600">
+          Evolution API
+        </div>
+        <p className="text-xs text-gray-500 mt-1">Este sistema utiliza exclusivamente a Evolution API para integração com WhatsApp.</p>
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">URL do Servidor *</label>

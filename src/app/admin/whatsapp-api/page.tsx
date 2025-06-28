@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, Alert } from '@/components/brand';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { ProviderModal } from '@/components/admin/providers/ProviderModal';
-import { ProviderType } from '@/components/admin/providers/ProviderSettings';
 import ProviderList, { ProviderListItem } from '@/components/admin/providers/ProviderList';
 import { userService } from '@/services/userService';
 import { Server } from 'lucide-react';
@@ -13,7 +12,7 @@ import { toast } from 'sonner';
 interface Provider {
   id: string;
   name: string;
-  provider_type: ProviderType;
+  provider_type: 'evolution';
   server_url: string;
   api_key: string;
   tenant_id?: string;
@@ -115,7 +114,7 @@ export default function WhatsappApiPage() {
           ) : !editMode ? (
             <ProviderList
               providers={providers.map(p => ({ ...p, tenantName: isSuperAdmin ? empresas[p.tenant_id || ''] : undefined, active: false }))}
-              onEdit={(prov: ProviderListItem) => { setEditMode(true); setProvider({ ...prov, provider_type: prov.provider_type as ProviderType }); setShowModal(true); }}
+              onEdit={(prov: ProviderListItem) => { setEditMode(true); setProvider({ ...prov, provider_type: 'evolution' }); setShowModal(true); }}
               onDelete={(id: string) => setDeleteId(id)}
               loading={loading}
               isSuperAdmin={isSuperAdmin}
