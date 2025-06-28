@@ -8,6 +8,7 @@ import ProviderList, { ProviderListItem } from '@/components/admin/providers/Pro
 import { userService } from '@/services/userService';
 import { Server } from 'lucide-react';
 import { tenantService } from '@/services/tenantService';
+import { toast } from 'sonner';
 
 interface Provider {
   id: string;
@@ -65,15 +66,24 @@ export default function WhatsappApiPage() {
   const handleDelete = async (id: string) => {
     setFormLoading(true);
     try {
-      await fetch('/api/providers/delete', {
+      const response = await fetch('/api/providers/delete', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
       });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao remover provedor');
+      }
+
       setSuccess('Provedor removido com sucesso!');
       fetchProvider();
       setTimeout(() => setSuccess(null), 2000);
-    } catch {} finally {
+    } catch {
+      toast.error('Erro ao deletar provedor');
+    } finally {
       setFormLoading(false);
       setDeleteId(null);
     }

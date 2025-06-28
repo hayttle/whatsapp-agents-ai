@@ -54,10 +54,8 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
       setLoading(true);
       const data = await tenantService.listTenants();
       setTenants(data.tenants || []);
-      setError(null);
     } catch (err) {
-      setError('Erro ao carregar empresas');
-      console.error('Error fetching tenants:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao carregar empresas');
     } finally {
       setLoading(false);
     }

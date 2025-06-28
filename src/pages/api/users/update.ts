@@ -64,7 +64,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
 
     if (error) {
-      console.error('Error updating user:', error);
       return res.status(500).json({ error: 'Error updating user: ' + error.message });
     }
 

@@ -47,19 +47,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     if (authError || !authUser?.user) {
+      // Verificar se é erro de email já existente
+      if (authError?.message?.includes('already been registered')) {
+        return res.status(422).json({ error: 'Este email já está registrado no sistema. Tente usar um email diferente.' });
+      }
+      
+      // Verificar se é erro de email inválido
+      if (authError?.message?.includes('Invalid email')) {
+        return res.status(400).json({ error: 'Email inválido. Verifique o formato do email.' });
+      }
+      
+      // Verificar se é erro de senha fraca
+      if (authError?.message?.includes('Password should be at least')) {
+        return res.status(400).json({ error: 'A senha deve ter pelo menos 6 caracteres.' });
+      }
+      
       return res.status(500).json({ error: 'Erro ao criar usuário no Auth: ' + (authError?.message || 'Erro desconhecido') });
     }
 
     // 2. Inserir dados do usuário na tabela users
+    const userDataToInsert = {
+      id: authUser.user.id,
+      email,
+      name,
+      role,
+      tenant_id: role === 'super_admin' ? null : tenant_id,
+    };
+
     const { error: insertError } = await supabase
       .from('users')
-      .insert({
-        id: authUser.user.id,
-        email,
-        name,
-        role,
-        tenant_id: role === 'super_admin' ? null : tenant_id,
-      });
+      .insert(userDataToInsert);
 
     if (insertError) {
       // Se falhar ao inserir na tabela users, deletar o usuário do Auth

@@ -54,7 +54,7 @@ export default function DesignSystemPage() {
   ];
 
   const handleConnect = () => {
-    // Remover todos os console.log
+    // Função de conexão
   };
 
   const handleDisconnect = () => {};

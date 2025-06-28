@@ -6,6 +6,7 @@ export interface User {
   tenant_id?: string;
   created_at?: string;
   updated_at?: string;
+  whatsapp?: string;
 }
 
 export interface UserListResponse {

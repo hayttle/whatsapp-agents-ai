@@ -77,8 +77,7 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
           empresasMap[tenant.id] = tenant.name;
         });
         setEmpresas(empresasMap);
-      } catch (empresasError) {
-        console.error('Error fetching empresas:', empresasError);
+      } catch {
         // Não falhar se não conseguir buscar empresas
       }
       

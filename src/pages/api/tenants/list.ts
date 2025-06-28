@@ -27,14 +27,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .select('*');
 
     if (error) {
-      console.error('Error fetching tenants:', error);
-      return res.status(500).json({ error: 'Internal server error: ' + error.message });
+      return res.status(500).json({ error: 'Error fetching tenants: ' + error.message });
     }
 
-    return res.status(200).json({ tenants });
+    return res.status(200).json({ tenants: tenants });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    console.error('Error in tenant list API:', error);
     return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
   }
 } 

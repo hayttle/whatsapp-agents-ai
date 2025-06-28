@@ -37,6 +37,13 @@ export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantI
     setError("");
   }, [user, isOpen, tenantId]);
 
+  // Limpar empresa quando role for super_admin
+  useEffect(() => {
+    if (role === 'super_admin') {
+      setEmpresa("");
+    }
+  }, [role]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -66,10 +73,6 @@ export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantI
         throw new Error('Senha deve ter pelo menos 6 caracteres');
       }
       
-      if (isSuperAdmin && !empresa) {
-        throw new Error('Empresa é obrigatória para super admins');
-      }
-      
       // Validação de role
       const validRoles = isSuperAdmin ? ['super_admin', 'user'] : ['user'];
       if (!validRoles.includes(role)) {
@@ -77,16 +80,21 @@ export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantI
       }
       
       // Validação de empresa para super admin
-      if (isSuperAdmin && empresa) {
+      if (isSuperAdmin && empresa && role !== 'super_admin') {
         const validEmpresas = empresas.map(emp => emp.id);
         if (!validEmpresas.includes(empresa)) {
           throw new Error('Empresa inválida');
         }
       }
       
-      // Validação de tenant para user
-      if (!isSuperAdmin && !tenantId) {
+      // Validação de tenant para user (apenas se não for super_admin)
+      if (role !== 'super_admin' && !isSuperAdmin && !tenantId) {
         throw new Error('Tenant ID é obrigatório para usuários');
+      }
+      
+      // Validação de empresa para usuários normais quando super admin está criando
+      if (isSuperAdmin && role !== 'super_admin' && !empresa) {
+        throw new Error('Empresa é obrigatória para usuários que não são super admin');
       }
       
       // Validação final do formulário
@@ -100,7 +108,7 @@ export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantI
           name,
           email,
           role,
-          tenant_id: isSuperAdmin ? empresa : tenantId,
+          tenant_id: role === 'super_admin' ? null : (isSuperAdmin ? empresa : tenantId),
         };
 
         // Incluir senha apenas se foi preenchida
@@ -151,31 +159,26 @@ export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantI
           password: senha,
           name,
           role,
-          tenant_id: isSuperAdmin ? empresa : tenantId,
+          tenant_id: role === 'super_admin' ? null : (isSuperAdmin ? empresa : tenantId),
         };
 
-        try {
-          const response = await fetch('/api/users/create', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(userData),
-          });
+        const response = await fetch('/api/users/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(userData),
+        });
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Erro ao criar usuário');
-          }
-        } catch (err: unknown) {
-          const errorMessage = err instanceof Error ? err.message : 'Erro ao salvar usuário';
-          setError(errorMessage);
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Erro ao criar usuário');
         }
 
         toast.success("Usuário cadastrado com sucesso!");
+        onSave({ id: '', name, email, role: role as 'user' | 'super_admin', tenant_id: undefined, created_at: new Date().toISOString() });
       }
-
-      onSave(user || { id: '', name, email, role: role as 'user' | 'super_admin', tenant_id: empresa, created_at: new Date().toISOString() });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao salvar usuário';
       setError(errorMessage);
@@ -236,7 +239,7 @@ export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantI
             <option value="user">Usuário</option>
           </Select>
           
-          {isSuperAdmin && (
+          {isSuperAdmin && role !== 'super_admin' && (
             <Select
               label="Empresa"
               value={empresa}

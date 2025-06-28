@@ -33,14 +33,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: agents, error } = await query;
 
     if (error) {
-      console.error('Error fetching agents:', error);
       return res.status(500).json({ error: 'Error fetching agents: ' + error.message });
     }
 
     return res.status(200).json({ agents: agents || [] });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    console.error('Error in agents list API:', error);
     return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
   }
 } 

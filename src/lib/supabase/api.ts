@@ -6,6 +6,7 @@ import { User } from '@supabase/supabase-js';
 export interface AuthenticatedUser {
   user: User;
   userData: {
+    id: string;
     role: string;
     tenant_id: string;
   };

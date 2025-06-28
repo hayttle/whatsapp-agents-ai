@@ -56,14 +56,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
 
     if (error) {
-      console.error('Error updating agent:', error);
       return res.status(500).json({ error: 'Error updating agent: ' + error.message });
     }
 
     return res.status(200).json({ success: true, agent });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    console.error('Error in agent update API:', error);
     return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
   }
 } 

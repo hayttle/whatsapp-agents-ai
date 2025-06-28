@@ -44,14 +44,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting agent:', error);
       return res.status(500).json({ error: 'Error deleting agent: ' + error.message });
     }
 
     return res.status(200).json({ success: true });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    console.error('Error in agent delete API:', error);
     return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
   }
 } 

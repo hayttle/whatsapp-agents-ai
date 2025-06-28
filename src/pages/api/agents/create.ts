@@ -47,14 +47,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
 
     if (error) {
-      console.error('Error creating agent:', error);
       return res.status(500).json({ error: 'Error creating agent: ' + error.message });
     }
 
     return res.status(201).json({ success: true, agent });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    console.error('Error in agent create API:', error);
     return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
   }
 } 

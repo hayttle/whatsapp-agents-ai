@@ -46,7 +46,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('tenant_id', id);
 
     if (usersError) {
-      console.error('Error checking users:', usersError);
       return res.status(500).json({ error: 'Error checking tenant dependencies' });
     }
 
@@ -63,7 +62,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('tenant_id', id);
 
     if (instancesError) {
-      console.error('Error checking instances:', instancesError);
       return res.status(500).json({ error: 'Error checking tenant dependencies' });
     }
 
@@ -80,7 +78,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('tenant_id', id);
 
     if (agentsError) {
-      console.error('Error checking agents:', agentsError);
       return res.status(500).json({ error: 'Error checking tenant dependencies' });
     }
 
@@ -97,14 +94,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting tenant:', error);
       return res.status(500).json({ error: 'Error deleting tenant: ' + error.message });
     }
 
     return res.status(200).json({ success: true, message: `Tenant "${existingTenant.name}" deleted successfully` });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    console.error('Error in tenant delete API:', error);
     return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
   }
 } 

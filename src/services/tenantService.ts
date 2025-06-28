@@ -8,6 +8,13 @@ export interface Tenant {
   status: string;
   user_id?: string;
   created_at?: string;
+  address_street?: string;
+  address_number?: string;
+  address_complement?: string;
+  address_neighborhood?: string;
+  address_city?: string;
+  address_state?: string;
+  address_zip_code?: string;
 }
 
 export interface TenantListResponse {
@@ -30,6 +37,13 @@ export interface CreateTenantData {
   cpf_cnpj: string;
   phone: string;
   type?: string;
+  address_street?: string;
+  address_number?: string;
+  address_complement?: string;
+  address_neighborhood?: string;
+  address_city?: string;
+  address_state?: string;
+  address_zip_code?: string;
 }
 
 export interface UpdateTenantData {
@@ -40,6 +54,13 @@ export interface UpdateTenantData {
   phone: string;
   type?: string;
   status?: string;
+  address_street?: string;
+  address_number?: string;
+  address_complement?: string;
+  address_neighborhood?: string;
+  address_city?: string;
+  address_state?: string;
+  address_zip_code?: string;
 }
 
 class TenantService {

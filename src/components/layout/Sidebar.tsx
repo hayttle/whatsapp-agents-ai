@@ -122,9 +122,8 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
           }
         }
         setIsLoading(false);
-      } catch (error) {
-        console.error('Erro ao carregar dados do usuário:', error);
-        setIsLoading(false);
+      } catch {
+        // Silenciar erro de carregamento de dados do usuário
       }
     };
 
@@ -157,8 +156,8 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
       const supabase = createClient();
       await supabase.auth.signOut();
       window.location.href = '/login';
-    } catch (error) {
-      console.error('Erro ao fazer logout:', error);
+    } catch {
+      // Silenciar erro de logout
     }
   };
 
