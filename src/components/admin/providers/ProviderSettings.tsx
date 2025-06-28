@@ -110,13 +110,6 @@ const ProviderSettings = forwardRef(function ProviderSettings({ initialData, onS
         </div>
       )}
       <div>
-        <label className="block text-sm font-medium mb-1">Tipo de Provedor</label>
-        <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-600">
-          Evolution API
-        </div>
-        <p className="text-xs text-gray-500 mt-1">Este sistema utiliza exclusivamente a Evolution API para integração com WhatsApp.</p>
-      </div>
-      <div>
         <label className="block text-sm font-medium mb-1">URL do Servidor *</label>
         <Input ref={urlInputRef} value={serverUrl} onChange={e => setServerUrl(e.target.value)} required disabled={isLoading} placeholder="https://exemplo.com" />
         {httpsWarning && (

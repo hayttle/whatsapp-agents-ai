@@ -93,7 +93,14 @@ export function ProviderModal({ open, onClose, onSaved, provider }: ProviderModa
 
   return (
     <Modal isOpen={open} onClose={onClose} className="w-full max-w-lg">
-      <ModalHeader>{provider ? 'Editar Provedor' : 'Novo Provedor'}</ModalHeader>
+      <ModalHeader>
+        <div className="flex flex-col items-center gap-2 mb-2">
+          <div className="bg-brand-gray-dark rounded-lg p-3 flex items-center justify-center">
+            <img src="/evolution-ai-logo.png" alt="Evolution API" className="h-8 w-auto" />
+          </div>
+          <span className="text-lg font-semibold mt-1">{provider ? 'Editar Servidor Evolution' : 'Novo Servidor Evolution'}</span>
+        </div>
+      </ModalHeader>
       <ModalBody>
         {msg && <Alert variant={msgType} title={msgType === 'success' ? 'Sucesso' : 'Erro'}>{msg}</Alert>}
         <ProviderSettings
