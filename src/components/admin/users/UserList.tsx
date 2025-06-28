@@ -1,12 +1,12 @@
 "use client";
-import React, { useReducer, useState, useEffect, useCallback } from "react";
+import React, { useReducer, useState, useEffect, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { UserModal } from "./UserModal";
 import { ConfirmationModal } from "@/components/ui";
 import { ActionButton } from "@/components/ui";
 import { useActions } from "@/hooks/useActions";
 import { tenantService } from "@/services/tenantService";
-import { Users, Plus, Edit, Trash2, Mail, User, Shield, Building } from "lucide-react";
+import { Users, Plus, Edit, Trash2, Mail, User, Shield, Building, Filter, X } from "lucide-react";
 import { userService } from "@/services/userService";
 import { User as UserType, Empresa } from "./types";
 
@@ -56,6 +56,11 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  // Estados dos filtros
+  const [filterRole, setFilterRole] = useState<string>('');
+  const [filterEmpresa, setFilterEmpresa] = useState<string>('');
+  const [showFilters, setShowFilters] = useState(false);
+  
   const { actionLoading, handleAction } = useActions();
 
   const fetchData = useCallback(async () => {
@@ -92,6 +97,24 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
   useEffect(() => {
     fetchData();
   }, [refreshKey, fetchData]);
+
+  // Filtrar usuários
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => {
+      const matchesRole = !filterRole || user.role === filterRole;
+      const matchesEmpresa = !filterEmpresa || user.tenant_id === filterEmpresa;
+      return matchesRole && matchesEmpresa;
+    });
+  }, [users, filterRole, filterEmpresa]);
+
+  // Limpar filtros
+  const clearFilters = () => {
+    setFilterRole('');
+    setFilterEmpresa('');
+  };
+
+  // Verificar se há filtros ativos
+  const hasActiveFilters = filterRole || filterEmpresa;
 
   const handleDelete = (userId: string) => handleAction(async () => {
     // Deletar usuário usando a API
@@ -135,7 +158,36 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
 
   return (
     <div className="overflow-x-auto">
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <button 
+            className={`px-3 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${
+              showFilters 
+                ? 'bg-brand-green-light text-white' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter className="w-4 h-4" />
+            Filtros
+            {hasActiveFilters && (
+              <span className="ml-1 px-2 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                {[filterRole, filterEmpresa].filter(Boolean).length}
+              </span>
+            )}
+          </button>
+          
+          {hasActiveFilters && (
+            <button 
+              className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-2"
+              onClick={clearFilters}
+            >
+              <X className="w-4 h-4" />
+              Limpar
+            </button>
+          )}
+        </div>
+        
         <button 
           className="px-4 py-2 text-sm font-semibold text-white bg-brand-gray-dark rounded-md hover:bg-brand-gray-deep transition-colors flex items-center gap-2"
           onClick={() => dispatchModal({ type: 'OPEN_CREATE' })}
@@ -144,6 +196,47 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
           Novo Usuário
         </button>
       </div>
+
+      {/* Filtros */}
+      {showFilters && (
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Papel
+              </label>
+              <select
+                value={filterRole}
+                onChange={(e) => setFilterRole(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+              >
+                <option value="">Todos os papéis</option>
+                <option value="super_admin">Super Admin</option>
+                <option value="admin">Admin</option>
+                <option value="user">Usuário</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Empresa
+              </label>
+              <select
+                value={filterEmpresa}
+                onChange={(e) => setFilterEmpresa(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+              >
+                <option value="">Todas as empresas</option>
+                {Object.entries(empresas).map(([id, name]) => (
+                  <option key={id} value={id}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
       
       {loading ? (
         <div className="flex justify-center items-center py-8">
@@ -153,6 +246,29 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
         <div className="text-red-500 text-center py-4">{error}</div>
       ) : (
         <>
+          {/* Resumo dos filtros */}
+          {hasActiveFilters && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <div className="flex items-center gap-2 text-sm text-blue-800">
+                <Filter className="w-4 h-4" />
+                <span className="font-medium">Filtros ativos:</span>
+                {filterRole && (
+                  <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                    Papel: {roleDisplay[filterRole]}
+                  </span>
+                )}
+                {filterEmpresa && (
+                  <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                    Empresa: {empresas[filterEmpresa]}
+                  </span>
+                )}
+                <span className="text-blue-600">
+                  ({filteredUsers.length} de {users.length} usuários)
+                </span>
+              </div>
+            </div>
+          )}
+
           <table className="min-w-full text-sm border">
             <thead>
               <tr className="bg-gray-100">
@@ -164,8 +280,8 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
               </tr>
             </thead>
             <tbody>
-              {users.length > 0 ? (
-                users.map((user) => {
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map((user) => {
                   const isLoading = actionLoading === user.id;
                   return (
                     <tr key={user.id} className="border-t hover:bg-gray-50">
@@ -225,8 +341,15 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
                 <tr>
                   <td colSpan={5} className="text-center py-8 text-gray-500">
                     <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                    <p className="font-medium">Nenhum usuário encontrado</p>
-                    <p className="text-sm">Use o botão &quot;Novo Usuário&quot; para criar o primeiro.</p>
+                    <p className="font-medium">
+                      {hasActiveFilters ? 'Nenhum usuário encontrado com os filtros aplicados' : 'Nenhum usuário encontrado'}
+                    </p>
+                    <p className="text-sm">
+                      {hasActiveFilters 
+                        ? 'Tente ajustar os filtros ou use o botão "Limpar" para remover os filtros.'
+                        : 'Use o botão "Novo Usuário" para criar o primeiro.'
+                      }
+                    </p>
                   </td>
                 </tr>
               )}
