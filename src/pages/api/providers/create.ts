@@ -113,14 +113,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const isSuperAdmin = userData.role === 'super_admin';
 
+    // Normalizar server_url: remover barra final
+    const normalizedServerUrl = server_url.replace(/\/+$/, '');
+
     // Validação da URL do servidor
-    const serverValidation = await validateServerUrl(server_url);
+    const serverValidation = await validateServerUrl(normalizedServerUrl);
     if (!serverValidation.valid) {
       return res.status(400).json({ error: serverValidation.error });
     }
 
     // Validação da API Key
-    const apiKeyValidation = await validateApiKey(server_url, api_key);
+    const apiKeyValidation = await validateApiKey(normalizedServerUrl, api_key);
     if (!apiKeyValidation.valid) {
       return res.status(400).json({ error: apiKeyValidation.error });
     }
@@ -130,7 +133,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { id, ...updateData } = req.body;
       let query = supabase
         .from('whatsapp_providers')
-        .update({ ...updateData, provider_type: 'evolution', updated_at: new Date().toISOString() })
+        .update({ ...updateData, server_url: normalizedServerUrl, provider_type: 'evolution', updated_at: new Date().toISOString() })
         .eq('id', id);
       if (!isSuperAdmin) {
         query = query.eq('tenant_id', userData.tenant_id);
@@ -151,7 +154,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           tenant_id: isSuperAdmin ? (tenant_id || userData.tenant_id) : userData.tenant_id,
           name,
           provider_type: 'evolution',
-          server_url,
+          server_url: normalizedServerUrl,
           api_key,
           updated_at: new Date().toISOString(),
         });
