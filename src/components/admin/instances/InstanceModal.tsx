@@ -36,6 +36,7 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
   const [agentId, setAgentId] = useState<string>("");
+  const [description, setDescription] = useState("");
   const { agentes, loading: loadingAgents } = useAgents({ isSuperAdmin: !!isSuperAdmin, tenantId: isSuperAdmin ? selectedTenant : tenantId });
 
   useEffect(() => {
@@ -46,6 +47,7 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
     setAgentId("");
     setMsg("");
     setError("");
+    setDescription("");
   }, [isOpen, tenantId]);
 
   useEffect(() => {
@@ -86,6 +88,7 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
 
     const payload: Record<string, unknown> = {
       instanceName,
+      description,
       integration: "WHATSAPP-BAILEYS",
       webhookEvents: ["MESSAGES_UPSERT"],
       webhookByEvents: false,
@@ -154,6 +157,17 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
             isSuperAdmin={isSuperAdmin}
           />
           <div>
+            <label className="block text-sm font-medium mb-1">Descrição</label>
+            <textarea
+              className="w-full border rounded px-3 py-2 text-sm resize-none min-h-[60px]"
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              maxLength={255}
+              placeholder="Descreva a finalidade ou detalhes da instância (opcional)"
+              disabled={loading}
+            />
+          </div>
+          <div>
             <label className="block text-sm font-medium mb-1">Tipo de Provedor *</label>
             <select
               className="w-full border rounded px-3 py-2 text-sm"
@@ -167,7 +181,7 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
           </div>
           {providerType === 'externo' && (
             <div>
-              <label className="block text-sm font-medium mb-1">Servidor WhatsApp *</label>
+              <label className="block text-sm font-medium mb-1">Servidor Evolution API*</label>
               <select
                 className="w-full border rounded px-3 py-2 text-sm"
                 value={providerId}
@@ -189,7 +203,7 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
                 value={agentId}
                 onChange={e => setAgentId(e.target.value)}
                 disabled={loadingAgents}
-              >ao
+              >
                 <option value="">Selecione o agente</option>
                 {agentes.map((a: Agent) => (
                   <option key={a.id} value={a.id}>{a.title}</option>

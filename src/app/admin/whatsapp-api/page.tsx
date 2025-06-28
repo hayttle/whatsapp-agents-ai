@@ -97,12 +97,12 @@ export default function WhatsappApiPage() {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-brand-gray-dark">
-              {isSuperAdmin ? 'Gerenciar Provedores' : 'Meus Provedores'}
+              {isSuperAdmin ? 'Gerenciar Servidores' : 'Meus Servidores'}
             </h1>
             <p className="text-gray-600">
               {isSuperAdmin
-                ? 'Gerencie todos os provedores de API WhatsApp do sistema'
-                : 'Gerencie seus provedores de API WhatsApp'}
+                ? 'Gerencie todos os servidores de API WhatsApp'
+                : 'Gerencie seus servidores de API WhatsApp'}
             </p>
           </div>
         </div>

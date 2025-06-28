@@ -52,8 +52,8 @@ export default function ProviderList({ providers, onEdit, onDelete, onCreate, lo
 
   return (
     <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
-      <h2 className="text-lg font-semibold mb-1">Provedores do WhatsApp</h2>
-      <p className="text-gray-600 text-sm mb-6">Visualize e gerencie todos os provedores de WhatsApp do sistema</p>
+      <h2 className="text-lg font-semibold mb-1">Servidores do WhatsApp</h2>
+      <p className="text-gray-600 text-sm mb-6">Visualize e gerencie todos os servidores de WhatsApp</p>
       
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">

@@ -131,6 +131,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         public_hash: randomUUID(),
         provider_type: 'externo',
         provider_id,
+        description: req.body.description || null,
         ...(req.body.agent_id ? { agent_id: req.body.agent_id } : {}),
       };
       // LOG: Payload salvo no banco
@@ -210,6 +211,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       public_hash: randomUUID(),
       provider_type: 'nativo',
       provider_id: null,
+      description: req.body.description || null,
       ...(req.body.agent_id ? { agent_id: req.body.agent_id } : {}),
     };
     }

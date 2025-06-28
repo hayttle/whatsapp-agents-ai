@@ -16,8 +16,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const baseClasses = 'inline-flex items-center justify-center font-semibold transition-all duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed';
     
     const variants = {
-      primary: 'bg-brand-green-light hover:bg-brand-green-medium text-white focus:ring-brand-green-light shadow-sm',
-      secondary: 'bg-blue-100 hover:bg-blue-200 text-blue-900 focus:ring-blue-200 shadow-sm',
+      primary: 'border-2 border-brand-green-light bg-brand-green-light hover:bg-brand-green-medium text-white focus:ring-brand-green-light shadow-sm',
+      secondary: 'border-2 border-blue-100 bg-blue-100 hover:bg-blue-200 text-blue-900 focus:ring-blue-200 shadow-sm',
       outline: 'border-2 border-brand-green-light text-brand-green-light hover:bg-brand-green-light hover:text-white focus:ring-brand-green-light',
       ghost: 'bg-white border border-gray-200 shadow-sm text-brand-gray-dark hover:bg-gray-50 hover:border-gray-300',
       destructive: 'border-2 border-red-600 bg-red-600 hover:bg-red-700 text-white focus:ring-red-600 shadow-sm',

@@ -36,7 +36,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
         </Select>
       )}
       <Input
-        label="Nome da Instância"
+        label="Nome da Instância *"
         type="text"
         placeholder="Nome da instância (apenas letras, números e hífens)"
         value={instanceName}

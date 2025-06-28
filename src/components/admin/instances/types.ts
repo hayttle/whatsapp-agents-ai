@@ -22,4 +22,5 @@ export interface Instance {
   public_hash?: string;
   phone_number?: string | null;
   agent_id?: string | null;
+  description?: string | null;
 } 
