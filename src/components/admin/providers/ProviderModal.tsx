@@ -22,6 +22,7 @@ export interface ProviderModalProps {
 export function ProviderModal({ open, onClose, onSaved, provider }: ProviderModalProps) {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
+  const [msgType, setMsgType] = useState<'success' | 'error'>('success');
   const [focusField, setFocusField] = useState<null | 'url' | 'api_key'>(null);
   const providerSettingsRef = useRef<{ focusUrl: () => void; focusApiKey: () => void } | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -56,21 +57,27 @@ export function ProviderModal({ open, onClose, onSaved, provider }: ProviderModa
       });
       const result = await res.json();
       if (!res.ok) {
-        setMsg('Erro ao salvar provedor.');
+        setMsg(result.error || 'Erro ao salvar provedor.');
+        setMsgType('error');
         if (result.error && result.error.toLowerCase().includes('url')) {
           setFocusField('url');
         } else if (result.error && result.error.toLowerCase().includes('api key')) {
           setFocusField('api_key');
         }
+        setLoading(false);
         return;
       } else {
         setMsg('Provedor salvo com sucesso!');
+        setMsgType('success');
         setTimeout(() => {
           setMsg('');
           onSaved();
         }, 1200);
       }
-    } catch {}
+    } catch {
+      setMsg('Erro ao salvar provedor.');
+      setMsgType('error');
+    }
     setLoading(false);
   };
 
@@ -88,7 +95,7 @@ export function ProviderModal({ open, onClose, onSaved, provider }: ProviderModa
     <Modal isOpen={open} onClose={onClose} className="w-full max-w-lg">
       <ModalHeader>{provider ? 'Editar Provedor' : 'Novo Provedor'}</ModalHeader>
       <ModalBody>
-        {msg && <Alert variant="success" title="Sucesso">{msg}</Alert>}
+        {msg && <Alert variant={msgType} title={msgType === 'success' ? 'Sucesso' : 'Erro'}>{msg}</Alert>}
         <ProviderSettings
           ref={providerSettingsRef}
           initialData={provider || undefined}
