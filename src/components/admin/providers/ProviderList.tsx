@@ -1,6 +1,6 @@
 import { Card, CardHeader, CardTitle, CardContent, Button } from '@/components/brand';
-import { Edit, Trash2, Server, Plus } from 'lucide-react';
-import React, { useState } from 'react';
+import { Edit, Trash2, Server, Plus, Filter, X } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
 
 export interface ProviderListItem {
   id: string;
@@ -28,70 +28,71 @@ const PROVIDER_TYPE_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 export default function ProviderList({ providers, onEdit, onDelete, onCreate, loading, isSuperAdmin }: ProviderListProps) {
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [empresaFilter, setEmpresaFilter] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  // Estados dos filtros
+  const [filterType, setFilterType] = useState<string>('');
+  const [filterEmpresa, setFilterEmpresa] = useState<string>('');
+  const [filterSearch, setFilterSearch] = useState<string>('');
+  const [showFilters, setShowFilters] = useState(false);
 
-  let filteredProviders = providers;
-  if (typeFilter !== 'all') {
-    filteredProviders = filteredProviders.filter(p => p.provider_type === typeFilter);
-  }
-  if (isSuperAdmin && empresaFilter !== 'all') {
-    filteredProviders = filteredProviders.filter(p => p.tenant_id === empresaFilter);
-  }
-  if (searchTerm.trim() !== '') {
-    filteredProviders = filteredProviders.filter(p => p.name.toLowerCase().includes(searchTerm.trim().toLowerCase()));
-  }
+  // Filtrar provedores
+  const filteredProviders = useMemo(() => {
+    return providers.filter(provider => {
+      const matchesType = !filterType || provider.provider_type === filterType;
+      const matchesEmpresa = !filterEmpresa || provider.tenant_id === filterEmpresa;
+      const matchesSearch = !filterSearch || provider.name.toLowerCase().includes(filterSearch.toLowerCase());
+      return matchesType && matchesEmpresa && matchesSearch;
+    });
+  }, [providers, filterType, filterEmpresa, filterSearch]);
+
+  // Limpar filtros
+  const clearFilters = () => {
+    setFilterType('');
+    setFilterEmpresa('');
+    setFilterSearch('');
+  };
+
+  // Verificar se há filtros ativos
+  const hasActiveFilters = filterType || filterEmpresa || filterSearch;
 
   if (loading) {
     return <div>Carregando...</div>;
   }
+
   return (
     <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
       <h2 className="text-lg font-semibold mb-1">Provedores do WhatsApp</h2>
       <p className="text-gray-600 text-sm mb-6">Visualize e gerencie todos os provedores de WhatsApp do sistema</p>
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <div className="flex flex-wrap gap-2 items-center">
-          <label className="text-sm font-medium">Tipo:</label>
-          <select
-            className="border rounded px-2 py-1 text-sm"
-            value={typeFilter}
-            onChange={e => setTypeFilter(e.target.value)}
+      
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+          <button 
+            className={`px-3 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${
+              showFilters 
+                ? 'bg-brand-green-light text-white' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            onClick={() => setShowFilters(!showFilters)}
           >
-            <option value="all">Todos</option>
-            <option value="evolution">Evolution</option>
-            <option value="zapi">Z-API</option>
-          </select>
-          {isSuperAdmin && (
-            <>
-              <label className="text-sm font-medium ml-4">Empresa:</label>
-              <select
-                className="border rounded px-2 py-1 text-sm"
-                value={empresaFilter}
-                onChange={e => setEmpresaFilter(e.target.value)}
-              >
-                <option value="all">Todas</option>
-                {Array.from(
-                  new Map(
-                    providers
-                      .filter(p => p.tenant_id && p.tenantName)
-                      .map(p => [p.tenant_id, p.tenantName])
-                  ).entries()
-                ).map(([id, name]) => (
-                  <option key={id} value={id as string}>{name}</option>
-                ))}
-              </select>
-            </>
+            <Filter className="w-4 h-4" />
+            Filtros
+            {hasActiveFilters && (
+              <span className="ml-1 px-2 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                {[filterType, filterEmpresa, filterSearch].filter(Boolean).length}
+              </span>
+            )}
+          </button>
+          
+          {hasActiveFilters && (
+            <button 
+              className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-2"
+              onClick={clearFilters}
+            >
+              <X className="w-4 h-4" />
+              Limpar
+            </button>
           )}
-          <input
-            type="text"
-            className="border rounded px-2 py-1 text-sm ml-4"
-            placeholder="Buscar por nome..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            style={{ minWidth: 180 }}
-          />
         </div>
+        
         {onCreate && (
           <Button
             variant="add"
@@ -103,8 +104,111 @@ export default function ProviderList({ providers, onEdit, onDelete, onCreate, lo
           </Button>
         )}
       </div>
+
+      {/* Filtros */}
+      {showFilters && (
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tipo
+              </label>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+              >
+                <option value="">Todos os tipos</option>
+                <option value="evolution">Evolution</option>
+                <option value="zapi">Z-API</option>
+              </select>
+            </div>
+            
+            {isSuperAdmin && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Empresa
+                </label>
+                <select
+                  value={filterEmpresa}
+                  onChange={(e) => setFilterEmpresa(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+                >
+                  <option value="">Todas as empresas</option>
+                  {Array.from(
+                    new Map(
+                      providers
+                        .filter(p => p.tenant_id && p.tenantName)
+                        .map(p => [p.tenant_id, p.tenantName])
+                    ).entries()
+                  ).map(([id, name]) => (
+                    <option key={id} value={id as string}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Buscar por nome
+              </label>
+              <input
+                type="text"
+                value={filterSearch}
+                onChange={(e) => setFilterSearch(e.target.value)}
+                placeholder="Digite o nome do provedor..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Resumo dos filtros */}
+      {hasActiveFilters && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <div className="flex items-center gap-2 text-sm text-blue-800">
+            <Filter className="w-4 h-4" />
+            <span className="font-medium">Filtros ativos:</span>
+            {filterType && (
+              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                Tipo: {PROVIDER_TYPE_LABELS[filterType]?.label || filterType}
+              </span>
+            )}
+            {filterEmpresa && (
+              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                Empresa: {providers.find(p => p.tenant_id === filterEmpresa)?.tenantName || filterEmpresa}
+              </span>
+            )}
+            {filterSearch && (
+              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                Busca: &quot;{filterSearch}&quot;
+              </span>
+            )}
+            <span className="text-blue-600">
+              ({filteredProviders.length} de {providers.length} provedores)
+            </span>
+          </div>
+        </div>
+      )}
+
       {filteredProviders.length === 0 ? (
-        <div className="text-center text-gray-500 py-8">Nenhum provedor cadastrado.</div>
+        <div className="text-center py-8 text-gray-500">
+          <div className="w-12 h-12 mx-auto mb-4 text-gray-300">
+            <Server className="w-12 h-12" />
+          </div>
+          <p className="font-medium">
+            {hasActiveFilters ? 'Nenhum provedor encontrado com os filtros aplicados' : 'Nenhum provedor cadastrado'}
+          </p>
+          <p className="text-sm">
+            {hasActiveFilters 
+              ? 'Tente ajustar os filtros ou use o botão "Limpar" para remover os filtros.'
+              : 'Use o botão "Novo Provedor" para criar o primeiro.'
+            }
+          </p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProviders.map((provider) => (

@@ -1,12 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { AgentModal } from "./AgentModal";
 import { useAgents } from "@/hooks/useAgents";
 import { useActions } from "@/hooks/useActions";
 import { Agent } from "./types";
 import { ConfirmationModal } from "@/components/ui";
-import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Select, StatusIndicator, Alert } from "@/components/brand";
-import { Bot, Plus, Edit, Trash2, Power, PowerOff, Building, AlertTriangle } from "lucide-react";
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, StatusIndicator, Alert } from "@/components/brand";
+import { Bot, Plus, Edit, Trash2, Power, PowerOff, Building, AlertTriangle, Filter, X } from "lucide-react";
 import { Tooltip } from '@/components/ui';
 
 interface AgentListProps {
@@ -15,10 +15,15 @@ interface AgentListProps {
 }
 
 export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
-  const [filtroAtivo, setFiltroAtivo] = useState<'all' | 'active' | 'inactive'>('all');
   const [showModal, setShowModal] = useState(false);
   const [editAgent, setEditAgent] = useState<Agent | null>(null);
   const [deleteAgent, setDeleteAgent] = useState<Agent | null>(null);
+  
+  // Estados dos filtros
+  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterEmpresa, setFilterEmpresa] = useState<string>('');
+  const [filterSearch, setFilterSearch] = useState<string>('');
+  const [showFilters, setShowFilters] = useState(false);
   
   const { 
     agentes, 
@@ -36,9 +41,27 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
   
   const { actionLoading, handleAction } = useActions();
 
-  const agentesFiltrados = agentes.filter((a: Agent) =>
-    filtroAtivo === 'all' ? true : filtroAtivo === 'active' ? a.active : !a.active
-  );
+  // Filtrar agentes
+  const filteredAgents = useMemo(() => {
+    return agentes.filter((agente: Agent) => {
+      const matchesStatus = !filterStatus || 
+        (filterStatus === 'active' && agente.active) || 
+        (filterStatus === 'inactive' && !agente.active);
+      const matchesEmpresa = !filterEmpresa || agente.tenant_id === filterEmpresa;
+      const matchesSearch = !filterSearch || agente.title.toLowerCase().includes(filterSearch.toLowerCase());
+      return matchesStatus && matchesEmpresa && matchesSearch;
+    });
+  }, [agentes, filterStatus, filterEmpresa, filterSearch]);
+
+  // Limpar filtros
+  const clearFilters = () => {
+    setFilterStatus('');
+    setFilterEmpresa('');
+    setFilterSearch('');
+  };
+
+  // Verificar se há filtros ativos
+  const hasActiveFilters = filterStatus || filterEmpresa || filterSearch;
 
   const handleToggleActive = (agente: Agent) => handleAction(
     async () => {
@@ -75,21 +98,40 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
   }
 
   return (
-    <div>
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <Select
-          label="Filtrar por status"
-          value={filtroAtivo}
-          onChange={e => setFiltroAtivo(e.target.value as 'all' | 'active' | 'inactive')}
-          className="w-full md:w-48"
-        >
-          <option value="all">Todos</option>
-          <option value="active">Ativos</option>
-          <option value="inactive">Inativos</option>
-        </Select>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <button 
+            className={`px-3 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${
+              showFilters 
+                ? 'bg-brand-green-light text-white' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter className="w-4 h-4" />
+            Filtros
+            {hasActiveFilters && (
+              <span className="ml-1 px-2 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                {[filterStatus, filterEmpresa, filterSearch].filter(Boolean).length}
+              </span>
+            )}
+          </button>
+          
+          {hasActiveFilters && (
+            <button 
+              className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-2"
+              onClick={clearFilters}
+            >
+              <X className="w-4 h-4" />
+              Limpar
+            </button>
+          )}
+        </div>
+        
         {(isSuperAdmin || tenantId) && (
           <button 
-            className="px-4 py-2 text-sm font-semibold text-white bg-brand-gray-dark rounded-md hover:bg-brand-gray-deep transition-colors flex items-center gap-2 whitespace-nowrap self-end"
+            className="px-4 py-2 text-sm font-semibold text-white bg-brand-gray-dark rounded-md hover:bg-brand-gray-deep transition-colors flex items-center gap-2 whitespace-nowrap"
             onClick={() => { setEditAgent(null); setShowModal(true); }}
           >
             <Plus className="w-4 h-4" />
@@ -98,9 +140,92 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
         )}
       </div>
 
-      {agentesFiltrados.length > 0 ? (
+      {/* Filtros */}
+      {showFilters && (
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Status
+              </label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+              >
+                <option value="">Todos os status</option>
+                <option value="active">Ativos</option>
+                <option value="inactive">Inativos</option>
+              </select>
+            </div>
+            
+            {isSuperAdmin && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Empresa
+                </label>
+                <select
+                  value={filterEmpresa}
+                  onChange={(e) => setFilterEmpresa(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+                >
+                  <option value="">Todas as empresas</option>
+                  {Object.entries(empresas).map(([id, name]) => (
+                    <option key={id} value={id}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Buscar por nome
+              </label>
+              <input
+                type="text"
+                value={filterSearch}
+                onChange={(e) => setFilterSearch(e.target.value)}
+                placeholder="Digite o nome do agente..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Resumo dos filtros */}
+      {hasActiveFilters && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <div className="flex items-center gap-2 text-sm text-blue-800">
+            <Filter className="w-4 h-4" />
+            <span className="font-medium">Filtros ativos:</span>
+            {filterStatus && (
+              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                Status: {filterStatus === 'active' ? 'Ativos' : 'Inativos'}
+              </span>
+            )}
+            {filterEmpresa && (
+              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                Empresa: {empresas[filterEmpresa]}
+              </span>
+            )}
+            {filterSearch && (
+              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                Busca: &quot;{filterSearch}&quot;
+              </span>
+            )}
+            <span className="text-blue-600">
+              ({filteredAgents.length} de {agentes.length} agentes)
+            </span>
+          </div>
+        </div>
+      )}
+
+      {filteredAgents.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {agentesFiltrados.map((agente: Agent) => {
+          {filteredAgents.map((agente: Agent) => {
             const isLoading = actionLoading?.startsWith(`toggle-${agente.id}`) || actionLoading?.startsWith(`delete-${agente.id}`);
             const instanceObj = agente.instance_id && instancias[agente.instance_id]
               ? instancias[agente.instance_id]
@@ -183,10 +308,19 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
           })}
         </div>
       ) : (
-        <div className="text-center py-10 text-gray-500 border border-dashed rounded-lg">
-          <Bot className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-          <h3 className="text-lg font-semibold">Nenhum agente encontrado</h3>
-          <p className="text-sm">Use o botão &quot;Novo Agente&quot; para criar o primeiro.</p>
+        <div className="text-center py-8 text-gray-500">
+          <div className="w-12 h-12 mx-auto mb-4 text-gray-300">
+            <Bot className="w-12 h-12" />
+          </div>
+          <p className="font-medium">
+            {hasActiveFilters ? 'Nenhum agente encontrado com os filtros aplicados' : 'Nenhum agente encontrado'}
+          </p>
+          <p className="text-sm">
+            {hasActiveFilters 
+              ? 'Tente ajustar os filtros ou use o botão "Limpar" para remover os filtros.'
+              : 'Use o botão "Novo Agente" para criar o primeiro.'
+            }
+          </p>
         </div>
       )}
       
@@ -198,19 +332,21 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
         tenantId={tenantId || ""}
         isSuperAdmin={isSuperAdmin}
       />
-      
-      {deleteAgent && (
-        <ConfirmationModal
-          isOpen={true}
-          onClose={() => setDeleteAgent(null)}
-          onConfirm={handleDelete}
-          title="Confirmar exclusão"
-          confirmText="Deletar"
-          isLoading={actionLoading === `delete-${deleteAgent.id}`}
-        >
-          Tem certeza que deseja deletar o agente <span className="font-semibold">&quot;{deleteAgent.title}&quot;</span>?
-        </ConfirmationModal>
-      )}
+
+      <ConfirmationModal
+        isOpen={!!deleteAgent}
+        onClose={() => setDeleteAgent(null)}
+        onConfirm={handleDelete}
+        title="Confirmar Exclusão"
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        isLoading={actionLoading?.startsWith(`delete-${deleteAgent?.id}`)}
+      >
+        <p>
+          Tem certeza que deseja excluir o agente <span className="font-semibold">&quot;{deleteAgent?.title}&quot;</span>? 
+          Esta ação não pode ser desfeita.
+        </p>
+      </ConfirmationModal>
     </div>
   );
 } 

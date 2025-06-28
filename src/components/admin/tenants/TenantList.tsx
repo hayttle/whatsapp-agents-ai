@@ -1,12 +1,12 @@
 "use client";
-import React, { useReducer, useState, useEffect } from "react";
+import React, { useReducer, useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import TenantModal from "./TenantModal";
 import { ConfirmationModal } from "@/components/ui";
 import { ActionButton } from "@/components/ui";
 import { useActions } from "@/hooks/useActions";
 import { tenantService, Tenant } from "@/services/tenantService";
-import { Building2, Plus, Edit, Trash2, Mail, Phone, FileText, Power, PowerOff } from "lucide-react";
+import { Building2, Plus, Edit, Trash2, Mail, Phone, FileText, Power, PowerOff, Filter, X } from "lucide-react";
 
 interface TenantListProps {
   isSuperAdmin: boolean;
@@ -46,6 +46,12 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  // Estados dos filtros
+  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterType, setFilterType] = useState<string>('');
+  const [filterSearch, setFilterSearch] = useState<string>('');
+  const [showFilters, setShowFilters] = useState(false);
+  
   const { actionLoading, handleAction } = useActions();
 
   // Buscar tenants
@@ -65,6 +71,29 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
   useEffect(() => {
     fetchTenants();
   }, [refreshKey]);
+
+  // Filtrar tenants
+  const filteredTenants = useMemo(() => {
+    return tenants.filter(tenant => {
+      const matchesStatus = !filterStatus || tenant.status === filterStatus;
+      const matchesType = !filterType || tenant.type === filterType;
+      const matchesSearch = !filterSearch || 
+        tenant.name.toLowerCase().includes(filterSearch.toLowerCase()) ||
+        tenant.email?.toLowerCase().includes(filterSearch.toLowerCase()) ||
+        tenant.cpf_cnpj?.toLowerCase().includes(filterSearch.toLowerCase());
+      return matchesStatus && matchesType && matchesSearch;
+    });
+  }, [tenants, filterStatus, filterType, filterSearch]);
+
+  // Limpar filtros
+  const clearFilters = () => {
+    setFilterStatus('');
+    setFilterType('');
+    setFilterSearch('');
+  };
+
+  // Verificar se há filtros ativos
+  const hasActiveFilters = filterStatus || filterType || filterSearch;
 
   const handleDelete = (tenantId: string) => handleAction(async () => {
     try {
@@ -110,9 +139,38 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
   };
 
   return (
-    <div className="overflow-x-auto">
-      {isSuperAdmin && (
-        <div className="mb-4 flex justify-end">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <button 
+            className={`px-3 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${
+              showFilters 
+                ? 'bg-brand-green-light text-white' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter className="w-4 h-4" />
+            Filtros
+            {hasActiveFilters && (
+              <span className="ml-1 px-2 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                {[filterStatus, filterType, filterSearch].filter(Boolean).length}
+              </span>
+            )}
+          </button>
+          
+          {hasActiveFilters && (
+            <button 
+              className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-2"
+              onClick={clearFilters}
+            >
+              <X className="w-4 h-4" />
+              Limpar
+            </button>
+          )}
+        </div>
+        
+        {isSuperAdmin && (
           <button 
             className="px-4 py-2 text-sm font-semibold text-white bg-brand-gray-dark rounded-md hover:bg-brand-gray-deep transition-colors flex items-center gap-2"
             onClick={() => dispatchModal({ type: 'OPEN_CREATE' })}
@@ -120,6 +178,84 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
             <Plus className="w-4 h-4" />
             Nova Empresa
           </button>
+        )}
+      </div>
+
+      {/* Filtros */}
+      {showFilters && (
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Status
+              </label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+              >
+                <option value="">Todos os status</option>
+                <option value="active">Ativa</option>
+                <option value="inactive">Inativa</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tipo
+              </label>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+              >
+                <option value="">Todos os tipos</option>
+                <option value="pf">Pessoa Física</option>
+                <option value="pj">Pessoa Jurídica</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Buscar
+              </label>
+              <input
+                type="text"
+                value={filterSearch}
+                onChange={(e) => setFilterSearch(e.target.value)}
+                placeholder="Nome, e-mail ou CPF/CNPJ..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Resumo dos filtros */}
+      {hasActiveFilters && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <div className="flex items-center gap-2 text-sm text-blue-800">
+            <Filter className="w-4 h-4" />
+            <span className="font-medium">Filtros ativos:</span>
+            {filterStatus && (
+              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                Status: {filterStatus === 'active' ? 'Ativa' : 'Inativa'}
+              </span>
+            )}
+            {filterType && (
+              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                Tipo: {filterType === 'pf' ? 'Pessoa Física' : 'Pessoa Jurídica'}
+              </span>
+            )}
+            {filterSearch && (
+              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                Busca: &quot;{filterSearch}&quot;
+              </span>
+            )}
+            <span className="text-blue-600">
+              ({filteredTenants.length} de {tenants.length} empresas)
+            </span>
+          </div>
         </div>
       )}
       
@@ -130,7 +266,7 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
       ) : error ? (
         <div className="text-red-500 text-center py-4">{error}</div>
       ) : (
-        <>
+        <div className="overflow-x-auto">
           <table className="min-w-full text-sm border">
             <thead>
               <tr className="bg-gray-100">
@@ -143,8 +279,8 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
               </tr>
             </thead>
             <tbody>
-              {tenants.length > 0 ? (
-                tenants.map((tenant) => {
+              {filteredTenants.length > 0 ? (
+                filteredTenants.map((tenant) => {
                   const isLoading = actionLoading === tenant.id;
                   return (
                     <tr key={tenant.id} className="border-t hover:bg-gray-50">
@@ -210,9 +346,18 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
               ) : (
                 <tr>
                   <td colSpan={isSuperAdmin ? 6 : 5} className="text-center py-8 text-gray-500">
-                    <Building2 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                    <p className="font-medium">Nenhuma empresa encontrada</p>
-                    <p className="text-sm">Use o botão &quot;Nova Empresa&quot; para criar a primeira.</p>
+                    <div className="w-12 h-12 mx-auto mb-4 text-gray-300">
+                      <Building2 className="w-12 h-12" />
+                    </div>
+                    <p className="font-medium">
+                      {hasActiveFilters ? 'Nenhuma empresa encontrada com os filtros aplicados' : 'Nenhuma empresa encontrada'}
+                    </p>
+                    <p className="text-sm">
+                      {hasActiveFilters 
+                        ? 'Tente ajustar os filtros ou use o botão "Limpar" para remover os filtros.'
+                        : 'Use o botão "Nova Empresa" para criar a primeira.'
+                      }
+                    </p>
                   </td>
                 </tr>
               )}
@@ -242,7 +387,7 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
               Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos.
             </p>
           </ConfirmationModal>
-        </>
+        </div>
       )}
     </div>
   );

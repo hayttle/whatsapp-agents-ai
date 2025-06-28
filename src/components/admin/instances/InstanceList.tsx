@@ -1,5 +1,5 @@
 "use client";
-import { useReducer, useState } from "react";
+import { useReducer, useState, useMemo } from "react";
 import { toast } from "sonner";
 import { Instance } from "./types";
 import InstanceModal from "./InstanceModal";
@@ -9,10 +9,10 @@ import { Button } from '@/components/brand';
 import { useInstanceActions } from "@/hooks/useInstanceActions";
 import { useInstances } from "@/hooks/useInstances";
 import { instanceService } from "@/services/instanceService";
-import { Power, Trash2, Plus, RefreshCw, PowerOff, Clipboard } from "lucide-react";
+import { Power, Trash2, Plus, RefreshCw, PowerOff, Clipboard, Filter, X } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/brand';
 import { useAgents } from '@/hooks/useAgents';
-import { Modal } from '@/components/ui';
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui';
 import { agentService } from "@/services/agentService";
 import type { Agent } from '@/services/agentService';
 
@@ -78,9 +78,12 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
   const [selectAgentModal, setSelectAgentModal] = useState<{ open: boolean; instanceId: string }>({ open: false, instanceId: "" });
   const [selectedAgentId, setSelectedAgentId] = useState<string>("");
   const [savingAgent, setSavingAgent] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [empresaFilter, setEmpresaFilter] = useState<string>('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Estados dos filtros
+  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterEmpresa, setFilterEmpresa] = useState<string>('');
+  const [filterSearch, setFilterSearch] = useState<string>('');
+  const [showFilters, setShowFilters] = useState(false);
 
   const handleConnect = (instanceName: string, forceRegenerate = false) => handleAction(async () => {
     const data = await instanceService.connectInstance(instanceName, forceRegenerate);
@@ -181,64 +184,150 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
     }
   };
 
-  // Filtros
-  let filteredInstances = instances;
-  if (statusFilter !== 'all') {
-    filteredInstances = filteredInstances.filter(inst => normalizeStatus(inst.status) === statusFilter);
-  }
-  if (isSuperAdmin && empresaFilter !== 'all') {
-    filteredInstances = filteredInstances.filter(inst => inst.tenant_id === empresaFilter);
-  }
-  if (searchTerm.trim() !== '') {
-    filteredInstances = filteredInstances.filter(inst => inst.instanceName.toLowerCase().includes(searchTerm.trim().toLowerCase()));
-  }
+  // Filtrar instâncias
+  const filteredInstances = useMemo(() => {
+    return instances.filter(inst => {
+      const matchesStatus = !filterStatus || normalizeStatus(inst.status) === filterStatus;
+      const matchesEmpresa = !filterEmpresa || inst.tenant_id === filterEmpresa;
+      const matchesSearch = !filterSearch || inst.instanceName.toLowerCase().includes(filterSearch.toLowerCase());
+      return matchesStatus && matchesEmpresa && matchesSearch;
+    });
+  }, [instances, filterStatus, filterEmpresa, filterSearch]);
+
+  // Limpar filtros
+  const clearFilters = () => {
+    setFilterStatus('');
+    setFilterEmpresa('');
+    setFilterSearch('');
+  };
+
+  // Verificar se há filtros ativos
+  const hasActiveFilters = filterStatus || filterEmpresa || filterSearch;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <div className="flex flex-wrap gap-2 items-center">
-          <label className="text-sm font-medium">Status:</label>
-          <select
-            className="border rounded px-2 py-1 text-sm"
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <button 
+            className={`px-3 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${
+              showFilters 
+                ? 'bg-brand-green-light text-white' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            onClick={() => setShowFilters(!showFilters)}
           >
-            <option value="all">Todos</option>
-            <option value="open">Conectado</option>
-            <option value="close">Desconectado</option>
-          </select>
-          {isSuperAdmin && (
-            <>
-              <label className="text-sm font-medium ml-4">Empresa:</label>
-              <select
-                className="border rounded px-2 py-1 text-sm"
-                value={empresaFilter}
-                onChange={e => setEmpresaFilter(e.target.value)}
-              >
-                <option value="all">Todas</option>
-                {Object.entries(empresas).map(([id, name]) => (
-                  <option key={id} value={id}>{name}</option>
-                ))}
-              </select>
-            </>
+            <Filter className="w-4 h-4" />
+            Filtros
+            {hasActiveFilters && (
+              <span className="ml-1 px-2 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                {[filterStatus, filterEmpresa, filterSearch].filter(Boolean).length}
+              </span>
+            )}
+          </button>
+          
+          {hasActiveFilters && (
+            <button 
+              className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-2"
+              onClick={clearFilters}
+            >
+              <X className="w-4 h-4" />
+              Limpar
+            </button>
           )}
-          <input
-            type="text"
-            className="border rounded px-2 py-1 text-sm ml-4"
-            placeholder="Buscar por nome..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            style={{ minWidth: 180 }}
-          />
         </div>
+        
         <button
-          className="px-4 py-2 text-sm font-semibold text-white bg-brand-gray-dark rounded-md hover:bg-brand-gray-deep transition-colors flex items-center gap-2 whitespace-nowrap self-end"
+          className="px-4 py-2 text-sm font-semibold text-white bg-brand-gray-dark rounded-md hover:bg-brand-gray-deep transition-colors flex items-center gap-2 whitespace-nowrap"
           onClick={() => dispatchModal({ type: 'OPEN_CREATE' })}
         >
           <Plus className="w-4 h-4" />
           Nova Instância
         </button>
       </div>
+
+      {/* Filtros */}
+      {showFilters && (
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Status
+              </label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+              >
+                <option value="">Todos os status</option>
+                <option value="open">Conectado</option>
+                <option value="close">Desconectado</option>
+              </select>
+            </div>
+            
+            {isSuperAdmin && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Empresa
+                </label>
+                <select
+                  value={filterEmpresa}
+                  onChange={(e) => setFilterEmpresa(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+                >
+                  <option value="">Todas as empresas</option>
+                  {Object.entries(empresas).map(([id, name]) => (
+                    <option key={id} value={id}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Buscar por nome
+              </label>
+              <input
+                type="text"
+                value={filterSearch}
+                onChange={(e) => setFilterSearch(e.target.value)}
+                placeholder="Digite o nome da instância..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Resumo dos filtros */}
+      {hasActiveFilters && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <div className="flex items-center gap-2 text-sm text-blue-800">
+            <Filter className="w-4 h-4" />
+            <span className="font-medium">Filtros ativos:</span>
+            {filterStatus && (
+              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                Status: {statusDisplay[filterStatus]}
+              </span>
+            )}
+            {filterEmpresa && (
+              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                Empresa: {empresas[filterEmpresa]}
+              </span>
+            )}
+            {filterSearch && (
+              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                Busca: &quot;{filterSearch}&quot;
+              </span>
+            )}
+            <span className="text-blue-600">
+              ({filteredInstances.length} de {instances.length} instâncias)
+            </span>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div>Carregando instâncias...</div>
       ) : (
@@ -374,7 +463,23 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
               );
             })
           ) : (
-            <div className="text-center py-2">Nenhuma instância encontrada.</div>
+            <div className="text-center py-8 text-gray-500">
+              <div className="w-12 h-12 mx-auto mb-4 text-gray-300">
+                <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M22 16.92V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2.08a2 2 0 0 1 1.09-1.79l7-3.11a2 2 0 0 1 1.82 0l7 3.11A2 2 0 0 1 22 16.92z"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </div>
+              <p className="font-medium">
+                {hasActiveFilters ? 'Nenhuma instância encontrada com os filtros aplicados' : 'Nenhuma instância encontrada'}
+              </p>
+              <p className="text-sm">
+                {hasActiveFilters 
+                  ? 'Tente ajustar os filtros ou use o botão "Limpar" para remover os filtros.'
+                  : 'Use o botão "Nova Instância" para criar a primeira.'
+                }
+              </p>
+            </div>
           )}
         </>
       )}
@@ -398,48 +503,73 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
           }}
         />
       )}
-      {modalState.type === 'DELETE' && (
-        <ConfirmationModal
-          isOpen={true}
-          onClose={closeModal}
-          onConfirm={() => handleDelete(modalState.payload.instanceName)}
-          title="Confirmar exclusão"
-          confirmText="Deletar"
-          isLoading={actionLoading === modalState.payload.instanceName}
-        >
-          Tem certeza que deseja deletar a instância <span className="font-semibold">&quot;{modalState.payload.instanceName}&quot;</span>? Essa ação não pode ser desfeita.
-        </ConfirmationModal>
-      )}
-      {modalState.type === 'DISCONNECT' && (
-        <ConfirmationModal
-          isOpen={true}
-          onClose={closeModal}
-          onConfirm={() => handleDisconnect(modalState.payload.instanceName)}
-          title="Confirmar Desconexão"
-          confirmText="Desconectar"
-          isLoading={actionLoading === modalState.payload.instanceName}
-        >
-          Tem certeza que deseja desconectar a instância <span className="font-semibold">&quot;{modalState.payload.instanceName}&quot;</span>?
-        </ConfirmationModal>
-      )}
-      <Modal isOpen={selectAgentModal.open} onClose={handleCloseSelectAgent} className="w-full max-w-md">
-        <div className="p-6">
-          <h2 className="text-lg font-semibold mb-4">Selecionar Agente</h2>
-          <select
-            className="w-full border rounded px-3 py-2 text-sm mb-4"
-            value={selectedAgentId}
-            onChange={e => setSelectedAgentId(e.target.value)}
-          >
-            <option value="">Selecione o agente</option>
-            {agentes.filter(a => !a.instance_id || a.instance_id === selectAgentModal.instanceId).map(a => (
-              <option key={a.id} value={a.id}>{a.title}</option>
-            ))}
-          </select>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={handleCloseSelectAgent} disabled={savingAgent}>Cancelar</Button>
-            <Button variant="primary" onClick={handleSaveAgent} loading={savingAgent} disabled={!selectedAgentId}>Salvar</Button>
+      <ConfirmationModal
+        isOpen={modalState.type === 'DELETE'}
+        onClose={closeModal}
+        onConfirm={() => handleDelete(modalState.type === 'DELETE' ? modalState.payload.instanceName : '')}
+        title="Confirmar Exclusão"
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        isLoading={actionLoading === (modalState.type === 'DELETE' ? modalState.payload.instanceName : '')}
+      >
+        <p>
+          Tem certeza que deseja excluir a instância <span className="font-semibold">&quot;{modalState.type === 'DELETE' ? modalState.payload.instanceName : ''}&quot;</span>? 
+          Esta ação não pode ser desfeita.
+        </p>
+      </ConfirmationModal>
+      <ConfirmationModal
+        isOpen={modalState.type === 'DISCONNECT'}
+        onClose={closeModal}
+        onConfirm={() => handleDisconnect(modalState.type === 'DISCONNECT' ? modalState.payload.instanceName : '')}
+        title="Confirmar Desconexão"
+        confirmText="Desconectar"
+        cancelText="Cancelar"
+        isLoading={actionLoading === (modalState.type === 'DISCONNECT' ? modalState.payload.instanceName : '')}
+      >
+        <p>
+          Tem certeza que deseja desconectar a instância <span className="font-semibold">&quot;{modalState.type === 'DISCONNECT' ? modalState.payload.instanceName : ''}&quot;</span>?
+        </p>
+      </ConfirmationModal>
+      <Modal
+        isOpen={selectAgentModal.open}
+        onClose={handleCloseSelectAgent}
+      >
+        <ModalHeader>Selecionar Agente</ModalHeader>
+        <ModalBody>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Selecione um agente para vincular:
+            </label>
+            <select
+              value={selectedAgentId}
+              onChange={(e) => setSelectedAgentId(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+            >
+              <option value="">Selecione um agente...</option>
+              {agentes.map((agent) => (
+                <option key={agent.id} value={agent.id}>
+                  {agent.title}
+                </option>
+              ))}
+            </select>
           </div>
-        </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            variant="ghost"
+            onClick={handleCloseSelectAgent}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSaveAgent}
+            disabled={!selectedAgentId || savingAgent}
+            loading={savingAgent}
+          >
+            Vincular
+          </Button>
+        </ModalFooter>
       </Modal>
     </div>
   );
