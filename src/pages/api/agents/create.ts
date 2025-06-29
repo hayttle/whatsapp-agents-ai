@@ -19,9 +19,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { tenant_id, instance_id, title, prompt, fallback_message, active, personality, custom_personality, tone, webhookUrl, description, agent_type } = req.body;
 
-    // Validação dos dados (instance_id agora é opcional)
-    if (!tenant_id || !title || !prompt || !fallback_message) {
+    // Validação baseada no tipo de agente
+    if (!tenant_id || !title) {
       return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Validação específica para agentes internos
+    if (agent_type === 'internal' || !agent_type) {
+      if (!prompt || !fallback_message) {
+        return res.status(400).json({ error: 'Prompt and fallback message are required for internal agents' });
+      }
+    }
+
+    // Validação específica para agentes externos
+    if (agent_type === 'external') {
+      if (!webhookUrl) {
+        return res.status(400).json({ error: 'Webhook URL is required for external agents' });
+      }
     }
 
     // Verificar permissões
