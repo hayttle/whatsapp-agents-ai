@@ -76,49 +76,83 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       console.log('[DEBUG] URL do webhook determinada:', webhookUrl);
 
-      // Preparar payload para webhook
-      const webhookPayload = {
-        instance_id: updated.id,
-        instance_name: updated.name,
-        provider: updated.provider,
-        webhook_url: webhookUrl, // Usar a URL determinada acima
-        agent: {
-          name: agent.title,
-          description: agent.description
-        },
-        ...(existingInstance.provider_type === 'externo' && agent.agent_type === 'external' && webhookUrl ? {
-          webhook: {
-            enabled: true,
-            url: webhookUrl
-          }
-        } : {})
-      };
-      console.log('[DEBUG] Payload do webhook montado:', webhookPayload);
-
       // Enviar webhook se configurado
       if (webhookUrl) {
         try {
-          console.log('[DEBUG] Enviando webhook para:', webhookUrl);
-          const response = await fetch(webhookUrl, {
+          console.log('[DEBUG] Configurando webhook da instância na Evolution API');
+          
+          // Buscar dados da instância para obter server_url e apikey
+          const { data: instanceData, error: instanceError } = await supabase
+            .from('whatsapp_instances')
+            .select('id, instanceName, apikey, provider_type, provider_id')
+            .eq('id', updated.id)
+            .single();
+          
+          if (instanceError) {
+            console.error('[DEBUG] Erro ao buscar dados da instância:', instanceError);
+            return res.status(500).json({ error: 'Erro ao buscar dados da instância: ' + instanceError.message });
+          }
+          
+          let serverUrl = process.env.EVOLUTION_API_URL;
+          let apiKey = instanceData.apikey;
+          
+          // Se for instância externa, buscar dados do provedor
+          if (instanceData.provider_type === 'externo' && instanceData.provider_id) {
+            const { data: provider, error: providerError } = await supabase
+              .from('whatsapp_providers')
+              .select('server_url, api_key')
+              .eq('id', instanceData.provider_id)
+              .single();
+              
+            if (providerError) {
+              console.error('[DEBUG] Erro ao buscar provedor:', providerError);
+              return res.status(500).json({ error: 'Erro ao buscar dados do provedor: ' + providerError.message });
+            }
+            
+            serverUrl = provider.server_url;
+            apiKey = provider.api_key;
+          }
+          
+          console.log('[DEBUG] Server URL:', serverUrl);
+          console.log('[DEBUG] Instance Name:', instanceData.instanceName);
+          
+          if (!apiKey) {
+            console.error('[DEBUG] API Key não encontrada');
+            return res.status(500).json({ error: 'API Key não configurada' });
+          }
+          
+          // Configurar webhook da instância
+          const webhookConfig = {
+            enabled: true,
+            url: webhookUrl,
+            webhookByEvents: false,
+            webhookBase64: true,
+            events: ["MESSAGES_UPSERT"]
+          };
+          
+          console.log('[DEBUG] Configuração do webhook:', webhookConfig);
+          
+          const response = await fetch(`${serverUrl}/webhook/set/${instanceData.instanceName}`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              'apikey': apiKey,
             },
-            body: JSON.stringify(webhookPayload),
+            body: JSON.stringify(webhookConfig),
           });
 
           const responseText = await response.text();
-          console.log('[DEBUG] Resposta do webhook:', response.status, responseText);
+          console.log('[DEBUG] Resposta da Evolution API:', response.status, responseText);
 
           if (!response.ok) {
             return res.status(500).json({ 
-              error: `Erro ao enviar webhook: ${response.status} - ${responseText}` 
+              error: `Erro ao configurar webhook: ${response.status} - ${responseText}` 
             });
           }
         } catch (webhookError) {
-          console.error('[DEBUG] Erro ao enviar webhook:', webhookError);
+          console.error('[DEBUG] Erro ao configurar webhook:', webhookError);
           return res.status(500).json({ 
-            error: 'Erro ao enviar webhook: ' + (webhookError instanceof Error ? webhookError.message : 'Erro desconhecido') 
+            error: 'Erro ao configurar webhook: ' + (webhookError instanceof Error ? webhookError.message : 'Erro desconhecido') 
           });
         }
       }
