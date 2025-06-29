@@ -17,11 +17,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { userData } = auth;
     const supabase = createApiClient(req, res);
 
-    const { tenantId } = req.query;
+    const { tenantId, agent_type } = req.query;
 
+    // Construir query base
     let query = supabase
       .from('agents')
-      .select(`*, tenants(name)`);
+      .select('*');
+
+    // Filtrar por tipo de agente se especificado
+    if (agent_type && typeof agent_type === 'string') {
+      query = query.eq('agent_type', agent_type);
+    }
 
     // Filtrar por tenant se não for super_admin
     if (userData.role !== 'super_admin') {
@@ -30,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       query = query.eq('tenant_id', tenantId);
     }
 
-    const { data: agents, error } = await query;
+    const { data: agents, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
       return res.status(500).json({ error: 'Error fetching agents: ' + error.message });
