@@ -568,18 +568,60 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Selecione um agente para vincular:
             </label>
-          <select
-            value={selectedAgentId}
+            <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-sm text-blue-800">
+                <strong>Regra de vínculo:</strong><br />
+                • Instâncias <strong>Nativas</strong> só aceitam agentes <strong>Internos</strong><br />
+                • Instâncias <strong>Externas</strong> só aceitam agentes <strong>Externos</strong>
+              </p>
+            </div>
+            <select
+              value={selectedAgentId}
               onChange={(e) => setSelectedAgentId(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
-          >
+            >
               <option value="">Selecione um agente...</option>
-              {agentes.map((agent) => (
-                <option key={agent.id} value={agent.id}>
-                  {agent.title}
-                </option>
-            ))}
-          </select>
+              {agentes
+                .filter(agent => {
+                  const currentInstance = instances.find(inst => inst.id === selectAgentModal.instanceId);
+                  if (!currentInstance) return false;
+                  
+                  // Instância nativa só aceita agentes internos
+                  if (currentInstance.provider_type === 'nativo') {
+                    return agent.agent_type === 'internal' || !agent.agent_type;
+                  }
+                  
+                  // Instância externa só aceita agentes externos
+                  if (currentInstance.provider_type === 'externo') {
+                    return agent.agent_type === 'external';
+                  }
+                  
+                  return true; // Fallback
+                })
+                .map((agent) => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.title} ({agent.agent_type === 'external' ? 'Externo' : 'Interno'})
+                  </option>
+                ))}
+            </select>
+            {agentes.filter(agent => {
+              const currentInstance = instances.find(inst => inst.id === selectAgentModal.instanceId);
+              if (!currentInstance) return false;
+              
+              if (currentInstance.provider_type === 'nativo') {
+                return agent.agent_type === 'internal' || !agent.agent_type;
+              }
+              
+              if (currentInstance.provider_type === 'externo') {
+                return agent.agent_type === 'external';
+              }
+              
+              return true;
+            }).length === 0 && (
+              <p className="mt-2 text-sm text-red-600">
+                Nenhum agente compatível encontrado para este tipo de instância.
+              </p>
+            )}
           </div>
         </ModalBody>
         <ModalFooter>
