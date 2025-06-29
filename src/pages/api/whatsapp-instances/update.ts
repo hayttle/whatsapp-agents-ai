@@ -74,7 +74,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         agent: {
           name: agent.title,
           description: agent.description
-        }
+        },
+        ...(existingInstance.provider_type === 'externo' && agent.agent_type === 'external' && webhookUrl ? {
+          webhook: {
+            enabled: true,
+            url: webhookUrl
+          }
+        } : {})
       };
 
       // Enviar webhook se configurado
