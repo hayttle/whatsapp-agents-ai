@@ -276,13 +276,11 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                       )}
                     </span>
                     <span className="flex items-center gap-1 text-xs mt-1">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        agente.agent_type === 'external' 
-                          ? 'bg-blue-100 text-blue-800' 
-                          : 'bg-green-100 text-green-800'
-                      }`}>
-                        {agente.agent_type === 'external' ? 'Externo (n8n)' : 'Interno (IA)'}
-                      </span>
+                      {agente.agent_type === 'external' ? (
+                        <img src="/n8n-logo.png" alt="n8n" className="w-5 h-5" />
+                      ) : (
+                        <Bot className="w-5 h-5 text-green-600" />
+                      )}
                     </span>
                     {isSuperAdmin && empresas[agente.tenant_id] && (
                       <span className="flex items-center gap-1 text-xs mt-1">
@@ -302,19 +300,6 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                   {''}
                 </CardContent>
                 <CardFooter className="flex flex-wrap items-center justify-end gap-2 pt-2 pb-2 px-0 bg-transparent">
-                  <Tooltip content="Editar">
-                    <Button 
-                      variant="secondary" 
-                      size="sm" 
-                      className="min-w-0 w-9 h-9 p-0 flex items-center justify-center"
-                      onClick={() => { setEditAgent(agente); setShowModal(true); }} 
-                      disabled={isLoading}
-                      leftIcon={<Edit className="w-4 h-4" />}
-                      aria-label="Editar"
-                    >
-                      {''}
-                    </Button>
-                  </Tooltip>
                   <Tooltip content={agente.active ? 'Desativar' : 'Ativar'}>
                     <Button 
                       variant={agente.active ? 'warning' : 'primary'}
@@ -324,6 +309,19 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                       disabled={isLoading}
                       leftIcon={agente.active ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
                       aria-label={agente.active ? 'Desativar' : 'Ativar'}
+                    >
+                      {''}
+                    </Button>
+                  </Tooltip>
+                  <Tooltip content="Editar">
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="min-w-0 w-9 h-9 p-0 flex items-center justify-center"
+                      onClick={() => { setEditAgent(agente); setShowModal(true); }} 
+                      disabled={isLoading}
+                      leftIcon={<Edit className="w-4 h-4" />}
+                      aria-label="Editar"
                     >
                       {''}
                     </Button>
@@ -376,14 +374,13 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
         isOpen={!!deleteAgent}
         onClose={() => setDeleteAgent(null)}
         onConfirm={handleDelete}
-        title="Confirmar Exclusão"
-        confirmText="Excluir"
+        title="Remover agente"
+        confirmText="Remover"
         cancelText="Cancelar"
         isLoading={actionLoading?.startsWith(`delete-${deleteAgent?.id}`)}
       >
         <p>
-          Tem certeza que deseja excluir o agente <span className="font-semibold">&quot;{deleteAgent?.title}&quot;</span>? 
-          Esta ação não pode ser desfeita.
+          Tem certeza que deseja remover o agente <span className="font-semibold">"{deleteAgent?.title}"</span>? Esta ação não pode ser desfeita.
         </p>
       </ConfirmationModal>
     </div>
