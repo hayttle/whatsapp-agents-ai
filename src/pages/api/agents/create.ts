@@ -43,6 +43,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
 
+    // Sempre sobrescrever webhookUrl para agentes internos
+    let finalWebhookUrl = webhookUrl;
+    if (agent_type === 'internal' || !agent_type) {
+      finalWebhookUrl = process.env.WEBHOOK_AGENT_URL;
+    }
+
     const { data: agent, error } = await supabase
       .from('agents')
       .insert({
@@ -55,7 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         personality,
         custom_personality,
         tone,
-        webhookUrl: webhookUrl || null,
+        webhookUrl: finalWebhookUrl,
         description: description || null,
         agent_type: agent_type || 'internal'
       })

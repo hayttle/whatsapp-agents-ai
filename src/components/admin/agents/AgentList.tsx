@@ -8,6 +8,7 @@ import { ConfirmationModal } from "@/components/ui";
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, StatusIndicator, Alert } from "@/components/brand";
 import { Bot, Plus, Edit, Trash2, Power, PowerOff, Building, AlertTriangle, Filter, X } from "lucide-react";
 import { Tooltip } from '@/components/ui';
+import Image from 'next/image';
 
 interface AgentListProps {
   isSuperAdmin: boolean;
@@ -207,7 +208,7 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                 type="text"
                 value={filterSearch}
                 onChange={(e) => setFilterSearch(e.target.value)}
-                placeholder="Digite o nome do agente ou descrição..."
+                placeholder="Digite o nome ou descrição..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
               />
             </div>
@@ -277,7 +278,7 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                     </span>
                     <span className="flex items-center gap-1 text-xs mt-1">
                       {agente.agent_type === 'external' ? (
-                        <img src="/n8n-logo.png" alt="n8n" className="w-5 h-5" />
+                        <Image src="/n8n-logo.png" alt="n8n" width={20} height={20} className="w-5 h-5" />
                       ) : (
                         <Bot className="w-5 h-5 text-green-600" />
                       )}
@@ -380,7 +381,7 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
         isLoading={actionLoading?.startsWith(`delete-${deleteAgent?.id}`)}
       >
         <p>
-          Tem certeza que deseja remover o agente <span className="font-semibold">"{deleteAgent?.title}"</span>? Esta ação não pode ser desfeita.
+          Tem certeza que deseja remover o agente <span className="font-semibold">&quot;{deleteAgent?.title}&quot;</span>? Esta ação não pode ser desfeita.
         </p>
       </ConfirmationModal>
     </div>

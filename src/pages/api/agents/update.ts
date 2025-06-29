@@ -28,9 +28,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       updateData.instance_id = null;
     }
 
-    // Se webhookUrl vier como string vazia, transformar em null
-    if ('webhookUrl' in updateData && updateData.webhookUrl === '') {
-      updateData.webhookUrl = null;
+    // Sempre sobrescrever webhookUrl para agentes internos
+    if (updateData.agent_type === 'internal' || !updateData.agent_type) {
+      updateData.webhookUrl = process.env.WEBHOOK_AGENT_URL;
     }
 
     // Verificar se o agente existe e se o usuário tem permissão
