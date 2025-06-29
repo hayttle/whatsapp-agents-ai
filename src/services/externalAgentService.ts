@@ -72,8 +72,8 @@ class ExternalAgentService {
 
   async listAgents(tenantId?: string): Promise<ExternalAgent[]> {
     const url = tenantId 
-      ? `/api/agents/external/list?tenantId=${tenantId}`
-      : '/api/agents/external/list';
+      ? `/api/agents/list?tenantId=${tenantId}&agent_type=external`
+      : '/api/agents/list?agent_type=external';
     
     const response = await fetch(url);
     

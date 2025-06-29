@@ -53,14 +53,35 @@ class AgentService {
   }
 
   async createAgent(agentData: Omit<Agent, 'id' | 'created_at' | 'updated_at'>): Promise<ApiResponse> {
-    return this.makeRequest<ApiResponse>("/api/agents/create", {
+    // Determinar o endpoint baseado no agent_type
+    const endpoint = agentData.agent_type === 'external' 
+      ? "/api/agents/external/create"
+      : "/api/agents/internal/create";
+    
+    return this.makeRequest<ApiResponse>(endpoint, {
       method: "POST",
       body: JSON.stringify(agentData),
     });
   }
 
   async updateAgent(agentId: string, agentData: Partial<Agent>): Promise<ApiResponse> {
-    return this.makeRequest<ApiResponse>("/api/agents/update", {
+    // Se agent_type não está no agentData, buscar do agente existente
+    let agentType = agentData.agent_type;
+    
+    if (!agentType) {
+      // Buscar o agent_type do agente
+      const response = await fetch(`/api/agents/list`);
+      const data = await response.json();
+      const agent = data.agents?.find((a: Agent) => a.id === agentId);
+      agentType = agent?.agent_type;
+    }
+    
+    // Determinar o endpoint baseado no agent_type
+    const endpoint = agentType === 'external' 
+      ? "/api/agents/external/update"
+      : "/api/agents/internal/update";
+    
+    return this.makeRequest<ApiResponse>(endpoint, {
       method: "PUT",
       body: JSON.stringify({ id: agentId, ...agentData }),
     });

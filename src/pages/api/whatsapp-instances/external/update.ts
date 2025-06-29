@@ -145,7 +145,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         try {
           const responseData = JSON.parse(responseText);
           console.log('[DEBUG] webhookBase64 na resposta:', responseData.webhookBase64);
-        } catch (e) {
+        } catch {
           console.log('[DEBUG] Não foi possível fazer parse da resposta JSON');
         }
 
@@ -156,11 +156,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
         
         console.log('[DEBUG] Webhook externo configurado com sucesso');
-      } catch (webhookError) {
-        console.error('[DEBUG] Erro ao configurar webhook externo:', webhookError);
-        return res.status(500).json({ 
-          error: 'Erro ao configurar webhook externo: ' + (webhookError instanceof Error ? webhookError.message : 'Erro desconhecido') 
-        });
+      } catch (err) {
+        return res.status(500).json({ error: err instanceof Error ? err.message : 'Erro inesperado' });
       }
     }
 

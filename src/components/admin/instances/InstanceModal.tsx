@@ -8,6 +8,7 @@ import GeneralSettings from './modal-parts/GeneralSettings';
 import { useAgents } from '@/hooks/useAgents';
 import { Agent } from '@/services/agentService';
 import { Save } from 'lucide-react';
+import { instanceService, CreateInstanceData } from "@/services/instanceService";
 
 type EmpresaDropdown = { id: string; name: string };
 
@@ -109,23 +110,14 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
     }
 
     try {
-      const res = await fetch("/api/whatsapp-instances/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Ocorreu um erro.");
-      } else {
-        setMsg("Instância criada com sucesso!");
-        setTimeout(() => {
-          setMsg("");
-          setError("");
-          onSave(data.instance || data);
-          onClose();
-        }, 800);
-      }
+      const data = await instanceService.createInstance(payload as unknown as CreateInstanceData);
+      setMsg("Instância criada com sucesso!");
+      setTimeout(() => {
+        setMsg("");
+        setError("");
+        onSave(data.instance || data);
+        onClose();
+      }, 800);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro inesperado.");
     } finally {

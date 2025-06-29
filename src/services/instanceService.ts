@@ -12,6 +12,7 @@ export interface ConnectResponse {
 export interface ApiResponse {
   success?: boolean;
   error?: string;
+  instance?: Record<string, unknown>;
 }
 
 export interface CreateInstanceData {
@@ -21,6 +22,7 @@ export interface CreateInstanceData {
   behavior_settings?: Record<string, unknown>;
   tenant_id: string;
   status?: string;
+  provider_type: string;
 }
 
 class InstanceService {
@@ -75,7 +77,12 @@ class InstanceService {
   }
 
   async createInstance(instanceData: CreateInstanceData): Promise<ApiResponse> {
-    return this.makeRequest<ApiResponse>("/api/whatsapp-instances/create", {
+    // Determinar o endpoint baseado no provider_type
+    const endpoint = instanceData.provider_type === 'externo' 
+      ? "/api/whatsapp-instances/external/create"
+      : "/api/whatsapp-instances/internal/create";
+    
+    return this.makeRequest<ApiResponse>(endpoint, {
       method: "POST",
       body: JSON.stringify(instanceData),
     });

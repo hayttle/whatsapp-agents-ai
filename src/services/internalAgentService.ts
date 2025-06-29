@@ -77,8 +77,8 @@ class InternalAgentService {
 
   async listAgents(tenantId?: string): Promise<InternalAgent[]> {
     const url = tenantId 
-      ? `/api/agents/internal/list?tenantId=${tenantId}`
-      : '/api/agents/internal/list';
+      ? `/api/agents/list?tenantId=${tenantId}&agent_type=internal`
+      : '/api/agents/list?agent_type=internal';
     
     const response = await fetch(url);
     

@@ -25,6 +25,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { tenantId, instanceName, provider_id } = req.body;
     
+    // Verificar se o provider_type é 'externo' (obrigatório para esta API)
+    if (req.body.provider_type !== 'externo') {
+      return res.status(400).json({ error: 'Esta API é apenas para instâncias externas (provider_type deve ser "externo")' });
+    }
+    
     // Verificar se o agente externo existe (se fornecido)
     if (req.body.agent_id) {
       const { data: agent, error: agentError } = await supabase
@@ -87,64 +92,75 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       groupsIgnore: true
     };
     
-    console.log('[DEBUG] Payload para criação de instância externa:', JSON.stringify(externalPayload, null, 2));
-    
     // Criar na API do provedor externo
-    const response = await fetch(provider.server_url.replace(/\/$/, '') + '/instance/create', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': provider.api_key,
-      },
-      body: JSON.stringify(externalPayload),
-    });
-    const data = await response.json();
-    
-    console.log('[WHATSAPP-INSTANCE][EXTERNAL] Response status:', response.status);
-    console.log('[WHATSAPP-INSTANCE][EXTERNAL] Response body:', JSON.stringify(data));
-    
-    if (!response.ok) {
-      return res.status(response.status).json({ error: data.error || data.response?.message?.[0] || 'Erro ao criar instância no provedor externo' });
-    }
+    try {
+      const response = await fetch(provider.server_url.replace(/\/$/, '') + '/instance/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': provider.api_key,
+        },
+        body: JSON.stringify(externalPayload),
+      });
+      
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        const textData = await response.text();
+        console.log('[WHATSAPP-INSTANCE][EXTERNAL] Resposta inválida do provedor:', textData);
+        return res.status(response.status).json({ error: 'Resposta inválida do provedor externo' });
+      }
+      
+      if (!response.ok) {
+        return res.status(response.status).json({ 
+          error: data.error || data.response?.message?.[0] || data.message || 'Erro ao criar instância no provedor externo' 
+        });
+      }
 
-    const rawStatus = data.status || data.instance?.status || 'close';
-    const normalizedStatus = rawStatus === 'open' ? 'open' : 'close';
-    
-    const instanceData = {
-      id: data.instanceId || data.id || randomUUID(),
-      instanceName,
-      integration: "WHATSAPP-BAILEYS",
-      status: normalizedStatus,
-      qrcode: data.qrcode || null,
-      apikey: data.apikey || null,
-      tenant_id: tenantId,
-      webhookEvents: ["MESSAGES_UPSERT"],
-      byEvents: false,
-      base64: true,
-      msgCall: "",
-      rejectCall: false,
-      groupsIgnore: true,
-      alwaysOnline: false,
-      readMessages: false,
-      readStatus: false,
-      syncFullHistory: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      public_hash: randomUUID(),
-      provider_type: 'externo',
-      provider_id,
-      description: req.body.description || null,
-      ...(req.body.agent_id ? { agent_id: req.body.agent_id } : {}),
-    };
+      const rawStatus = data.status || data.instance?.status || 'close';
+      const normalizedStatus = rawStatus === 'open' ? 'open' : 'close';
+      
+      const instanceData = {
+        id: data.instanceId || data.id || randomUUID(),
+        instanceName,
+        integration: "WHATSAPP-BAILEYS",
+        status: normalizedStatus,
+        qrcode: data.qrcode || null,
+        apikey: data.apikey || null,
+        tenant_id: tenantId,
+        webhookEvents: ["MESSAGES_UPSERT"],
+        byEvents: false,
+        base64: true,
+        msgCall: "",
+        rejectCall: false,
+        groupsIgnore: true,
+        alwaysOnline: false,
+        readMessages: false,
+        readStatus: false,
+        syncFullHistory: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        public_hash: randomUUID(),
+        provider_type: 'externo',
+        provider_id,
+        description: req.body.description || null,
+        ...(req.body.agent_id ? { agent_id: req.body.agent_id } : {}),
+      };
 
-    // Salvar no banco de dados
-    const { error: dbError } = await supabase.from('whatsapp_instances').insert(instanceData);
-    if (dbError) {
-      return res.status(500).json({ error: dbError.message || 'Erro ao salvar instância no banco' });
+      // Salvar no banco de dados
+      const { error: dbError } = await supabase.from('whatsapp_instances').insert(instanceData);
+      if (dbError) {
+        return res.status(500).json({ error: dbError.message || 'Erro ao salvar instância no banco' });
+      }
+      
+      console.log('[WHATSAPP-INSTANCE][EXTERNAL] Instância externa criada com sucesso:', instanceData.instanceName);
+      return res.status(201).json({ instance: instanceData });
+      
+    } catch (fetchError) {
+      console.log('[WHATSAPP-INSTANCE][EXTERNAL] Erro de conexão com provedor:', fetchError);
+      return res.status(500).json({ error: 'Erro de conexão com o provedor externo: ' + (fetchError instanceof Error ? fetchError.message : 'Erro desconhecido') });
     }
-    
-    console.log('[WHATSAPP-INSTANCE][EXTERNAL] Instância externa criada com sucesso:', instanceData.instanceName);
-    return res.status(201).json({ instance: instanceData });
   } catch (err: unknown) {
     return res.status(500).json({ error: err instanceof Error ? err.message : 'Erro inesperado' });
   }
