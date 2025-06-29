@@ -121,11 +121,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             url: webhookUrl,
             webhookByEvents: false,
             webhookBase64: true,
+            base64: true,
             events: ["MESSAGES_UPSERT"]
           }
         };
         
-        console.log('[DEBUG] Configuração do webhook externo:', webhookConfig);
+        console.log('[DEBUG] Configuração do webhook externo:', JSON.stringify(webhookConfig, null, 2));
         
         const response = await fetch(`${provider.server_url}/webhook/set/${instanceData.instanceName}`, {
           method: 'POST',
@@ -138,12 +139,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const responseText = await response.text();
         console.log('[DEBUG] Resposta do provedor externo:', response.status, responseText);
+        
+        // Tentar fazer parse da resposta para verificar se webhookBase64 foi aplicado
+        try {
+          const responseData = JSON.parse(responseText);
+          console.log('[DEBUG] webhookBase64 na resposta:', responseData.webhookBase64);
+          console.log('[DEBUG] base64 na resposta:', responseData.base64);
+        } catch (e) {
+          console.log('[DEBUG] Não foi possível fazer parse da resposta JSON');
+        }
 
         if (!response.ok) {
           return res.status(500).json({ 
             error: `Erro ao configurar webhook externo: ${response.status} - ${responseText}` 
           });
         }
+        
+        // Também configurar a instância para garantir webhookBase64
+        console.log('[DEBUG] Configurando instância externa para webhookBase64');
+        const instanceConfig = {
+          webhookBase64: true,
+          base64: true,
+          webhookByEvents: false
+        };
+        
+        const instanceResponse = await fetch(`${provider.server_url}/instance/set/${instanceData.instanceName}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': provider.api_key,
+          },
+          body: JSON.stringify(instanceConfig),
+        });
+        
+        const instanceResponseText = await instanceResponse.text();
+        console.log('[DEBUG] Resposta da configuração da instância:', instanceResponse.status, instanceResponseText);
       } catch (webhookError) {
         console.error('[DEBUG] Erro ao configurar webhook externo:', webhookError);
         return res.status(500).json({ 
