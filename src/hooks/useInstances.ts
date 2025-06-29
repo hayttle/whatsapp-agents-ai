@@ -10,6 +10,7 @@ interface InstanceFormData {
   webhook_url?: string;
   behavior_settings?: Record<string, unknown>;
   tenant_id: string;
+  provider_type: string; // 'nativo' | 'externo'
 }
 
 interface UseInstancesProps {

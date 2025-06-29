@@ -111,11 +111,13 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
 
     try {
       const data = await instanceService.createInstance(payload as unknown as CreateInstanceData);
+      if (data && data.instance) {
+        onSave(data.instance as unknown as Instance);
+      }
       setMsg("Instância criada com sucesso!");
       setTimeout(() => {
         setMsg("");
         setError("");
-        onSave(data.instance || data);
         onClose();
       }, 800);
     } catch (err: unknown) {
