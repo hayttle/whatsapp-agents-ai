@@ -33,24 +33,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
 
-    // Se está vinculando um agente, buscar dados do agente para atualizar webhookUrl
-    if (updateData.agent_id) {
-      const { data: agent, error: agentError } = await supabase
-        .from('agents')
-        .select('title, description, webhookUrl, agent_type')
-        .eq('id', updateData.agent_id)
-        .single();
-
-      if (agentError) {
-        return res.status(500).json({ error: 'Erro ao buscar dados do agente: ' + agentError.message });
-      }
-
-      // Para instâncias externas com agentes externos, atualizar o webhookUrl da instância
-      if (existingInstance.provider_type === 'externo' && agent.agent_type === 'external') {
-        updateData.webhookUrl = agent.webhookUrl;
-      }
-    }
-
     // Atualizar instância
     const { data: updated, error: updateError } = await supabase
       .from('whatsapp_instances')
@@ -88,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         instance_id: updated.id,
         instance_name: updated.name,
         provider: updated.provider,
-        webhook_url: updated.webhookUrl,
+        webhook_url: webhookUrl, // Usar a URL determinada acima
         agent: {
           name: agent.title,
           description: agent.description
