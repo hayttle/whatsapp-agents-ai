@@ -121,8 +121,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             url: webhookUrl,
             webhookByEvents: false,
             webhookBase64: true,
-            base64: true,
-            events: ["MESSAGES_UPSERT"]
+            events: [
+              "MESSAGES_UPSERT"
+            ]
           }
         };
         
@@ -144,7 +145,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         try {
           const responseData = JSON.parse(responseText);
           console.log('[DEBUG] webhookBase64 na resposta:', responseData.webhookBase64);
-          console.log('[DEBUG] base64 na resposta:', responseData.base64);
         } catch (e) {
           console.log('[DEBUG] Não foi possível fazer parse da resposta JSON');
         }
@@ -155,25 +155,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           });
         }
         
-        // Também configurar a instância para garantir webhookBase64
-        console.log('[DEBUG] Configurando instância externa para webhookBase64');
-        const instanceConfig = {
-          webhookBase64: true,
-          base64: true,
-          webhookByEvents: false
-        };
-        
-        const instanceResponse = await fetch(`${provider.server_url}/instance/set/${instanceData.instanceName}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': provider.api_key,
-          },
-          body: JSON.stringify(instanceConfig),
-        });
-        
-        const instanceResponseText = await instanceResponse.text();
-        console.log('[DEBUG] Resposta da configuração da instância:', instanceResponse.status, instanceResponseText);
+        console.log('[DEBUG] Webhook externo configurado com sucesso');
       } catch (webhookError) {
         console.error('[DEBUG] Erro ao configurar webhook externo:', webhookError);
         return res.status(500).json({ 
