@@ -48,12 +48,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (updated.agent_id) {
       const { data: agent, error: agentError } = await supabase
         .from('agents')
-        .select('title, description')
+        .select('title, description, webhookUrl, agent_type')
         .eq('id', updated.agent_id)
         .single();
 
       if (agentError) {
         return res.status(500).json({ error: 'Erro ao buscar dados do agente: ' + agentError.message });
+      }
+
+      // Determinar a URL do webhook baseada no tipo do agente
+      let webhookUrl = null;
+      if (agent.agent_type === 'external') {
+        webhookUrl = agent.webhookUrl;
+      } else {
+        // Para agentes internos, usar a variável de ambiente
+        webhookUrl = process.env.WEBHOOK_AGENT_URL;
       }
 
       // Preparar payload para webhook
@@ -69,9 +78,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
 
       // Enviar webhook se configurado
-      if (updated.webhook_url) {
+      if (webhookUrl) {
         try {
-          const endpoint = updated.webhook_url;
+          const endpoint = webhookUrl;
           const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
