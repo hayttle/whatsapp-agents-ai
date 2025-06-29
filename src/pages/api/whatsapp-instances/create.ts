@@ -24,18 +24,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { userData } = auth;
 
     const { tenantId, instanceName, provider_type, provider_id } = req.body;
-    // Buscar webhook do agente vinculado
-    let agentWebhookUrl = null;
+    // Verificar se o agente existe (se fornecido)
     if (req.body.agent_id) {
-      const { data: agent, error: agentError } = await supabase
+      const { error: agentError } = await supabase
         .from('agents')
-        .select('webhookUrl')
+        .select('id')
         .eq('id', req.body.agent_id)
         .single();
       if (agentError) {
         return res.status(400).json({ error: 'Erro ao buscar agente vinculado.' });
       }
-      agentWebhookUrl = agent?.webhookUrl || null;
     }
     
     if (!tenantId) {

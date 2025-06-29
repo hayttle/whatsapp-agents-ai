@@ -170,7 +170,7 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
           )}
         </div>
         
-        {isSuperAdmin && (
+      {isSuperAdmin && (
           <button 
             className="px-4 py-2 text-sm font-semibold text-white bg-brand-gray-dark rounded-md hover:bg-brand-gray-deep transition-colors flex items-center gap-2"
             onClick={() => dispatchModal({ type: 'OPEN_CREATE' })}

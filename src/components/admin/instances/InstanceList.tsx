@@ -163,8 +163,14 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
       toast.success('Agente vinculado com sucesso!');
       setRefreshKey(k => k + 1);
       handleCloseSelectAgent();
-    } catch {
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'message' in err) {
+        toast.error('Erro ao vincular agente: ' + (err as { message: string }).message);
+      } else if (typeof err === 'string') {
+        toast.error('Erro ao vincular agente: ' + err);
+      } else {
       toast.error('Erro ao vincular agente.');
+      }
     } finally {
       setSavingAgent(false);
     }
@@ -341,7 +347,20 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
               return (
                 <Card key={inst.id} className="">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-semibold mb-1">Status da Conexão: <span className={normalizeStatus(inst.status) === 'open' ? 'text-green-600' : 'text-red-600'}>{statusDisplay[normalizeStatus(inst.status)]}</span></CardTitle>
+                    <div className="flex items-center justify-between mb-1">
+                      <CardTitle className="text-base font-semibold">Status da Conexão: <span className={normalizeStatus(inst.status) === 'open' ? 'text-green-600' : 'text-red-600'}>{statusDisplay[normalizeStatus(inst.status)]}</span></CardTitle>
+                      <div className="flex items-center gap-2">
+                        {inst.provider_type && (
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            inst.provider_type === 'nativo' 
+                              ? 'bg-blue-100 text-blue-800' 
+                              : 'bg-purple-100 text-purple-800'
+                          }`}>
+                            {inst.provider_type === 'nativo' ? 'Nativa' : 'Externa'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                     <CardDescription className="mt-1">
                       <span className="font-semibold">Agente vinculado: </span>
                       {agenteVinculado ? (
@@ -399,36 +418,36 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
                         </div>
                       </div>
                     )}
-                    {normalizeStatus(inst.status) === 'close' && inst.public_hash && (
+                  {normalizeStatus(inst.status) === 'close' && inst.public_hash && (
                       <div className="flex items-start gap-2 p-3 bg-gray-50 border border-gray-200 rounded-md md:col-span-2">
                         <span className="text-gray-500 mt-0.5"><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
                         <div className="flex-1">
                           <div className="font-semibold mb-1">URL pública para conectar instância</div>
                           <div className="text-gray-600 text-sm mb-2">Envie essa url para o seu cliente escanear o QRCode</div>
                           <div className="flex items-center gap-2 w-full">
-                            <input
-                              type="text"
-                              readOnly
-                              value={`${window.location.origin}/qrcode/${inst.public_hash}`}
-                              className="text-base bg-gray-100 rounded px-2 py-2 flex-1 h-10"
-                              onFocus={e => e.target.select()}
-                            />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              leftIcon={<Clipboard className="w-4 h-4" />}
-                              onClick={() => {
-                                navigator.clipboard.writeText(`${window.location.origin}/qrcode/${inst.public_hash}`);
-                                toast.success('Link copiado!');
-                              }}
-                            >
-                              Copiar link
-                            </Button>
-                          </div>
+                          <input
+                            type="text"
+                            readOnly
+                            value={`${window.location.origin}/qrcode/${inst.public_hash}`}
+                            className="text-base bg-gray-100 rounded px-2 py-2 flex-1 h-10"
+                            onFocus={e => e.target.select()}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            leftIcon={<Clipboard className="w-4 h-4" />}
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/qrcode/${inst.public_hash}`);
+                              toast.success('Link copiado!');
+                            }}
+                          >
+                            Copiar link
+                          </Button>
                         </div>
                       </div>
+                      </div>
                     )}
-                  </CardContent>
+                    </CardContent>
                   <CardFooter className="flex gap-2 justify-end">
                     {normalizeStatus(inst.status) === 'open' ? (
                       <Button
@@ -513,32 +532,32 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
           }}
         />
       )}
-      <ConfirmationModal
+        <ConfirmationModal
         isOpen={modalState.type === 'DELETE'}
-        onClose={closeModal}
+          onClose={closeModal}
         onConfirm={() => handleDelete(modalState.type === 'DELETE' ? modalState.payload.instanceName : '')}
         title="Remover instância"
         confirmText="Remover"
         cancelText="Cancelar"
         isLoading={actionLoading === (modalState.type === 'DELETE' ? modalState.payload.instanceName : '')}
-      >
+        >
         <p>
           Tem certeza que deseja remover a instância <span className="font-semibold">&quot;{modalState.type === 'DELETE' ? modalState.payload.instanceName : ''}&quot;</span>? Esta ação não pode ser desfeita.
         </p>
-      </ConfirmationModal>
-      <ConfirmationModal
+        </ConfirmationModal>
+        <ConfirmationModal
         isOpen={modalState.type === 'DISCONNECT'}
-        onClose={closeModal}
+          onClose={closeModal}
         onConfirm={() => handleDisconnect(modalState.type === 'DISCONNECT' ? modalState.payload.instanceName : '')}
-        title="Confirmar Desconexão"
-        confirmText="Desconectar"
+          title="Confirmar Desconexão"
+          confirmText="Desconectar"
         cancelText="Cancelar"
         isLoading={actionLoading === (modalState.type === 'DISCONNECT' ? modalState.payload.instanceName : '')}
-      >
+        >
         <p>
           Tem certeza que deseja desconectar a instância <span className="font-semibold">&quot;{modalState.type === 'DISCONNECT' ? modalState.payload.instanceName : ''}&quot;</span>?
         </p>
-      </ConfirmationModal>
+        </ConfirmationModal>
       <Modal
         isOpen={selectAgentModal.open}
         onClose={handleCloseSelectAgent}
@@ -549,18 +568,18 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Selecione um agente para vincular:
             </label>
-            <select
-              value={selectedAgentId}
+          <select
+            value={selectedAgentId}
               onChange={(e) => setSelectedAgentId(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
-            >
+          >
               <option value="">Selecione um agente...</option>
               {agentes.map((agent) => (
                 <option key={agent.id} value={agent.id}>
                   {agent.title}
                 </option>
-              ))}
-            </select>
+            ))}
+          </select>
           </div>
         </ModalBody>
         <ModalFooter>

@@ -256,7 +256,7 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
             const instanceObj = agente.instance_id && instancias[agente.instance_id]
               ? instancias[agente.instance_id]
               : null;
-            const instanceName = instanceObj ? instanceObj.instanceName : "Não definida";
+            const instanceName = instanceObj ? instanceObj.instanceName : "Nenhuma instância vinculada";
             const instanceStatus = instanceObj ? instanceObj.status : null;
             return (
               <Card key={agente.id} className="flex flex-col p-4">
@@ -269,7 +269,7 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                     <StatusIndicator status={agente.active ? 'online' : 'offline'} />
                   </CardTitle>
                   <CardDescription>
-                    <span className="font-bold">Instância: {instanceName}
+                    <span><span className="font-bold">Instância:</span> {instanceName}
                       {instanceObj && instanceStatus !== 'open' && (
                         <Tooltip content="Instância não conectada">
                           <AlertTriangle className="inline w-4 h-4 text-yellow-500 ml-1 align-text-bottom" />
@@ -370,20 +370,20 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
         tenantId={tenantId || ""}
         isSuperAdmin={isSuperAdmin}
       />
-
-      <ConfirmationModal
+      
+        <ConfirmationModal
         isOpen={!!deleteAgent}
-        onClose={() => setDeleteAgent(null)}
-        onConfirm={handleDelete}
+          onClose={() => setDeleteAgent(null)}
+          onConfirm={handleDelete}
         title="Remover agente"
         confirmText="Remover"
         cancelText="Cancelar"
         isLoading={actionLoading?.startsWith(`delete-${deleteAgent?.id}`)}
-      >
+        >
         <p>
           Tem certeza que deseja remover o agente <span className="font-semibold">&quot;{deleteAgent?.title}&quot;</span>? Esta ação não pode ser desfeita.
         </p>
-      </ConfirmationModal>
+        </ConfirmationModal>
     </div>
   );
 } 

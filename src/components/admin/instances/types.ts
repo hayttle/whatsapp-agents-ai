@@ -23,4 +23,6 @@ export interface Instance {
   phone_number?: string | null;
   agent_id?: string | null;
   description?: string | null;
+  provider_type?: 'nativo' | 'externo';
+  provider_id?: string | null;
 } 

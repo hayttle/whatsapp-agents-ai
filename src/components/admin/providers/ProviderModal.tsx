@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import Image from 'next/image';
 import Modal, { ModalHeader, ModalBody } from '@/components/ui/Modal';
 import { Button, Alert } from '@/components/brand';
 import ProviderSettings from './ProviderSettings';
@@ -97,7 +98,7 @@ export function ProviderModal({ open, onClose, onSaved, provider }: ProviderModa
       <ModalHeader>
         <div className="flex flex-col items-center gap-2 mb-2">
           <div className="bg-brand-gray-dark rounded-lg p-3 flex items-center justify-center">
-            <img src="/evolution-ai-logo.png" alt="Evolution API" className="h-8 w-auto" />
+            <Image src="/evolution-ai-logo.png" alt="Evolution API" width={32} height={32} className="h-8 w-auto" />
           </div>
           <span className="text-lg font-semibold mt-1">{provider ? 'Editar Servidor Evolution' : 'Novo Servidor Evolution'}</span>
         </div>
