@@ -21,6 +21,8 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
   const [customPersonality, setCustomPersonality] = useState('');
   const [tone, setTone] = useState('Empathetic');
   const [webhookUrl, setWebhookUrl] = useState("");
+  const [description, setDescription] = useState("");
+  const [agentType, setAgentType] = useState<'internal' | 'external'>('internal');
 
   // Resetar campos ao abrir/fechar ou mudar agente
   useEffect(() => {
@@ -34,6 +36,8 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
       setCustomPersonality(agent.personality === 'Custom' ? (agent.custom_personality || '') : '');
       setTone(agent.tone || 'Empathetic');
       setWebhookUrl(agent.webhookUrl || "");
+      setDescription(agent.description || "");
+      setAgentType(agent.agent_type || 'internal');
     } else {
       setTitle("");
       setPrompt("");
@@ -44,6 +48,8 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
       setCustomPersonality('');
       setTone('Empathetic');
       setWebhookUrl("");
+      setDescription("");
+      setAgentType('internal');
     }
     setMsg("");
     setError("");
@@ -69,17 +75,40 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
     setLoading(true);
     setMsg("");
     setError("");
+    
+    // Validação específica por tipo de agente
+    if (agentType === 'internal') {
+      if (!prompt.trim()) {
+        setError('Prompt é obrigatório para agentes internos.');
+        setLoading(false);
+        return;
+      }
+      if (!fallback.trim()) {
+        setError('Mensagem fallback é obrigatória para agentes internos.');
+        setLoading(false);
+        return;
+      }
+    } else {
+      if (!webhookUrl.trim()) {
+        setError('Endpoint é obrigatório para agentes externos.');
+        setLoading(false);
+        return;
+      }
+    }
+    
     try {
       const agentData = {
         title,
-        prompt,
-        fallback_message: fallback,
+        prompt: agentType === 'internal' ? prompt : '',
+        fallback_message: agentType === 'internal' ? fallback : '',
         active,
         tenant_id: selectedTenant,
-        personality: personality,
-        custom_personality: personality === 'Custom' ? customPersonality : undefined,
-        tone: tone,
-        webhookUrl: webhookUrl || undefined,
+        personality: agentType === 'internal' ? personality : undefined,
+        custom_personality: agentType === 'internal' && personality === 'Custom' ? customPersonality : undefined,
+        tone: agentType === 'internal' ? tone : undefined,
+        webhookUrl: agentType === 'external' ? webhookUrl : undefined,
+        description: description || undefined,
+        agent_type: agentType,
       };
       if (agent) {
         await agentService.updateAgent(agent.id, agentData);
@@ -125,71 +154,116 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
             </Select>
           )}
           <Input
-            label="Título do agente"
+            label="Título do agente *"
             placeholder="Ex: Bot de Atendimento"
             value={title}
             onChange={e => setTitle(e.target.value)}
             required
           />
           <div>
-            <label className="block text-sm font-medium mb-1">Prompt (mensagem base de IA)</label>
+            <label className="block text-sm font-medium mb-1">Descrição</label>
             <textarea
-              className="border rounded px-3 py-2 w-full"
-              placeholder="Prompt do agente"
-              value={prompt}
-              onChange={e => setPrompt(e.target.value)}
-              required
-              rows={4}
+              className="border rounded px-3 py-2 w-full resize-none min-h-[60px]"
+              placeholder="Descreva a finalidade ou detalhes do agente (opcional)"
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              maxLength={255}
+              disabled={loading}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Personalidade</label>
+            <label className="block text-sm font-medium mb-1">Tipo de Agente *</label>
             <select
               className="border rounded px-3 py-2 w-full"
-              value={personality}
-              onChange={e => setPersonality(e.target.value)}
+              value={agentType}
+              onChange={e => setAgentType(e.target.value as 'internal' | 'external')}
               required
+              disabled={loading}
             >
-              <option value="Friendly">Amigável</option>
-              <option value="Professional">Profissional</option>
-              <option value="Sophisticated">Sofisticado</option>
-              <option value="Custom">Personalizado</option>
-            </select>
-            {personality === 'Custom' && (
-              <input
-                className="border rounded px-3 py-2 w-full mt-2"
-                placeholder="Descreva a personalidade personalizada"
-                value={customPersonality}
-                onChange={e => setCustomPersonality(e.target.value)}
-                required
-              />
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Tom de Voz</label>
-            <select
-              className="border rounded px-3 py-2 w-full"
-              value={tone}
-              onChange={e => setTone(e.target.value)}
-              required
-            >
-              <option value="Empathetic">Empático</option>
-              <option value="Direct">Direto</option>
-              <option value="Humorous">Bem-humorado</option>
-              <option value="Robotic">Robótico</option>
+              <option value="internal">Agente Interno (IA)</option>
+              <option value="external">Agente Externo (n8n/Webhook)</option>
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Mensagem fallback (caso IA falhe)</label>
-            <textarea
-              className="border rounded px-3 py-2 w-full"
-              placeholder="Mensagem fallback"
-              value={fallback}
-              onChange={e => setFallback(e.target.value)}
+          
+          {agentType === 'internal' ? (
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-1">Prompt (mensagem base de IA) *</label>
+                <textarea
+                  className="border rounded px-3 py-2 w-full"
+                  placeholder="Prompt do agente"
+                  value={prompt}
+                  onChange={e => setPrompt(e.target.value)}
+                  required
+                  rows={4}
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Personalidade</label>
+                <select
+                  className="border rounded px-3 py-2 w-full"
+                  value={personality}
+                  onChange={e => setPersonality(e.target.value)}
+                  required
+                  disabled={loading}
+                >
+                  <option value="Friendly">Amigável</option>
+                  <option value="Professional">Profissional</option>
+                  <option value="Sophisticated">Sofisticado</option>
+                  <option value="Custom">Personalizado</option>
+                </select>
+                {personality === 'Custom' && (
+                  <input
+                    className="border rounded px-3 py-2 w-full mt-2"
+                    placeholder="Descreva a personalidade personalizada"
+                    value={customPersonality}
+                    onChange={e => setCustomPersonality(e.target.value)}
+                    required
+                    disabled={loading}
+                  />
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Tom de Voz</label>
+                <select
+                  className="border rounded px-3 py-2 w-full"
+                  value={tone}
+                  onChange={e => setTone(e.target.value)}
+                  required
+                  disabled={loading}
+                >
+                  <option value="Empathetic">Empático</option>
+                  <option value="Direct">Direto</option>
+                  <option value="Humorous">Bem-humorado</option>
+                  <option value="Robotic">Robótico</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Mensagem fallback (caso IA falhe) *</label>
+                <textarea
+                  className="border rounded px-3 py-2 w-full"
+                  placeholder="Mensagem fallback"
+                  value={fallback}
+                  onChange={e => setFallback(e.target.value)}
+                  required
+                  rows={2}
+                  disabled={loading}
+                />
+              </div>
+            </>
+          ) : (
+            <Input
+              label="Endpoint (URL do webhook) *"
+              placeholder="https://seu-n8n.com/webhook/123"
+              value={webhookUrl}
+              onChange={e => setWebhookUrl(e.target.value)}
+              type="url"
               required
-              rows={2}
+              disabled={loading}
             />
-          </div>
+          )}
+          
           <div className="flex items-center gap-2">
             <Switch
               checked={active}
@@ -199,14 +273,6 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
               Ativo
             </Switch>
           </div>
-          <Input
-            label="Webhook do agente (URL)"
-            placeholder="https://meusistema.com/webhook"
-            value={webhookUrl}
-            onChange={e => setWebhookUrl(e.target.value)}
-            type="url"
-            required={false}
-          />
         </ModalBody>
         <ModalFooter>
           <Button

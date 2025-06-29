@@ -11,6 +11,8 @@ export interface Agent {
   personality?: string;
   custom_personality?: string;
   tone?: string;
+  description?: string | null;
+  agent_type?: 'internal' | 'external';
 }
 
 export interface AgentListResponse {

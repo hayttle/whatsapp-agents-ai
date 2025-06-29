@@ -23,6 +23,7 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterEmpresa, setFilterEmpresa] = useState<string>('');
   const [filterSearch, setFilterSearch] = useState<string>('');
+  const [filterType, setFilterType] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
   
   const { 
@@ -48,20 +49,24 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
         (filterStatus === 'active' && agente.active) || 
         (filterStatus === 'inactive' && !agente.active);
       const matchesEmpresa = !filterEmpresa || agente.tenant_id === filterEmpresa;
-      const matchesSearch = !filterSearch || agente.title.toLowerCase().includes(filterSearch.toLowerCase());
-      return matchesStatus && matchesEmpresa && matchesSearch;
+      const matchesSearch = !filterSearch || 
+        agente.title.toLowerCase().includes(filterSearch.toLowerCase()) ||
+        (agente.description && agente.description.toLowerCase().includes(filterSearch.toLowerCase()));
+      const matchesType = !filterType || agente.agent_type === filterType;
+      return matchesStatus && matchesEmpresa && matchesSearch && matchesType;
     });
-  }, [agentes, filterStatus, filterEmpresa, filterSearch]);
+  }, [agentes, filterStatus, filterEmpresa, filterSearch, filterType]);
 
   // Limpar filtros
   const clearFilters = () => {
     setFilterStatus('');
     setFilterEmpresa('');
     setFilterSearch('');
+    setFilterType('');
   };
 
   // Verificar se há filtros ativos
-  const hasActiveFilters = filterStatus || filterEmpresa || filterSearch;
+  const hasActiveFilters = filterStatus || filterEmpresa || filterSearch || filterType;
 
   const handleToggleActive = (agente: Agent) => handleAction(
     async () => {
@@ -113,7 +118,7 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
             Filtros
             {hasActiveFilters && (
               <span className="ml-1 px-2 py-0.5 text-xs bg-red-500 text-white rounded-full">
-                {[filterStatus, filterEmpresa, filterSearch].filter(Boolean).length}
+                {[filterStatus, filterEmpresa, filterSearch, filterType].filter(Boolean).length}
               </span>
             )}
           </button>
@@ -143,7 +148,7 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
       {/* Filtros */}
       {showFilters && (
         <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Status
@@ -156,6 +161,21 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                 <option value="">Todos os status</option>
                 <option value="active">Ativos</option>
                 <option value="inactive">Inativos</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tipo
+              </label>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+              >
+                <option value="">Todos os tipos</option>
+                <option value="internal">Interno (IA)</option>
+                <option value="external">Externo (n8n)</option>
               </select>
             </div>
             
@@ -181,13 +201,13 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Buscar por nome
+                Buscar por nome ou descrição
               </label>
               <input
                 type="text"
                 value={filterSearch}
                 onChange={(e) => setFilterSearch(e.target.value)}
-                placeholder="Digite o nome do agente..."
+                placeholder="Digite o nome do agente ou descrição..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
               />
             </div>
@@ -204,6 +224,11 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
             {filterStatus && (
               <span className="px-2 py-1 bg-blue-100 rounded text-xs">
                 Status: {filterStatus === 'active' ? 'Ativos' : 'Inativos'}
+              </span>
+            )}
+            {filterType && (
+              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                Tipo: {filterType === 'internal' ? 'Interno (IA)' : 'Externo (n8n)'}
               </span>
             )}
             {filterEmpresa && (
@@ -250,6 +275,15 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                         </Tooltip>
                       )}
                     </span>
+                    <span className="flex items-center gap-1 text-xs mt-1">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        agente.agent_type === 'external' 
+                          ? 'bg-blue-100 text-blue-800' 
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {agente.agent_type === 'external' ? 'Externo (n8n)' : 'Interno (IA)'}
+                      </span>
+                    </span>
                     {isSuperAdmin && empresas[agente.tenant_id] && (
                       <span className="flex items-center gap-1 text-xs mt-1">
                         <Building className="w-3 h-3"/>
@@ -259,6 +293,11 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow">
+                  {agente.description && (
+                    <div className="text-sm text-gray-600 mb-2">
+                      {agente.description}
+                    </div>
+                  )}
                   {/* Prompt removido */}
                   {''}
                 </CardContent>

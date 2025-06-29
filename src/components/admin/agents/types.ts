@@ -10,6 +10,8 @@ export interface Agent {
   custom_personality?: string;
   tone?: string;
   webhookUrl?: string | null;
+  description?: string | null;
+  agent_type?: 'internal' | 'external';
 }
 
 export interface Instance {
