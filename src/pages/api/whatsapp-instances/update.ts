@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Buscar instância existente
     const { data: existingInstance, error: fetchError } = await supabase
       .from('whatsapp_instances')
-      .select('tenant_id')
+      .select('tenant_id, provider_type')
       .eq('id', id)
       .single();
     if (fetchError || !existingInstance) {
@@ -31,6 +31,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     if (userData.role !== 'super_admin' && existingInstance.tenant_id !== userData.tenant_id) {
       return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+
+    // Se está vinculando um agente, buscar dados do agente para atualizar webhookUrl
+    if (updateData.agent_id) {
+      const { data: agent, error: agentError } = await supabase
+        .from('agents')
+        .select('title, description, webhookUrl, agent_type')
+        .eq('id', updateData.agent_id)
+        .single();
+
+      if (agentError) {
+        return res.status(500).json({ error: 'Erro ao buscar dados do agente: ' + agentError.message });
+      }
+
+      // Para instâncias externas com agentes externos, atualizar o webhookUrl da instância
+      if (existingInstance.provider_type === 'externo' && agent.agent_type === 'external') {
+        updateData.webhook_url = agent.webhookUrl;
+      }
     }
 
     // Atualizar instância
@@ -44,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Erro ao atualizar instância: ' + updateError.message });
     }
 
-    // Se a instância tem um agente associado, buscar dados do agente
+    // Se a instância tem um agente associado, buscar dados do agente para webhook
     if (updated.agent_id) {
       const { data: agent, error: agentError } = await supabase
         .from('agents')
