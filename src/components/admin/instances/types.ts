@@ -8,8 +8,8 @@ export interface Instance {
   tenant_id?: string;
   webhookUrl?: string;
   webhookEvents?: string[];
-  webhookByEvents?: boolean;
-  webhookBase64?: boolean;
+  byEvents?: boolean;
+  base64?: boolean;
   msgCall?: string;
   rejectCall?: boolean;
   groupsIgnore?: boolean;

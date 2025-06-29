@@ -86,8 +86,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Montar payload mínimo para provedor externo
       const externalPayload: Record<string, unknown> = {
         instanceName,
-        integration: "WHATSAPP-BAILEYS"
+        integration: "WHATSAPP-BAILEYS",
+        groupsIgnore: true,
+        ignoreGroup: true
       };
+      
+      console.log('[DEBUG] Payload para criação de instância externa:', JSON.stringify(externalPayload, null, 2));
+      
       // Criar na API do provedor externo
       const response = await fetch(provider.server_url.replace(/\/$/, '') + '/instance/create', {
         method: 'POST',
@@ -142,6 +147,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       msgCall: "",
       rejectCall: false,
       groupsIgnore: true,
+      ignoreGroup: true,
       alwaysOnline: false,
       readMessages: false,
       readStatus: false,
@@ -154,6 +160,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         events: ["MESSAGES_UPSERT"],
       },
     };
+    
+    console.log('[DEBUG] Payload para criação de instância interna:', JSON.stringify(evolutionPayload, null, 2));
+    
     // Remover campos undefined
     Object.keys(evolutionPayload).forEach(key => {
       if (evolutionPayload[key] === undefined) delete evolutionPayload[key];
@@ -177,6 +186,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       body: JSON.stringify(evolutionPayload),
     });
     const data = await response.json();
+    
+    console.log('[WHATSAPP-INSTANCE][INTERNAL] Response status:', response.status);
+    console.log('[WHATSAPP-INSTANCE][INTERNAL] Response body:', JSON.stringify(data));
+    
     if (!response.ok) {
       return res.status(response.status).json({ error: data.error || data.response?.message?.[0] || 'Erro ao criar instância' });
     }
