@@ -21,12 +21,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Buscar instância existente
+    console.log('[DEBUG] Buscando instância:', id);
     const { data: existingInstance, error: fetchError } = await supabase
       .from('whatsapp_instances')
       .select('tenant_id, provider_type')
       .eq('id', id)
       .single();
+    console.log('[DEBUG] Instância encontrada:', existingInstance);
     if (fetchError || !existingInstance) {
+      console.error('[DEBUG] Erro ao buscar instância:', fetchError);
       return res.status(404).json({ error: 'Instance not found' });
     }
     if (userData.role !== 'super_admin' && existingInstance.tenant_id !== userData.tenant_id) {
@@ -34,25 +37,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Atualizar instância
+    console.log('[DEBUG] Atualizando instância:', id, updateData);
     const { data: updated, error: updateError } = await supabase
       .from('whatsapp_instances')
       .update(updateData)
       .eq('id', id)
       .select()
       .single();
+    console.log('[DEBUG] Instância atualizada:', updated);
     if (updateError) {
+      console.error('[DEBUG] Erro ao atualizar instância:', updateError);
       return res.status(500).json({ error: 'Erro ao atualizar instância: ' + updateError.message });
     }
 
     // Se a instância tem um agente associado, buscar dados do agente para webhook
     if (updated.agent_id) {
+      console.log('[DEBUG] Buscando agente vinculado:', updated.agent_id);
       const { data: agent, error: agentError } = await supabase
         .from('agents')
         .select('title, description, webhookUrl, agent_type')
         .eq('id', updated.agent_id)
         .single();
+      console.log('[DEBUG] Agente encontrado:', agent);
 
       if (agentError) {
+        console.error('[DEBUG] Erro ao buscar agente:', agentError);
         return res.status(500).json({ error: 'Erro ao buscar dados do agente: ' + agentError.message });
       }
 
@@ -60,10 +69,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       let webhookUrl = null;
       if (agent.agent_type === 'external') {
         webhookUrl = agent.webhookUrl;
-      } else {
-        // Para agentes internos, usar a variável de ambiente
+      } else if (agent.agent_type === 'internal' || !agent.agent_type) {
         webhookUrl = process.env.WEBHOOK_AGENT_URL;
+      } else {
+        webhookUrl = null;
       }
+      console.log('[DEBUG] URL do webhook determinada:', webhookUrl);
 
       // Preparar payload para webhook
       const webhookPayload = {
@@ -82,12 +93,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         } : {})
       };
+      console.log('[DEBUG] Payload do webhook montado:', webhookPayload);
 
       // Enviar webhook se configurado
       if (webhookUrl) {
         try {
-          const endpoint = webhookUrl;
-          const response = await fetch(endpoint, {
+          console.log('[DEBUG] Enviando webhook para:', webhookUrl);
+          const response = await fetch(webhookUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -96,6 +108,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           });
 
           const responseText = await response.text();
+          console.log('[DEBUG] Resposta do webhook:', response.status, responseText);
 
           if (!response.ok) {
             return res.status(500).json({ 
@@ -103,6 +116,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             });
           }
         } catch (webhookError) {
+          console.error('[DEBUG] Erro ao enviar webhook:', webhookError);
           return res.status(500).json({ 
             error: 'Erro ao enviar webhook: ' + (webhookError instanceof Error ? webhookError.message : 'Erro desconhecido') 
           });

@@ -45,7 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Sempre sobrescrever webhookUrl para agentes internos
     let finalWebhookUrl = webhookUrl;
-    if (agent_type === 'internal' || !agent_type) {
+    if (agent_type === 'internal') {
       finalWebhookUrl = process.env.WEBHOOK_AGENT_URL;
     }
 
