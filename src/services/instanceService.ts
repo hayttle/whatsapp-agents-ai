@@ -82,7 +82,23 @@ class InstanceService {
   }
 
   async updateInstance(id: string, updateData: Partial<Instance>): Promise<ApiResponse> {
-    return this.makeRequest<ApiResponse>("/api/whatsapp-instances/update", {
+    // Se provider_type não está no updateData, buscar da instância
+    let providerType = updateData.provider_type;
+    
+    if (!providerType) {
+      // Buscar o provider_type da instância
+      const response = await fetch(`/api/whatsapp-instances/list`);
+      const data = await response.json();
+      const instance = data.instances?.find((inst: Instance) => inst.id === id);
+      providerType = instance?.provider_type;
+    }
+    
+    // Determinar o endpoint baseado no tipo da instância
+    const endpoint = providerType === 'externo' 
+      ? "/api/whatsapp-instances/external/update"
+      : "/api/whatsapp-instances/internal/update";
+    
+    return this.makeRequest<ApiResponse>(endpoint, {
       method: "PUT",
       body: JSON.stringify({ id, ...updateData }),
     });

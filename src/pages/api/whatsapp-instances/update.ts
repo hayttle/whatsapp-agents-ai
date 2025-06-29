@@ -123,11 +123,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           
           // Configurar webhook da instância
           const webhookConfig = {
-            enabled: true,
-            url: webhookUrl,
-            webhookByEvents: false,
-            webhookBase64: true,
-            events: ["MESSAGES_UPSERT"]
+            webhook: {
+              enabled: true,
+              url: webhookUrl,
+              webhookByEvents: false,
+              webhookBase64: true,
+              events: ["MESSAGES_UPSERT"]
+            }
           };
           
           console.log('[DEBUG] Configuração do webhook:', webhookConfig);
