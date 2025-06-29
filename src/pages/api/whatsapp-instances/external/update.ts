@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Buscar instância existente
     const { data: existingInstance, error: fetchError } = await supabase
       .from('whatsapp_instances')
-      .select('tenant_id, provider_type')
+      .select('tenant_id, provider_type, agent_id, instanceName, provider_id')
       .eq('id', id)
       .single();
     if (fetchError || !existingInstance) {
@@ -39,6 +39,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
 
+    // Verificar se um agente foi desvinculado (tinha agente antes, agora não tem)
+    const agentWasUnlinked = existingInstance.agent_id && !updateData.agent_id;
+
     // Atualizar instância
     const { data: updated, error: updateError } = await supabase
       .from('whatsapp_instances')
@@ -50,8 +53,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Erro ao atualizar instância: ' + updateError.message });
     }
 
+    // Se um agente foi desvinculado, desativar o webhook no provedor externo
+    if (agentWasUnlinked) {
+      try {
+        // Buscar dados do provedor externo
+        const { data: provider, error: providerError } = await supabase
+          .from('whatsapp_providers')
+          .select('server_url, api_key')
+          .eq('id', existingInstance.provider_id)
+          .single();
+          
+        if (providerError) {
+          return res.status(500).json({ error: 'Erro ao buscar dados do provedor: ' + providerError.message });
+        }
+        
+        const webhookConfig = {
+          webhook: {
+            enabled: false
+          }
+        };
+        
+        const response = await fetch(`${provider.server_url}/webhook/set/${existingInstance.instanceName}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': provider.api_key,
+          },
+          body: JSON.stringify(webhookConfig),
+        });
+
+        if (!response.ok) {
+          const responseText = await response.text();
+          return res.status(500).json({ 
+            error: `Erro ao desativar webhook externo: ${response.status} - ${responseText}` 
+          });
+        }
+      } catch {
+        return res.status(500).json({ error: 'Erro ao desativar webhook externo' });
+      }
+    }
     // Se a instância tem um agente associado, configurar webhook no provedor externo
-    if (updated.agent_id) {
+    else if (updated.agent_id) {
       const { data: agent, error: agentError } = await supabase
         .from('agents')
         .select('title, description, webhookUrl, agent_type')

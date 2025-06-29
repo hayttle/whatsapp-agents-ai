@@ -107,7 +107,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       try {
         data = await response.json();
       } catch {
-        const textData = await response.text();
         return res.status(response.status).json({ error: 'Resposta inválida do provedor externo' });
       }
       

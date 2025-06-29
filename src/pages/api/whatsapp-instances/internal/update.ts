@@ -21,15 +21,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Buscar instância existente
-    console.log('[DEBUG] Buscando instância interna:', id);
     const { data: existingInstance, error: fetchError } = await supabase
       .from('whatsapp_instances')
-      .select('tenant_id, provider_type')
+      .select('tenant_id, provider_type, agent_id, instanceName')
       .eq('id', id)
       .single();
-    console.log('[DEBUG] Instância interna encontrada:', existingInstance);
     if (fetchError || !existingInstance) {
-      console.error('[DEBUG] Erro ao buscar instância interna:', fetchError);
       return res.status(404).json({ error: 'Instance not found' });
     }
 
@@ -42,32 +39,65 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
 
+    // Verificar se um agente foi desvinculado (tinha agente antes, agora não tem)
+    const agentWasUnlinked = existingInstance.agent_id && !updateData.agent_id;
+
     // Atualizar instância
-    console.log('[DEBUG] Atualizando instância interna:', id, updateData);
     const { data: updated, error: updateError } = await supabase
       .from('whatsapp_instances')
       .update(updateData)
       .eq('id', id)
       .select()
       .single();
-    console.log('[DEBUG] Instância interna atualizada:', updated);
     if (updateError) {
-      console.error('[DEBUG] Erro ao atualizar instância interna:', updateError);
       return res.status(500).json({ error: 'Erro ao atualizar instância: ' + updateError.message });
     }
 
+    // Verificar se a API key está configurada
+    const apiKey = process.env.EVOLUTION_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: 'Evolution API key not configured' });
+    }
+
+    // Se um agente foi desvinculado, desativar o webhook
+    if (agentWasUnlinked) {
+      try {
+        const webhookConfig = {
+          webhook: {
+            enabled: false
+          }
+        };
+        
+        const response = await fetch(`${process.env.EVOLUTION_API_URL}/webhook/set/${existingInstance.instanceName}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': apiKey,
+          },
+          body: JSON.stringify(webhookConfig),
+        });
+
+        if (!response.ok) {
+          const responseText = await response.text();
+          return res.status(500).json({ 
+            error: `Erro ao desativar webhook: ${response.status} - ${responseText}` 
+          });
+        }
+      } catch (webhookError) {
+        return res.status(500).json({ 
+          error: 'Erro ao desativar webhook: ' + (webhookError instanceof Error ? webhookError.message : 'Erro desconhecido') 
+        });
+      }
+    }
     // Se a instância tem um agente associado, configurar webhook na Evolution API
-    if (updated.agent_id) {
-      console.log('[DEBUG] Buscando agente interno vinculado:', updated.agent_id);
+    else if (updated.agent_id) {
       const { data: agent, error: agentError } = await supabase
         .from('agents')
         .select('title, description, webhookUrl, agent_type')
         .eq('id', updated.agent_id)
         .single();
-      console.log('[DEBUG] Agente interno encontrado:', agent);
 
       if (agentError) {
-        console.error('[DEBUG] Erro ao buscar agente interno:', agentError);
         return res.status(500).json({ error: 'Erro ao buscar dados do agente: ' + agentError.message });
       }
 
@@ -79,23 +109,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Para instâncias internas, sempre usar a variável de ambiente
       const webhookUrl = process.env.WEBHOOK_AGENT_URL;
       if (!webhookUrl) {
-        console.error('[DEBUG] WEBHOOK_AGENT_URL não configurada');
         return res.status(500).json({ error: 'Internal webhook URL not configured' });
       }
-      console.log('[DEBUG] URL do webhook interno (do .env):', webhookUrl);
-
-      // Verificar se a API key está configurada
-      const apiKey = process.env.EVOLUTION_API_KEY;
-      if (!apiKey) {
-        console.error('[DEBUG] EVOLUTION_API_KEY não configurada');
-        return res.status(500).json({ error: 'Evolution API key not configured' });
-      }
-      console.log('[DEBUG] API Key encontrada:', apiKey ? 'Sim' : 'Não');
 
       // Configurar webhook na Evolution API
       try {
-        console.log('[DEBUG] Configurando webhook da instância interna na Evolution API');
-        
         const webhookConfig = {
           webhook: {
             enabled: true,
@@ -106,8 +124,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         };
         
-        console.log('[DEBUG] Configuração do webhook interno:', webhookConfig);
-        
         const response = await fetch(`${process.env.EVOLUTION_API_URL}/webhook/set/${updated.instanceName}`, {
           method: 'POST',
           headers: {
@@ -117,16 +133,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           body: JSON.stringify(webhookConfig),
         });
 
-        const responseText = await response.text();
-        console.log('[DEBUG] Resposta da Evolution API (interno):', response.status, responseText);
-
         if (!response.ok) {
+          const responseText = await response.text();
           return res.status(500).json({ 
             error: `Erro ao configurar webhook interno: ${response.status} - ${responseText}` 
           });
         }
       } catch (webhookError) {
-        console.error('[DEBUG] Erro ao configurar webhook interno:', webhookError);
         return res.status(500).json({ 
           error: 'Erro ao configurar webhook interno: ' + (webhookError instanceof Error ? webhookError.message : 'Erro desconhecido') 
         });
