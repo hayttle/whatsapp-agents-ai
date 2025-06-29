@@ -48,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (updated.agent_id) {
       const { data: agent, error: agentError } = await supabase
         .from('agents')
-        .select('name, description, instructions, model, temperature, max_tokens')
+        .select('title, description')
         .eq('id', updated.agent_id)
         .single();
 
@@ -63,12 +63,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         provider: updated.provider,
         webhook_url: updated.webhook_url,
         agent: {
-          name: agent.name,
-          description: agent.description,
-          instructions: agent.instructions,
-          model: agent.model,
-          temperature: agent.temperature,
-          max_tokens: agent.max_tokens
+          name: agent.title,
+          description: agent.description
         }
       };
 
