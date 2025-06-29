@@ -108,7 +108,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         data = await response.json();
       } catch {
         const textData = await response.text();
-        console.log('[WHATSAPP-INSTANCE][EXTERNAL] Resposta inválida do provedor:', textData);
         return res.status(response.status).json({ error: 'Resposta inválida do provedor externo' });
       }
       
@@ -154,12 +153,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(500).json({ error: dbError.message || 'Erro ao salvar instância no banco' });
       }
       
-      console.log('[WHATSAPP-INSTANCE][EXTERNAL] Instância externa criada com sucesso:', instanceData.instanceName);
       return res.status(201).json({ instance: instanceData });
       
-    } catch (fetchError) {
-      console.log('[WHATSAPP-INSTANCE][EXTERNAL] Erro de conexão com provedor:', fetchError);
-      return res.status(500).json({ error: 'Erro de conexão com o provedor externo: ' + (fetchError instanceof Error ? fetchError.message : 'Erro desconhecido') });
+    } catch {
+      return res.status(500).json({ error: 'Erro de conexão com o provedor externo' });
     }
   } catch (err: unknown) {
     return res.status(500).json({ error: err instanceof Error ? err.message : 'Erro inesperado' });
