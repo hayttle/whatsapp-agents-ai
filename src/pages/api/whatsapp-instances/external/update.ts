@@ -120,7 +120,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             enabled: true,
             url: webhookUrl,
             webhookByEvents: false,
-            webhookBase64: true,
+            webhookBase64: false,
             events: [
               "MESSAGES_UPSERT"
             ]
