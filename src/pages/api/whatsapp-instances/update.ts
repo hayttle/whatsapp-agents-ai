@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Para instâncias externas com agentes externos, atualizar o webhookUrl da instância
       if (existingInstance.provider_type === 'externo' && agent.agent_type === 'external') {
-        updateData.webhook_url = agent.webhookUrl;
+        updateData.webhookUrl = agent.webhookUrl;
       }
     }
 
@@ -88,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         instance_id: updated.id,
         instance_name: updated.name,
         provider: updated.provider,
-        webhook_url: updated.webhook_url,
+        webhook_url: updated.webhookUrl,
         agent: {
           name: agent.title,
           description: agent.description
