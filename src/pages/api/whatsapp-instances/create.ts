@@ -87,8 +87,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const externalPayload: Record<string, unknown> = {
         instanceName,
         integration: "WHATSAPP-BAILEYS",
-        groupsIgnore: true,
-        ignoreGroup: true
+        groupIgnore: true
       };
       
       console.log('[DEBUG] Payload para criação de instância externa:', JSON.stringify(externalPayload, null, 2));
@@ -124,7 +123,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         base64: true,
         msgCall: "",
         rejectCall: false,
-        groupsIgnore: true,
+        groupIgnore: true,
         alwaysOnline: false,
         readMessages: false,
         readStatus: false,
@@ -146,8 +145,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       integration: "WHATSAPP-BAILEYS",
       msgCall: "",
       rejectCall: false,
-      groupsIgnore: true,
-      ignoreGroup: true,
+      groupIgnore: true,
       alwaysOnline: false,
       readMessages: false,
       readStatus: false,
@@ -212,7 +210,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       base64: true,
       msgCall: "",
       rejectCall: false,
-      groupsIgnore: true,
+      groupIgnore: true,
       alwaysOnline: false,
       readMessages: false,
       readStatus: false,

@@ -12,7 +12,7 @@ export interface Instance {
   base64?: boolean;
   msgCall?: string;
   rejectCall?: boolean;
-  groupsIgnore?: boolean;
+  groupIgnore?: boolean;
   alwaysOnline?: boolean;
   readMessages?: boolean;
   readStatus?: boolean;
