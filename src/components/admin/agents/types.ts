@@ -12,6 +12,7 @@ export interface Agent {
   webhookUrl?: string | null;
   description?: string | null;
   agent_type?: 'internal' | 'external';
+  buffer_time?: number;
 }
 
 export interface Instance {

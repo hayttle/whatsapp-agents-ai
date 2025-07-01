@@ -23,6 +23,7 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
   const [webhookUrl, setWebhookUrl] = useState("");
   const [description, setDescription] = useState("");
   const [agentType, setAgentType] = useState<'internal' | 'external'>('internal');
+  const [bufferTime, setBufferTime] = useState<number>(10);
 
   // Resetar campos ao abrir/fechar ou mudar agente
   useEffect(() => {
@@ -38,6 +39,7 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
       setWebhookUrl(agent.webhookUrl || "");
       setDescription(agent.description || "");
       setAgentType(agent.agent_type || 'internal');
+      setBufferTime(agent.buffer_time ?? 10);
     } else {
       setTitle("");
       setPrompt("");
@@ -50,6 +52,7 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
       setWebhookUrl("");
       setDescription("");
       setAgentType('internal');
+      setBufferTime(10);
     }
     setMsg("");
     setError("");
@@ -109,6 +112,7 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
         webhookUrl: agentType === 'external' ? webhookUrl : undefined,
         description: description || undefined,
         agent_type: agentType,
+        buffer_time: bufferTime,
       };
       if (agent) {
         await agentService.updateAgent(agent.id, agentData);
@@ -160,6 +164,20 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
             onChange={e => setTitle(e.target.value)}
             required
           />
+          <div>
+            <label className="block text-sm font-medium mb-1">Tempo de pausa para resposta (segundos)</label>
+            <input
+              type="number"
+              min={0}
+              step={1}
+              className="border rounded px-3 py-2 w-full"
+              placeholder="Ex: 10"
+              value={bufferTime}
+              onChange={e => setBufferTime(Number(e.target.value))}
+              disabled={loading}
+            />
+            <span className="text-xs text-gray-500">O agente só irá responder após esse tempo, caso o usuário não envie outra mensagem.</span>
+          </div>
           <div>
             <label className="block text-sm font-medium mb-1">Descrição</label>
             <textarea
