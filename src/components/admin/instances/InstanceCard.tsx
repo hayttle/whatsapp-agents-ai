@@ -108,41 +108,53 @@ export function InstanceCard({
           <Button
             variant="outline"
             size="sm"
-            className="flex-1 min-w-[40px] max-w-[48px]"
+            className="min-w-0 w-9 h-9 p-0 flex items-center justify-center"
             onClick={() => onViewDetails(instance)}
-            leftIcon={<Eye className="w-5 h-5" />}
+            leftIcon={<Eye className="w-4 h-4" />}
+            aria-label="Ver Detalhes"
             title="Ver Detalhes"
-          > </Button>
+          >
+            {''}
+          </Button>
           {isConnected ? (
             <Button
               variant="warning"
               size="sm"
-              className="flex-1 min-w-[40px] max-w-[48px]"
+              className="min-w-0 w-9 h-9 p-0 flex items-center justify-center"
               onClick={() => onDisconnect(instance.instanceName)}
               loading={isLoading}
-              leftIcon={<PowerOff className="w-5 h-5" />}
+              leftIcon={<PowerOff className="w-4 h-4" />}
+              aria-label="Desconectar"
               title="Desconectar"
-            > </Button>
+            >
+              {''}
+            </Button>
           ) : (
             <Button
               variant="primary"
               size="sm"
-              className="flex-1 min-w-[40px] max-w-[48px]"
+              className="min-w-0 w-9 h-9 p-0 flex items-center justify-center"
               onClick={() => onConnect(instance.instanceName)}
               loading={isLoading}
-              leftIcon={<Power className="w-5 h-5" />}
+              leftIcon={<Power className="w-4 h-4" />}
+              aria-label="Conectar"
               title="Conectar"
-            > </Button>
+            >
+              {''}
+            </Button>
           )}
           <Button
             variant="destructive"
             size="sm"
-            className="flex-1 min-w-[40px] max-w-[48px]"
+            className="min-w-0 w-9 h-9 p-0 flex items-center justify-center"
             onClick={() => onRequestDelete(instance)}
             loading={isLoading}
-            leftIcon={<Trash2 className="w-5 h-5" />}
+            leftIcon={<Trash2 className="w-4 h-4" />}
+            aria-label="Remover"
             title="Remover"
-          > </Button>
+          >
+            {''}
+          </Button>
         </div>
       </CardFooter>
     </Card>
