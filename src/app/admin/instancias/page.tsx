@@ -64,22 +64,7 @@ export default async function InstanciasAdminPage() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {isSuperAdmin ? 'Instâncias do WhatsApp' : 'Minhas Instâncias'}
-          </CardTitle>
-          <CardDescription>
-            {isSuperAdmin 
-              ? 'Visualize e gerencie todas as instâncias do WhatsApp Business do sistema'
-              : 'Visualize e gerencie suas instâncias do WhatsApp Business'
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <InstanceList isSuperAdmin={isSuperAdmin} tenantId={tenantId} />
-        </CardContent>
-      </Card>
+      <InstanceList isSuperAdmin={isSuperAdmin} tenantId={tenantId} />
     </div>
   );
 } 

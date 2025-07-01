@@ -92,8 +92,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     };
     
-    console.log('[DEBUG] Payload para criação de instância interna:', JSON.stringify(evolutionPayload, null, 2));
-    
     // Remover campos undefined
     Object.keys(evolutionPayload).forEach(key => {
       if (evolutionPayload[key] === undefined) delete evolutionPayload[key];
@@ -117,9 +115,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       body: JSON.stringify(evolutionPayload),
     });
     const data = await response.json();
-    
-    console.log('[WHATSAPP-INSTANCE][INTERNAL] Response status:', response.status);
-    console.log('[WHATSAPP-INSTANCE][INTERNAL] Response body:', JSON.stringify(data));
     
     if (!response.ok) {
       return res.status(response.status).json({ error: data.error || data.response?.message?.[0] || 'Erro ao criar instância interna' });
@@ -163,7 +158,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: dbError.message || 'Erro ao salvar instância no banco' });
     }
     
-    console.log('[WHATSAPP-INSTANCE][INTERNAL] Instância interna criada com sucesso:', instanceData.instanceName);
     return res.status(201).json({ instance: instanceData });
   } catch (err: unknown) {
     return res.status(500).json({ error: err instanceof Error ? err.message : 'Erro inesperado' });

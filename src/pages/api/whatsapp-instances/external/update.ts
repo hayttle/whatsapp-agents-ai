@@ -41,9 +41,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Verificar se um agente foi desvinculado (tinha agente antes, agora não tem)
     const agentWasUnlinked = existingInstance.agent_id && !updateData.agent_id;
-    if (agentWasUnlinked) {
-      console.log('[DEBUG][UNLINK][EXTERNAL] Desvinculando agente da instância:', id, 'Agente anterior:', existingInstance.agent_id);
-    }
 
     // Atualizar instância
     const { data: updated, error: updateError } = await supabase
@@ -66,7 +63,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           .eq('id', existingInstance.provider_id)
           .single();
         if (providerError) {
-          console.log('[DEBUG][UNLINK][EXTERNAL] Erro ao buscar provedor:', providerError);
           return res.status(500).json({ error: 'Erro ao buscar dados do provedor: ' + providerError.message });
         }
         
@@ -78,7 +74,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           .single();
         
         if (agentError) {
-          console.log('[DEBUG][UNLINK][EXTERNAL] Erro ao buscar agente:', agentError);
           return res.status(500).json({ error: 'Erro ao buscar dados do agente: ' + agentError.message });
         }
         
@@ -91,7 +86,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             events: ["MESSAGES_UPSERT"]
           }
         };
-        console.log('[DEBUG][UNLINK][EXTERNAL] Enviando requisição para desativar webhook:', `${provider.server_url}/webhook/set/${existingInstance.instanceName}`);
         const response = await fetch(`${provider.server_url}/webhook/set/${existingInstance.instanceName}`, {
           method: 'POST',
           headers: {
@@ -100,17 +94,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           },
           body: JSON.stringify(webhookConfig),
         });
-        console.log('[DEBUG][UNLINK][EXTERNAL] Status da resposta:', response.status);
         if (!response.ok) {
           const responseText = await response.text();
-          console.log('[DEBUG][UNLINK][EXTERNAL] Erro ao desativar webhook. Status:', response.status, 'Resposta:', responseText);
           return res.status(500).json({ 
             error: `Erro ao desativar webhook externo: ${response.status} - ${responseText}` 
           });
         }
-        console.log('[DEBUG][UNLINK][EXTERNAL] Webhook desativado com sucesso para a instância:', existingInstance.instanceName);
       } catch (err) {
-        console.log('[DEBUG][UNLINK][EXTERNAL] Erro inesperado ao desativar webhook:', err);
         return res.status(500).json({ error: 'Erro ao desativar webhook externo: ' + (err instanceof Error ? err.message : 'Erro desconhecido') });
       }
     }
