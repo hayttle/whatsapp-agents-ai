@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { userData } = auth;
     const supabase = createApiClient(req, res);
 
-    const { tenant_id, instance_id, title, webhookUrl, description } = req.body;
+    const { tenant_id, instance_id, title, webhookUrl, description, buffer_time } = req.body;
 
     // Validação para agentes externos
     if (!tenant_id || !title || !webhookUrl) {
@@ -43,7 +43,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         tone: null,
         webhookUrl,
         description: description || null,
-        agent_type: 'external'
+        agent_type: 'external',
+        buffer_time: buffer_time ?? null,
       })
       .select()
       .single();

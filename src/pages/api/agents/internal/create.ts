@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { userData } = auth;
     const supabase = createApiClient(req, res);
 
-    const { tenant_id, instance_id, title, prompt, fallback_message, active, personality, custom_personality, tone, description } = req.body;
+    const { tenant_id, instance_id, title, prompt, fallback_message, active, personality, custom_personality, tone, description, buffer_time } = req.body;
 
     // Validação para agentes internos
     if (!tenant_id || !title || !prompt || !fallback_message) {
@@ -49,7 +49,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         tone,
         webhookUrl,
         description: description || null,
-        agent_type: 'internal'
+        agent_type: 'internal',
+        buffer_time: buffer_time ?? null,
       })
       .select()
       .single();
