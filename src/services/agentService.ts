@@ -4,7 +4,7 @@ export interface Agent {
   instance_id?: string | null;
   title: string;
   prompt: string;
-  fallback_message: string;
+  fallback_message?: string;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -13,6 +13,8 @@ export interface Agent {
   tone?: string;
   description?: string | null;
   agent_type?: 'internal' | 'external';
+  agent_model_id?: string | null;
+  webhookUrl?: string | null;
 }
 
 export interface AgentListResponse {
@@ -65,15 +67,11 @@ class AgentService {
   }
 
   async updateAgent(agentId: string, agentData: Partial<Agent>): Promise<ApiResponse> {
-    // Se agent_type não está no agentData, buscar do agente existente
-    let agentType = agentData.agent_type;
+    // Determinar o endpoint baseado no agent_type fornecido
+    const agentType = agentData.agent_type;
     
     if (!agentType) {
-      // Buscar o agent_type do agente
-      const response = await fetch(`/api/agents/list`);
-      const data = await response.json();
-      const agent = data.agents?.find((a: Agent) => a.id === agentId);
-      agentType = agent?.agent_type;
+      throw new Error('agent_type é obrigatório para atualização');
     }
     
     // Determinar o endpoint baseado no agent_type

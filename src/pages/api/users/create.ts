@@ -1,32 +1,16 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { authenticateUser, createApiClient } from '@/lib/supabase/api';
+import { withSuperAdmin, AuthResult } from '@/lib/auth/helpers';
 import { createAdminClient } from '@/lib/supabase/admin';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResult) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Autenticar usuário via cookies
-    const auth = await authenticateUser(req, res);
-    
-    if (!auth) {
-      return res.status(401).json({ error: 'Unauthorized - User not authenticated' });
-    }
-
-    const { userData } = auth;
-    
-    // Apenas super_admin pode criar usuários
-    if (userData.role !== 'super_admin') {
-      return res.status(403).json({ error: 'Insufficient permissions - Only super_admin can create users' });
-    }
-
-    const supabase = createApiClient(req, res);
-    const adminClient = createAdminClient();
-
     const { email, password, name, role, tenant_id } = req.body;
 
+    // Validações
     if (!email || !password || !name || !role) {
       return res.status(400).json({ error: 'Campos obrigatórios faltando.' });
     }
@@ -34,10 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Usuários que não são super_admin devem ter uma empresa associada.' });
     }
 
-    // Verificar permissões para criar super_admin
-    if (role === 'super_admin' && userData.role !== 'super_admin') {
-      return res.status(403).json({ error: 'Insufficient permissions to create super_admin' });
-    }
+    const adminClient = createAdminClient();
 
     // 1. Criar usuário no Supabase Auth
     const { data: authUser, error: authError } = await adminClient.auth.admin.createUser({
@@ -62,7 +43,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: 'A senha deve ter pelo menos 6 caracteres.' });
       }
       
-      return res.status(500).json({ error: 'Erro ao criar usuário no Auth: ' + (authError?.message || 'Erro desconhecido') });
+      console.error('[Users Create] Erro ao criar usuário no Auth:', authError);
+      return res.status(500).json({ error: 'Erro ao criar usuário no sistema de autenticação.' });
     }
 
     // 2. Inserir dados do usuário na tabela users
@@ -74,28 +56,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       tenant_id: role === 'super_admin' ? null : tenant_id,
     };
 
-    const { error: insertError } = await supabase
+    const { error: insertError } = await auth.supabase
       .from('users')
       .insert(userDataToInsert);
 
     if (insertError) {
       // Se falhar ao inserir na tabela users, deletar o usuário do Auth
       await adminClient.auth.admin.deleteUser(authUser.user.id);
-      return res.status(500).json({ error: 'Erro ao criar usuário: ' + insertError.message });
+      console.error('[Users Create] Erro ao inserir na tabela users:', insertError);
+      return res.status(500).json({ error: 'Erro ao criar usuário no banco de dados.' });
     }
+
+    const newUser = {
+      id: authUser.user.id,
+      email,
+      name,
+      role,
+      tenant_id: role === 'super_admin' ? null : tenant_id,
+    };
+
+    // Log de auditoria
 
     return res.status(201).json({ 
       success: true, 
-      user: {
-        id: authUser.user.id,
-        email,
-        name,
-        role,
-        tenant_id: role === 'super_admin' ? null : tenant_id,
-      }
+      user: newUser
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
+    console.error('[Users Create] Erro inesperado:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
-} 
+}
+
+export default withSuperAdmin(handler); 

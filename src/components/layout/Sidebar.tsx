@@ -4,13 +4,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { 
-  Home, 
-  Settings, 
-  Users, 
-  Building2, 
-  Bot, 
-  MessageSquare, 
+import {
+  Home,
+  Settings,
+  Users,
+  Building2,
+  Bot,
+  MessageSquare,
+  MessageCircleMore,
   ChevronDown,
   ChevronRight,
   LogOut,
@@ -18,6 +19,7 @@ import {
   ChevronLeft
 } from 'lucide-react';
 import { Button, Badge } from '@/components/brand';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface SidebarItem {
   label: string;
@@ -28,47 +30,44 @@ interface SidebarItem {
 }
 
 const navItems: SidebarItem[] = [
-  { 
-    href: '/dashboard', 
-    label: 'Dashboard', 
+  {
+    href: '/dashboard',
+    label: 'Dashboard',
     icon: Home
   },
-  { 
-    href: '/admin/instancias', 
-    label: 'Instâncias', 
+  {
+    href: '/admin/instancias',
+    label: 'Instâncias',
     icon: MessageSquare
   },
-  { 
-    href: '/admin/agentes', 
-    label: 'Agentes', 
+  {
+    href: '/admin/agentes',
+    label: 'Agentes',
     icon: Bot
   },
   {
     href: '/admin/whatsapp-api',
     label: 'Whatsapp API',
-    icon: MessageSquare
+    icon: MessageCircleMore
   },
-  { 
-    href: '/admin/usuarios', 
-    label: 'Usuários', 
-    icon: Users, 
+
+  {
+    href: '/admin/prompt-models',
+    label: 'Modelos de Prompt',
+    icon: Bot,
     superAdminOnly: true
   },
-  { 
-    href: '/admin/empresas', 
-    label: 'Empresas', 
-    icon: Building2, 
+  {
+    href: '/admin/usuarios',
+    label: 'Usuários',
+    icon: Users,
     superAdminOnly: true
   },
-  { 
-    href: '/admin', 
-    label: 'Administração', 
-    icon: Settings, 
-    superAdminOnly: true,
-    children: [
-      { href: '/admin/configuracoes', label: 'Configurações', icon: Settings, superAdminOnly: true },
-      { href: '/admin/logs', label: 'Logs do Sistema', icon: Settings, superAdminOnly: true },
-    ]
+  {
+    href: '/admin/empresas',
+    label: 'Empresas',
+    icon: Building2,
+    superAdminOnly: true
   },
 ];
 
@@ -79,11 +78,10 @@ interface SidebarProps {
 
 export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   const pathname = usePathname();
-  const [userRole, setUserRole] = useState<string>('user');
+  const { userRole, userData, isLoading } = useUserRole();
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  const [isLoading, setIsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -100,35 +98,19 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
 
   useEffect(() => {
     // Expande o item de menu pai se a rota atual for uma de suas filhas
-    const activeParent = navItems.find(item => 
+    const activeParent = navItems.find(item =>
       item.children?.some(child => pathname === child.href)
     );
     if (activeParent) {
       setExpandedItems(prev => new Set(prev).add(activeParent.href));
     }
 
-    const fetchUserData = async () => {
-      try {
-        // Usar a API em vez de consulta direta ao Supabase
-        const response = await fetch('/api/users/current');
-        
-        if (response.ok) {
-          const data = await response.json();
-          
-          if (data.user) {
-            setUserRole(data.user.role || 'user');
-            setUserName(data.user.name || '');
-            setUserEmail(data.user.email || '');
-          }
-        }
-        setIsLoading(false);
-      } catch {
-        // Silenciar erro de carregamento de dados do usuário
-      }
-    };
-
-    fetchUserData();
-  }, [pathname]);
+    // Atualizar dados do usuário quando userData mudar
+    if (userData) {
+      setUserName(userData.name || '');
+      setUserEmail(userData.email || '');
+    }
+  }, [pathname, userData]);
 
   const toggleExpanded = (href: string) => {
     const newExpanded = new Set(expandedItems);
@@ -146,7 +128,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
     if (item.superAdminOnly) {
       return userRole === 'super_admin';
     }
-    
+
     // Se não tem restrições, mostrar para todos (super_admin e user)
     return true;
   });
@@ -234,20 +216,20 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
               const isChildActive = hasChildren && item.children!.some(child => pathname === child.href);
               const isItemActive = (pathname === item.href) || isChildActive;
               const isExpanded = expandedItems.has(item.href);
-              
+
               // Filtrar itens filhos baseado no role do usuário
-              const filteredChildren = hasChildren 
+              const filteredChildren = hasChildren
                 ? item.children!.filter(child => {
-                    // Se o item filho é apenas para super admin, verificar se o usuário é super admin
-                    if (child.superAdminOnly) {
-                      return userRole === 'super_admin';
-                    }
-                    
-                    // Se não tem restrições, mostrar para todos
-                    return true;
-                  })
+                  // Se o item filho é apenas para super admin, verificar se o usuário é super admin
+                  if (child.superAdminOnly) {
+                    return userRole === 'super_admin';
+                  }
+
+                  // Se não tem restrições, mostrar para todos
+                  return true;
+                })
                 : [];
-              
+
               return (
                 <li key={item.href}>
                   <div className="relative">
@@ -317,8 +299,8 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                 <p className="text-xs text-gray-400 truncate">
                   {userEmail}
                 </p>
-                <Badge 
-                  variant="success" 
+                <Badge
+                  variant="success"
                   className="text-xs mt-1"
                 >
                   {userRole === 'super_admin' ? 'Super Admin' : 'Usuário'}

@@ -6,6 +6,9 @@ import { Toaster } from 'sonner';
 export const metadata = {
   title: "Whatsapp Agents AI",
   description: "Automatize o atendimento da sua empresa no WhatsApp com agentes inteligentes de IA, personalizados e fáceis de configurar.",
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({

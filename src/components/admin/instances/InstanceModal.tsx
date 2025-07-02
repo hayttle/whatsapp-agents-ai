@@ -38,7 +38,7 @@ const InstanceModal: React.FC<InstanceModalProps> = ({ isOpen, onClose, onSave, 
   const [error, setError] = useState("");
   const [agentId, setAgentId] = useState<string>("");
   const [description, setDescription] = useState("");
-  const { agentes, loading: loadingAgents } = useAgents({ isSuperAdmin: !!isSuperAdmin, tenantId: isSuperAdmin ? selectedTenant : tenantId });
+  const { data: agentes, loading: loadingAgents } = useAgents({ isSuperAdmin: !!isSuperAdmin, tenantId: isSuperAdmin ? selectedTenant : tenantId });
 
   useEffect(() => {
     setInstanceName("");

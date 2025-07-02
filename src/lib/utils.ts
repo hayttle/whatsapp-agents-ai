@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import type { NextApiRequest } from 'next'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -96,4 +97,35 @@ export function formatPhone(phone: string): string {
     return cleanPhone.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
   }
   return cleanPhone;
+}
+
+// Retorna o papel do usuário a partir do request (exemplo simplificado)
+export async function getUserRole(req: NextApiRequest): Promise<string> {
+  // Exemplo: role no header (em produção, use JWT ou sessão)
+  const role = req.headers['x-user-role'] as string | undefined;
+  if (role) return role;
+  // TODO: integrar com autenticação real
+  return 'user';
+}
+
+// Comparação profunda de objetos (deepEqual)
+export function deepEqual(obj1: unknown, obj2: unknown): boolean {
+  if (obj1 === obj2) return true;
+  if (
+    typeof obj1 !== 'object' || typeof obj2 !== 'object' || obj1 == null || obj2 == null
+  ) return false;
+  const keys1 = Object.keys(obj1);
+  const keys2 = Object.keys(obj2);
+  if (keys1.length !== keys2.length) return false;
+  for (const key of keys1) {
+    if (!keys2.includes(key)) return false;
+    // Type guard para acesso seguro
+    if (
+      !deepEqual(
+        (obj1 as Record<string, unknown>)[key],
+        (obj2 as Record<string, unknown>)[key]
+      )
+    ) return false;
+  }
+  return true;
 }

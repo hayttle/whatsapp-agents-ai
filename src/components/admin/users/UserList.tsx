@@ -9,6 +9,7 @@ import { tenantService } from "@/services/tenantService";
 import { Users, Plus, Edit, Trash2, Mail, User, Shield, Building, Filter, X } from "lucide-react";
 import { userService } from "@/services/userService";
 import { User as UserType, Empresa } from "./types";
+import { AdminListLayout } from '@/components/layout/AdminListLayout';
 
 interface UserListProps {
   isSuperAdmin: boolean;
@@ -157,37 +158,13 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
   }));
 
   return (
-    <div className="overflow-x-auto">
-      <div className="mb-4 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <button 
-            className={`px-3 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${
-              showFilters 
-                ? 'bg-brand-green-light text-white' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter className="w-4 h-4" />
-            Filtros
-            {hasActiveFilters && (
-              <span className="ml-1 px-2 py-0.5 text-xs bg-red-500 text-white rounded-full">
-                {[filterRole, filterEmpresa].filter(Boolean).length}
-              </span>
-            )}
-          </button>
-          
-          {hasActiveFilters && (
-            <button 
-              className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-2"
-              onClick={clearFilters}
-            >
-              <X className="w-4 h-4" />
-              Limpar
-            </button>
-          )}
-        </div>
-        
+    <AdminListLayout
+      icon={<User className="w-6 h-6 text-white" />}
+      pageTitle="Usuários"
+      pageDescription="Gerencie os usuários da plataforma, atribua papéis e vincule-os às empresas."
+      cardTitle="Lista de Usuários"
+      cardDescription="Visualize, filtre, crie e edite usuários."
+      actionButton={
         <button 
           className="px-4 py-2 text-sm font-semibold text-white bg-brand-gray-dark rounded-md hover:bg-brand-gray-deep transition-colors flex items-center gap-2"
           onClick={() => dispatchModal({ type: 'OPEN_CREATE' })}
@@ -195,195 +172,200 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
           <Plus className="w-4 h-4" />
           Novo Usuário
         </button>
-      </div>
-
-      {/* Filtros */}
-      {showFilters && (
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Papel
-              </label>
-              <select
-                value={filterRole}
-                onChange={(e) => setFilterRole(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
-              >
-                <option value="">Todos os papéis</option>
-                <option value="super_admin">Super Admin</option>
-                <option value="admin">Admin</option>
-                <option value="user">Usuário</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Empresa
-              </label>
-              <select
-                value={filterEmpresa}
-                onChange={(e) => setFilterEmpresa(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
-              >
-                <option value="">Todas as empresas</option>
-                {Object.entries(empresas).map(([id, name]) => (
-                  <option key={id} value={id}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </div>
+      }
+      filtersOpen={showFilters}
+      onToggleFilters={() => setShowFilters(!showFilters)}
+    >
+      <AdminListLayout.Filters>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Papel
+            </label>
+            <select
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+            >
+              <option value="">Todos os papéis</option>
+              <option value="super_admin">Super Admin</option>
+              <option value="admin">Admin</option>
+              <option value="user">Usuário</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Empresa
+            </label>
+            <select
+              value={filterEmpresa}
+              onChange={(e) => setFilterEmpresa(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+            >
+              <option value="">Todas as empresas</option>
+              {Object.entries(empresas).map(([id, name]) => (
+                <option key={id} value={id}>
+                  {name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
-      )}
-      
-      {loading ? (
-        <div className="flex justify-center items-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-green-light"></div>
-        </div>
-      ) : error ? (
-        <div className="text-red-500 text-center py-4">{error}</div>
-      ) : (
-        <>
-          {/* Resumo dos filtros */}
-          {hasActiveFilters && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <div className="flex items-center gap-2 text-sm text-blue-800">
-                <Filter className="w-4 h-4" />
-                <span className="font-medium">Filtros ativos:</span>
-                {filterRole && (
-                  <span className="px-2 py-1 bg-blue-100 rounded text-xs">
-                    Papel: {roleDisplay[filterRole]}
+        {hasActiveFilters && (
+          <div className="mt-4 flex gap-2">
+            <button 
+              className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-2"
+              onClick={clearFilters}
+            >
+              <X className="w-4 h-4" />
+              Limpar
+            </button>
+          </div>
+        )}
+      </AdminListLayout.Filters>
+      <AdminListLayout.List>
+        {loading ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-green-light"></div>
+          </div>
+        ) : error ? (
+          <div className="text-red-500 text-center py-4">{error}</div>
+        ) : (
+          <>
+            {/* Resumo dos filtros */}
+            {hasActiveFilters && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="flex items-center gap-2 text-sm text-blue-800">
+                  <Filter className="w-4 h-4" />
+                  <span className="font-medium">Filtros ativos:</span>
+                  {filterRole && (
+                    <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                      Papel: {roleDisplay[filterRole]}
+                    </span>
+                  )}
+                  {filterEmpresa && (
+                    <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                      Empresa: {empresas[filterEmpresa]}
+                    </span>
+                  )}
+                  <span className="text-blue-600">
+                    ({filteredUsers.length} de {users.length} usuários)
                   </span>
-                )}
-                {filterEmpresa && (
-                  <span className="px-2 py-1 bg-blue-100 rounded text-xs">
-                    Empresa: {empresas[filterEmpresa]}
-                  </span>
-                )}
-                <span className="text-blue-600">
-                  ({filteredUsers.length} de {users.length} usuários)
-                </span>
+                </div>
               </div>
-            </div>
-          )}
-
-          <table className="min-w-full text-sm border">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="px-4 py-3 border text-left">Nome</th>
-                <th className="px-4 py-3 border text-left">E-mail</th>
-                <th className="px-4 py-3 border text-left">Papel</th>
-                <th className="px-4 py-3 border text-left">Empresa</th>
-                <th className="px-4 py-3 border text-left">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => {
-                  const isLoading = actionLoading === user.id;
-                  return (
-                    <tr key={user.id} className="border-t hover:bg-gray-50">
-                      <td className="px-4 py-3 border font-medium">
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-gray-400" />
-                          <span>{user.name || '-'}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 border">
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-gray-400" />
-                          <span>{user.email}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 border">
-                        <div className="flex items-center gap-2">
-                          <Shield className="w-4 h-4 text-gray-400" />
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            (user.role as string) === 'super_admin' ? 'bg-purple-100 text-purple-800' :
-                            (user.role as string) === 'admin' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {roleDisplay[user.role] || user.role}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 border">
-                        <div className="flex items-center gap-2">
-                          <Building className="w-4 h-4 text-gray-400" />
-                          <span>{empresas[user.tenant_id || ''] || '-'}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 border">
-                        <div className="flex gap-2 items-center">
-                          <ActionButton
-                            icon={Edit}
-                            onClick={() => dispatchModal({ type: 'OPEN_EDIT', payload: user })}
-                            variant="secondary"
-                            disabled={isLoading}
-                            title="Editar"
-                          />
-                          <ActionButton
-                            icon={Trash2}
-                            onClick={() => dispatchModal({ type: 'OPEN_DELETE', payload: user })}
-                            variant="destructive"
-                            disabled={isLoading}
-                            loading={isLoading}
-                            title="Deletar"
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={5} className="text-center py-8 text-gray-500">
-                    <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                    <p className="font-medium">
-                      {hasActiveFilters ? 'Nenhum usuário encontrado com os filtros aplicados' : 'Nenhum usuário encontrado'}
-                    </p>
-                    <p className="text-sm">
-                      {hasActiveFilters 
-                        ? 'Tente ajustar os filtros ou use o botão "Limpar" para remover os filtros.'
-                        : 'Use o botão "Novo Usuário" para criar o primeiro.'
-                      }
-                    </p>
-                  </td>
+            )}
+            <table className="min-w-full text-sm border">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="px-4 py-3 border text-left">Nome</th>
+                  <th className="px-4 py-3 border text-left">E-mail</th>
+                  <th className="px-4 py-3 border text-left">Papel</th>
+                  <th className="px-4 py-3 border text-left">Empresa</th>
+                  <th className="px-4 py-3 border text-left">Ações</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-
-          {/* Modal de criação/edição */}
-          <UserModal
-            isOpen={modalState.type === 'CREATE' || modalState.type === 'EDIT'}
-            onClose={closeModal}
-            onSave={handleSave}
-            user={modalState.type === 'EDIT' ? modalState.payload : undefined}
-            isSuperAdmin={isSuperAdmin}
-            tenantId={tenantId}
-            empresas={empresasForModal}
-          />
-
-          {/* Modal de confirmação de exclusão */}
-          <ConfirmationModal
-            isOpen={modalState.type === 'DELETE'}
-            onClose={closeModal}
-            onConfirm={() => handleDelete(modalState.type === 'DELETE' ? modalState.payload.id : '')}
-            title="Confirmar Exclusão"
-            confirmText="Excluir"
-            cancelText="Cancelar"
-            isLoading={actionLoading === (modalState.type === 'DELETE' ? modalState.payload.id : '')}
-          >
-            <p>
-              Tem certeza que deseja excluir o usuário <span className="font-semibold">&quot;{modalState.type === 'DELETE' ? modalState.payload.name : ''}&quot;</span>? 
-              Esta ação não pode ser desfeita.
-            </p>
-          </ConfirmationModal>
-        </>
-      )}
-    </div>
+              </thead>
+              <tbody>
+                {filteredUsers.length > 0 ? (
+                  filteredUsers.map((user) => {
+                    const isLoading = actionLoading === user.id;
+                    return (
+                      <tr key={user.id} className="border-t hover:bg-gray-50">
+                        <td className="px-4 py-3 border font-medium">
+                          <div className="flex items-center gap-2">
+                            <User className="w-4 h-4 text-gray-400" />
+                            <span>{user.name || '-'}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 border">
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-4 h-4 text-gray-400" />
+                            <span>{user.email}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 border">
+                          <div className="flex items-center gap-2">
+                            <Shield className="w-4 h-4 text-gray-400" />
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              (user.role as string) === 'super_admin' ? 'bg-purple-100 text-purple-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {roleDisplay[user.role] || user.role}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 border">
+                          <div className="flex items-center gap-2">
+                            <Building className="w-4 h-4 text-gray-400" />
+                            <span>{empresas[user.tenant_id || ''] || '-'}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 border">
+                          <div className="flex gap-2 items-center">
+                            <ActionButton
+                              icon={Edit}
+                              onClick={() => dispatchModal({ type: 'OPEN_EDIT', payload: user })}
+                              variant="secondary"
+                              disabled={isLoading}
+                              title="Editar"
+                            />
+                            <ActionButton
+                              icon={Trash2}
+                              onClick={() => dispatchModal({ type: 'OPEN_DELETE', payload: user })}
+                              variant="destructive"
+                              disabled={isLoading}
+                              loading={isLoading}
+                              title="Deletar"
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="text-center py-8 text-gray-500">
+                      <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                      <p className="font-medium">
+                        {hasActiveFilters ? 'Nenhum usuário encontrado com os filtros aplicados' : 'Nenhum usuário encontrado'}
+                      </p>
+                      <p className="text-sm">
+                        {hasActiveFilters 
+                          ? 'Tente ajustar os filtros ou use o botão "Limpar" para remover os filtros.'
+                          : 'Use o botão "Novo Usuário" para criar o primeiro.'
+                        }
+                      </p>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </>
+        )}
+      </AdminListLayout.List>
+      {/* Modais permanecem fora do layout */}
+      <UserModal
+        isOpen={modalState.type === 'CREATE' || modalState.type === 'EDIT'}
+        onClose={closeModal}
+        onSave={handleSave}
+        user={modalState.type === 'EDIT' ? modalState.payload : undefined}
+        isSuperAdmin={isSuperAdmin}
+        tenantId={tenantId}
+        empresas={empresasForModal}
+      />
+      <ConfirmationModal
+        isOpen={modalState.type === 'DELETE'}
+        onClose={closeModal}
+        onConfirm={() => handleDelete(modalState.type === 'DELETE' ? modalState.payload.id : '')}
+        title="Confirmar Exclusão"
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        isLoading={actionLoading === (modalState.type === 'DELETE' ? modalState.payload.id : '')}
+      >
+        <p>
+          Tem certeza que deseja excluir o usuário <span className="font-semibold">&quot;{modalState.type === 'DELETE' ? modalState.payload.name : ''}&quot;</span>? 
+          Esta ação não pode ser desfeita.
+        </p>
+      </ConfirmationModal>
+    </AdminListLayout>
   );
 } 

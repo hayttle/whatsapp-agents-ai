@@ -26,7 +26,7 @@ export function InstanceDetailsModal({
   empresaName 
 }: InstanceDetailsModalProps) {
   const { actionLoading, handleAction } = useInstanceActions();
-  const { agentes } = useAgents({ isSuperAdmin: true, tenantId: instance?.tenant_id });
+  const { data: agentes } = useAgents({ isSuperAdmin: true, tenantId: instance?.tenant_id });
   const [selectedAgentId, setSelectedAgentId] = useState<string>("");
   const [savingAgent, setSavingAgent] = useState(false);
 
@@ -88,12 +88,37 @@ export function InstanceDetailsModal({
     try {
       // Desvincular agente anterior, se houver
       if (localInstance.agent_id) {
-        await agentService.updateAgent(localInstance.agent_id, { instance_id: null });
+        if (agenteVinculado?.agent_type === 'external') {
+          await agentService.updateAgent(localInstance.agent_id, {
+            title: agenteVinculado.title,
+            webhookUrl: agenteVinculado.webhookUrl,
+            tenant_id: agenteVinculado.tenant_id,
+            active: agenteVinculado.active,
+            instance_id: null,
+            description: agenteVinculado.description,
+            agent_type: agenteVinculado.agent_type
+          });
+        } else {
+          await agentService.updateAgent(localInstance.agent_id, { instance_id: null, agent_type: agenteVinculado?.agent_type });
+        }
       }
       // Atualizar agent_id da instância
-      await instanceService.updateInstance(localInstance.id, { agent_id: selectedAgentId });
+      await instanceService.updateInstance(localInstance.id, { agent_id: selectedAgentId, provider_type: localInstance.provider_type });
       // Vincular novo agente
-      await agentService.updateAgent(selectedAgentId, { instance_id: localInstance.id });
+      const novoAgente = agentes.find(a => a.id === selectedAgentId);
+      if (novoAgente?.agent_type === 'external') {
+        await agentService.updateAgent(selectedAgentId, {
+          title: novoAgente.title,
+          webhookUrl: novoAgente.webhookUrl,
+          tenant_id: novoAgente.tenant_id,
+          active: novoAgente.active,
+          instance_id: localInstance.id,
+          description: novoAgente.description,
+          agent_type: novoAgente.agent_type
+        });
+      } else {
+        await agentService.updateAgent(selectedAgentId, { instance_id: localInstance.id, agent_type: novoAgente?.agent_type });
+      }
       toast.success('Agente vinculado com sucesso!');
       setLocalInstance({ ...localInstance, agent_id: selectedAgentId });
       onRefresh();
@@ -113,8 +138,20 @@ export function InstanceDetailsModal({
     if (!agenteVinculado) return;
     setSavingAgent(true);
     try {
-      await instanceService.updateInstance(localInstance.id, { agent_id: null });
-      await agentService.updateAgent(agenteVinculado.id, { instance_id: null });
+      await instanceService.updateInstance(localInstance.id, { agent_id: null, provider_type: localInstance.provider_type });
+      if (agenteVinculado.agent_type === 'external') {
+        await agentService.updateAgent(agenteVinculado.id, {
+          title: agenteVinculado.title,
+          webhookUrl: agenteVinculado.webhookUrl,
+          tenant_id: agenteVinculado.tenant_id,
+          active: agenteVinculado.active,
+          instance_id: null,
+          description: agenteVinculado.description,
+          agent_type: agenteVinculado.agent_type
+        });
+      } else {
+        await agentService.updateAgent(agenteVinculado.id, { instance_id: null, agent_type: agenteVinculado.agent_type });
+      }
       toast.success('Agente desvinculado com sucesso!');
       setLocalInstance({ ...localInstance, agent_id: null });
       onRefresh();

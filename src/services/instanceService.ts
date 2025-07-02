@@ -89,15 +89,11 @@ class InstanceService {
   }
 
   async updateInstance(id: string, updateData: Partial<Instance>): Promise<ApiResponse> {
-    // Se provider_type não está no updateData, buscar da instância
-    let providerType = updateData.provider_type;
+    // Determinar o endpoint baseado no provider_type fornecido
+    const providerType = updateData.provider_type;
     
     if (!providerType) {
-      // Buscar o provider_type da instância
-      const response = await fetch(`/api/whatsapp-instances/list`);
-      const data = await response.json();
-      const instance = data.instances?.find((inst: Instance) => inst.id === id);
-      providerType = instance?.provider_type;
+      throw new Error('provider_type é obrigatório para atualização');
     }
     
     // Determinar o endpoint baseado no tipo da instância

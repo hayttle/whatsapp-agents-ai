@@ -1,11 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
 import { agentService } from "@/services/agentService";
-import { tenantService, Tenant } from "@/services/tenantService";
 import Modal, { ModalHeader, ModalBody, ModalFooter } from "@/components/ui/Modal";
-import { Input, Button, Select, Alert, Switch } from "@/components/brand";
-import { Building, Save } from "lucide-react";
+import { Input, Button, Select, Switch } from "@/components/brand";
+import { Building, Save, ArrowLeft } from "lucide-react";
 import { AgentModalProps } from "./types";
+import { toast } from "sonner";
+import { useTenants } from "@/hooks/useTenants";
 
 export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdmin }: AgentModalProps) {
   const [title, setTitle] = useState("");
@@ -13,10 +14,8 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
   const [fallback, setFallback] = useState("");
   const [active, setActive] = useState(true);
   const [selectedTenant, setSelectedTenant] = useState("");
-  const [empresas, setEmpresas] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState("");
-  const [error, setError] = useState("");
+  const { data: empresas } = useTenants(isSuperAdmin);
   const [personality, setPersonality] = useState('Friendly');
   const [customPersonality, setCustomPersonality] = useState('');
   const [tone, setTone] = useState('Empathetic');
@@ -54,46 +53,37 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
       setAgentType('internal');
       setBufferTime(10);
     }
-    setMsg("");
-    setError("");
   }, [agent, open, tenantId]);
 
-  // Buscar empresas se for super admin
-  useEffect(() => {
-    if (isSuperAdmin && !agent) {
-      const fetchEmpresas = async () => {
-        try {
-          const data = await tenantService.listTenants();
-          setEmpresas(data.tenants || []);
-        } catch {
-          setEmpresas([]);
-        }
-      };
-      fetchEmpresas();
-    }
-  }, [isSuperAdmin, agent]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setMsg("");
-    setError("");
     
     // Validação específica por tipo de agente
     if (agentType === 'internal') {
       if (!prompt.trim()) {
-        setError('Prompt é obrigatório para agentes internos.');
+        toast.error('Prompt é obrigatório para agentes internos.');
         setLoading(false);
         return;
       }
       if (!fallback.trim()) {
-        setError('Mensagem fallback é obrigatória para agentes internos.');
+        toast.error('Mensagem fallback é obrigatória para agentes internos.');
         setLoading(false);
         return;
       }
     } else {
       if (!webhookUrl.trim()) {
-        setError('Endpoint é obrigatório para agentes externos.');
+        toast.error('Endpoint é obrigatório para agentes externos.');
+        setLoading(false);
+        return;
+      }
+      // Validar se é uma URL válida
+      try {
+        new URL(webhookUrl);
+      } catch {
+        toast.error('Endpoint deve ser uma URL válida.');
         setLoading(false);
         return;
       }
@@ -103,7 +93,7 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
       const agentData = {
         title,
         prompt: agentType === 'internal' ? prompt : '',
-        fallback_message: agentType === 'internal' ? fallback : '',
+        fallback_message: agentType === 'internal' ? fallback : undefined,
         active,
         tenant_id: selectedTenant,
         personality: agentType === 'internal' ? personality : undefined,
@@ -116,17 +106,16 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
       };
       if (agent) {
         await agentService.updateAgent(agent.id, agentData);
-        setMsg("Agente atualizado com sucesso!");
+        toast.success("Agente atualizado com sucesso!");
       } else {
         await agentService.createAgent({ ...agentData, instance_id: null });
-        setMsg("Agente criado com sucesso!");
+        toast.success("Agente criado com sucesso!");
       }
-      setTimeout(() => {
-        setMsg("");
-        onSaved();
-      }, 1200);
+      onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao salvar agente");
+      const errorMessage = err instanceof Error ? err.message : "Erro ao salvar agente";
+      toast.error(errorMessage);
+      console.error('[AgentModal] Erro ao salvar agente:', err);
     } finally {
       setLoading(false);
     }
@@ -137,12 +126,6 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
       <ModalHeader>{agent ? "Editar Agente" : "Novo Agente"}</ModalHeader>
       <form onSubmit={handleSubmit}>
         <ModalBody className="space-y-4">
-          {msg && (
-            <Alert variant="success" title="Sucesso">{msg}</Alert>
-          )}
-          {error && (
-            <Alert variant="error" title="Erro">{error}</Alert>
-          )}
           {isSuperAdmin && !agent && (
             <Select
               label="Empresa"
@@ -293,6 +276,17 @@ export function AgentModal({ open, onClose, onSaved, agent, tenantId, isSuperAdm
           </div>
         </ModalBody>
         <ModalFooter>
+          {agent && (
+            <Button
+              type="button"
+              onClick={onClose}
+              variant="ghost"
+              disabled={loading}
+              leftIcon={<ArrowLeft className="w-4 h-4" />}
+            >
+              Voltar
+            </Button>
+          )}
           <Button
             type="button"
             onClick={onClose}

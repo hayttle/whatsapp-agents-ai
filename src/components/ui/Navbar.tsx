@@ -220,8 +220,7 @@ export function Navbar() {
                         variant="success" 
                         className="text-xs mt-1"
                       >
-                        {user.role === 'super_admin' ? 'Super Admin' : 
-                         (user.role as string) === 'admin' ? 'Admin' : 'Usuário'}
+                                {user.role === 'super_admin' ? 'Super Admin' : 'Usuário'}
                       </Badge>
                     </div>
                   </div>

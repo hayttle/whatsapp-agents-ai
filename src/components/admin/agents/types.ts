@@ -2,7 +2,7 @@ export interface Agent {
   id: string;
   title: string;
   prompt: string;
-  fallback_message: string;
+  fallback_message?: string;
   active: boolean;
   instance_id?: string | null;
   tenant_id: string;
@@ -13,6 +13,7 @@ export interface Agent {
   description?: string | null;
   agent_type?: 'internal' | 'external';
   buffer_time?: number;
+  agent_model_id?: string | null;
 }
 
 export interface Instance {

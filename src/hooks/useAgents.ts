@@ -1,8 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Agent } from '@/services/agentService';
 import { agentService } from '@/services/agentService';
-import { tenantService } from '@/services/tenantService';
-import { Instance } from '@/components/admin/instances/types';
+
 
 interface UseAgentsProps {
   isSuperAdmin: boolean;
@@ -19,9 +18,7 @@ interface AgentFormData {
 }
 
 export const useAgents = ({ isSuperAdmin, tenantId }: UseAgentsProps) => {
-  const [agentes, setAgentes] = useState<Agent[]>([]);
-  const [empresas, setEmpresas] = useState<Record<string, string>>({});
-  const [instancias, setInstancias] = useState<Record<string, Instance>>({});
+  const [data, setData] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,35 +27,10 @@ export const useAgents = ({ isSuperAdmin, tenantId }: UseAgentsProps) => {
     setError(null);
     
     try {
-      const data = await agentService.listAgents(isSuperAdmin ? undefined : tenantId);
-      setAgentes(data.agents || []);
-      
-      if (isSuperAdmin && data.agents) {
-        const tenantIds = [...new Set(data.agents.map((a: Agent) => a.tenant_id).filter(Boolean))];
-        if (tenantIds.length > 0) {
-          const dataEmp = await tenantService.listTenants();
-          const empresaMap = (dataEmp.tenants || []).reduce((acc: Record<string, string>, t) => {
-            acc[t.id] = t.name;
-            return acc;
-          }, {});
-          setEmpresas(empresaMap);
-        } else {
-          setEmpresas({});
-        }
-      }
-      
-      // Buscar nomes das instâncias
-      const instanceIds = Array.from(new Set((data.agents || []).map((a: Agent) => a.instance_id).filter(Boolean)));
-      if (instanceIds.length > 0) {
-        // TODO: Criar instanceService.listInstancesByIds quando necessário
-        // Por enquanto, vamos manter a lógica atual
-        const insts = await fetch('/api/whatsapp-instances/list').then(res => res.json());
-        const instMap: Record<string, Instance> = {};
-        (insts?.instances || []).forEach((i: Instance) => { instMap[i.id] = i; });
-        setInstancias(instMap);
-      }
+      const response = await agentService.listAgents(isSuperAdmin ? undefined : tenantId);
+      setData(response.agents || []);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar agentes';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -90,7 +62,7 @@ export const useAgents = ({ isSuperAdmin, tenantId }: UseAgentsProps) => {
       await agentService.deleteAgent(id);
       await fetchAgentes();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao remover agente';
       throw new Error(errorMessage);
     }
   }, [fetchAgentes]);
@@ -100,7 +72,7 @@ export const useAgents = ({ isSuperAdmin, tenantId }: UseAgentsProps) => {
       await agentService.toggleAgentStatus(id, active);
       await fetchAgentes();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao alterar status do agente';
       throw new Error(errorMessage);
     }
   }, [fetchAgentes]);
@@ -110,9 +82,7 @@ export const useAgents = ({ isSuperAdmin, tenantId }: UseAgentsProps) => {
   }, [fetchAgentes]);
 
   return {
-    agentes,
-    empresas,
-    instancias,
+    data,
     loading,
     error,
     refetch: fetchAgentes,

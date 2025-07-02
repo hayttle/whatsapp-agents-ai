@@ -1,70 +1,70 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { authenticateUser, createApiClient } from '@/lib/supabase/api';
+import { withAuth, AuthResult } from '@/lib/auth/helpers';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResult) {
   if (req.method !== 'PUT') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Autenticar usuário via cookies
-    const auth = await authenticateUser(req, res);
-    
-    if (!auth) {
-      return res.status(401).json({ error: 'Unauthorized - User not authenticated' });
+    // Verificar permissões - usuários comuns podem atualizar agentes do seu próprio tenant
+    if (!auth.user.role || !['user', 'super_admin'].includes(auth.user.role)) {
+      return res.status(403).json({ error: 'Forbidden - Insufficient permissions' });
     }
 
-    const { userData } = auth;
-    const supabase = createApiClient(req, res);
+    const { id, title, description, webhookUrl, tenant_id, active, instance_id } = req.body;
 
-    const { id, ...updateData } = req.body;
-
-    if (!id) {
-      return res.status(400).json({ error: 'Agent ID is required' });
+    if (!id || !title || !webhookUrl || !tenant_id) {
+      return res.status(400).json({ error: 'Missing required fields for external agent update' });
     }
 
-    // Se instance_id vier como string vazia, transformar em null
-    if ('instance_id' in updateData && updateData.instance_id === '') {
-      updateData.instance_id = null;
+    // Verificar permissões de tenant
+    if (auth.user.role !== 'super_admin' && tenant_id !== auth.user.tenant_id) {
+      return res.status(403).json({ error: 'Forbidden - Cannot update agent for different tenant' });
     }
 
-    // Para agentes externos, manter o webhookUrl original
-    updateData.agent_type = 'external';
-
-    // Verificar se o agente existe e se o usuário tem permissão
-    const { data: existingAgent } = await supabase
+    const { data: agent, error } = await auth.supabase
       .from('agents')
-      .select('tenant_id, agent_type')
-      .eq('id', id)
-      .single();
-
-    if (!existingAgent) {
-      return res.status(404).json({ error: 'Agent not found' });
-    }
-
-    // Verificar se é realmente um agente externo
-    if (existingAgent.agent_type !== 'external') {
-      return res.status(400).json({ error: 'This endpoint is only for external agents' });
-    }
-
-    if (userData.role !== 'super_admin' && existingAgent.tenant_id !== userData.tenant_id) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
-    }
-
-    const { data: agent, error } = await supabase
-      .from('agents')
-      .update(updateData)
+      .update({
+        title,
+        description: description || null,
+        webhookUrl,
+        tenant_id,
+        active: active ?? true,
+        agent_type: 'external',
+        instance_id: instance_id || null,
+        prompt: ''
+      })
       .eq('id', id)
       .select()
       .single();
 
     if (error) {
-      return res.status(500).json({ error: 'Error updating external agent: ' + error.message });
+      console.error('[Agents External Update] Erro ao atualizar agente externo:', error);
+      return res.status(500).json({ error: 'Internal server error' });
     }
+
+    // Log de auditoria
+    // logAuditAction(
+    //   'UPDATE_EXTERNAL_AGENT',
+    //   'agents',
+    //   id,
+    //   auth.user.id,
+    //   auth.user.email,
+    //   { 
+    //     agent_title: title,
+    //     tenant_id: tenant_id,
+    //     agent_type: 'external',
+    //     updated_fields: ['title', 'description', 'webhookUrl', 'tenant_id', 'active', 'instance_id'],
+    //     method: req.method 
+    //   }
+    // );
 
     return res.status(200).json({ success: true, agent });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
+    console.error('[Agents External Update] Erro inesperado:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
-} 
+}
+
+export default withAuth(handler); 

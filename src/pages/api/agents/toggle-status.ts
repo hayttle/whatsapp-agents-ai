@@ -1,21 +1,16 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { authenticateUser, createApiClient } from '@/lib/supabase/api';
+import { withAuth, AuthResult } from '@/lib/auth/helpers';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResult) {
   if (req.method !== 'PUT') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Autenticar usuário via cookies
-    const auth = await authenticateUser(req, res);
-    
-    if (!auth) {
-      return res.status(401).json({ error: 'Unauthorized - User not authenticated' });
+    // Verificar permissões - usuários comuns podem alterar status de agentes do seu próprio tenant
+    if (!auth.user.role || !['user', 'super_admin'].includes(auth.user.role)) {
+      return res.status(403).json({ error: 'Forbidden - Insufficient permissions' });
     }
-
-    const { userData } = auth;
-    const supabase = createApiClient(req, res);
 
     const { id, active } = req.body;
 
@@ -28,9 +23,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Verificar se o agente existe e se o usuário tem permissão
-    const { data: existingAgent } = await supabase
+    const { data: existingAgent } = await auth.supabase
       .from('agents')
-      .select('tenant_id')
+      .select('tenant_id, title, agent_type, active')
       .eq('id', id)
       .single();
 
@@ -38,11 +33,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'Agent not found' });
     }
 
-    if (userData.role !== 'super_admin' && existingAgent.tenant_id !== userData.tenant_id) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
+    // Verificar permissões de tenant
+    if (auth.user.role !== 'super_admin' && existingAgent.tenant_id !== auth.user.tenant_id) {
+      return res.status(403).json({ error: 'Forbidden - Cannot toggle agent from different tenant' });
     }
 
-    const { data: agent, error } = await supabase
+    const { data: agent, error } = await auth.supabase
       .from('agents')
       .update({ active })
       .eq('id', id)
@@ -50,12 +46,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
 
     if (error) {
-      return res.status(500).json({ error: 'Error toggling agent status: ' + error.message });
+      console.error('[Agents Toggle Status] Erro ao alterar status do agente:', error);
+      return res.status(500).json({ error: 'Internal server error' });
     }
+
+    // Log de auditoria
 
     return res.status(200).json({ success: true, agent });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
+    console.error('[Agents Toggle Status] Erro inesperado:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
-} 
+}
+
+export default withAuth(handler); 

@@ -1,26 +1,16 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { authenticateUser, createApiClient } from '@/lib/supabase/api';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { withAuth, AuthResult } from '@/lib/auth/helpers';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResult) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Autenticar usuário via cookies
-    const auth = await authenticateUser(req, res);
-    
-    if (!auth) {
-      return res.status(401).json({ error: 'Unauthorized - User not authenticated' });
-    }
-
-    const { userData } = auth;
-    const supabase = createApiClient(req, res);
-
     const { tenantId, agent_type } = req.query;
 
     // Construir query base
-    let query = supabase
+    let query = auth.supabase
       .from('agents')
       .select('*');
 
@@ -30,8 +20,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Filtrar por tenant se não for super_admin
-    if (userData.role !== 'super_admin') {
-      query = query.eq('tenant_id', userData.tenant_id);
+    if (auth.user.role !== 'super_admin') {
+      query = query.eq('tenant_id', auth.user.tenant_id);
     } else if (tenantId && typeof tenantId === 'string') {
       query = query.eq('tenant_id', tenantId);
     }
@@ -39,12 +29,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: agents, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
-      return res.status(500).json({ error: 'Error fetching agents: ' + error.message });
+      console.error('[Agents List] Erro ao buscar agentes:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+
+    // Log de auditoria para super_admin
+    if (auth.user.role === 'super_admin') {
+      // logAuditAction(
+      //   'LIST_AGENTS',
+      //   'agents',
+      //   'all',
+      //   auth.user.id,
+      //   auth.user.email,
+      //   { 
+      //     filters: { tenantId, agent_type },
+      //     count: agents?.length || 0,
+      //     method: req.method 
+      //   }
+      // );
     }
 
     return res.status(200).json({ agents: agents || [] });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
+    console.error('[Agents List] Erro inesperado:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
-} 
+}
+
+export default withAuth(handler); 

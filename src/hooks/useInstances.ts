@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Instance } from '@/components/admin/instances/types';
 import { instanceService } from '@/services/instanceService';
-import { tenantService } from '@/services/tenantService';
 
 interface InstanceFormData {
   instanceName: string;
@@ -20,8 +19,7 @@ interface UseInstancesProps {
 }
 
 export const useInstances = ({ isSuperAdmin, tenantId, refreshKey }: UseInstancesProps) => {
-  const [instances, setInstances] = useState<Instance[]>([]);
-  const [empresas, setEmpresas] = useState<Record<string, string>>({});
+  const [data, setData] = useState<Instance[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,8 +28,8 @@ export const useInstances = ({ isSuperAdmin, tenantId, refreshKey }: UseInstance
     setError(null);
     
     try {
-      const data = await instanceService.listInstances(isSuperAdmin ? undefined : tenantId);
-      const updatedInstances = data.instances || [];
+      const response = await instanceService.listInstances(isSuperAdmin ? undefined : tenantId);
+      const updatedInstances = response.instances || [];
 
       // Para cada instância, consultar status real na Evolution e atualizar localmente
       await Promise.all(updatedInstances.map(async (inst) => {
@@ -43,20 +41,11 @@ export const useInstances = ({ isSuperAdmin, tenantId, refreshKey }: UseInstance
           }
         } catch {}
       }));
-      setInstances(updatedInstances);
-      
-      if (isSuperAdmin && updatedInstances) {
-        const tenantsData = await tenantService.listTenants();
-        const tenantsMap: Record<string, string> = {};
-        tenantsData.tenants?.forEach(tenant => {
-          tenantsMap[tenant.id] = tenant.name;
-        });
-        setEmpresas(tenantsMap);
-      }
+      setData(updatedInstances);
       
       setError(null);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar instâncias';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -110,8 +99,7 @@ export const useInstances = ({ isSuperAdmin, tenantId, refreshKey }: UseInstance
   }, [fetchInstances]);
 
   return {
-    instances,
-    empresas,
+    data,
     loading,
     error,
     refetch: fetchInstances,

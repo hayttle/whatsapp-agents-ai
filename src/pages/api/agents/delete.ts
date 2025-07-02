@@ -1,21 +1,16 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { authenticateUser, createApiClient } from '@/lib/supabase/api';
+import { withAuth, AuthResult } from '@/lib/auth/helpers';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResult) {
   if (req.method !== 'DELETE') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Autenticar usuário via cookies
-    const auth = await authenticateUser(req, res);
-    
-    if (!auth) {
-      return res.status(401).json({ error: 'Unauthorized - User not authenticated' });
+    // Verificar permissões - usuários comuns podem deletar agentes do seu próprio tenant
+    if (!auth.user.role || !['user', 'super_admin'].includes(auth.user.role)) {
+      return res.status(403).json({ error: 'Forbidden - Insufficient permissions' });
     }
-
-    const { userData } = auth;
-    const supabase = createApiClient(req, res);
 
     const { id } = req.body;
 
@@ -24,9 +19,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Verificar se o agente existe e se o usuário tem permissão
-    const { data: existingAgent } = await supabase
+    const { data: existingAgent } = await auth.supabase
       .from('agents')
-      .select('tenant_id')
+      .select('tenant_id, title, agent_type')
       .eq('id', id)
       .single();
 
@@ -34,22 +29,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'Agent not found' });
     }
 
-    if (userData.role !== 'super_admin' && existingAgent.tenant_id !== userData.tenant_id) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
+    // Verificar permissões de tenant
+    if (auth.user.role !== 'super_admin' && existingAgent.tenant_id !== auth.user.tenant_id) {
+      return res.status(403).json({ error: 'Forbidden - Cannot delete agent from different tenant' });
     }
 
-    const { error } = await supabase
+    const { error } = await auth.supabase
       .from('agents')
       .delete()
       .eq('id', id);
 
     if (error) {
-      return res.status(500).json({ error: 'Error deleting agent: ' + error.message });
+      console.error('[Agents Delete] Erro ao deletar agente:', error);
+      return res.status(500).json({ error: 'Internal server error' });
     }
+
+    // Log de auditoria
+    // logAuditAction(
+    //   'DELETE_AGENT',
+    //   'agents',
+    //   id,
+    //   auth.user.id,
+    //   auth.user.email,
+    //   { 
+    //     agent_title: existingAgent.title,
+    //     tenant_id: existingAgent.tenant_id,
+    //     agent_type: existingAgent.agent_type,
+    //     method: req.method 
+    //   }
+    // );
 
     return res.status(200).json({ success: true });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
+    console.error('[Agents Delete] Erro inesperado:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
-} 
+}
+
+export default withAuth(handler); 

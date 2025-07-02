@@ -1,11 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Card, CardContent, Alert } from '@/components/brand';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { ProviderModal } from '@/components/admin/providers/ProviderModal';
 import ProviderList, { ProviderListItem } from '@/components/admin/providers/ProviderList';
 import { userService } from '@/services/userService';
-import { Server } from 'lucide-react';
 import { tenantService } from '@/services/tenantService';
 import { toast } from 'sonner';
 
@@ -89,52 +87,31 @@ export default function WhatsappApiPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto mt-8">
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 bg-brand-green-light rounded-lg flex items-center justify-center">
-            <Server className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-brand-gray-dark">
-              {isSuperAdmin ? 'Gerenciar Servidores' : 'Meus Servidores'}
-            </h1>
-            <p className="text-gray-600">
-              {isSuperAdmin
-                ? 'Gerencie todos os servidores de API WhatsApp'
-                : 'Gerencie seus servidores de API WhatsApp'}
-            </p>
-          </div>
-        </div>
-      </div>
-      <Card>
-        <CardContent>
-          {loading ? (
-            <div>Carregando...</div>
-          ) : !editMode ? (
-            <ProviderList
-              providers={providers.map(p => ({ ...p, tenantName: isSuperAdmin ? empresas[p.tenant_id || ''] : undefined, active: false }))}
-              onEdit={(prov: ProviderListItem) => { setEditMode(true); setProvider({ ...prov, provider_type: 'evolution' }); setShowModal(true); }}
-              onDelete={(id: string) => setDeleteId(id)}
-              loading={loading}
-              isSuperAdmin={isSuperAdmin}
-              onCreate={() => { setProvider(null); setShowModal(true); }}
-            />
-          ) : null}
-          {success && <Alert variant="success" className="mt-4">{success}</Alert>}
-          <ConfirmationModal
-            isOpen={!!deleteId}
-            onClose={() => setDeleteId(null)}
-            onConfirm={() => deleteId && handleDelete(deleteId)}
-            title="Remover configuração do servidor?"
-            confirmText="Remover"
-            cancelText="Cancelar"
-            isLoading={formLoading}
-          >
-            Tem certeza que deseja remover a configuração do servidor WhatsApp API? Esta ação não poderá ser desfeita.
-          </ConfirmationModal>
-        </CardContent>
-      </Card>
+    <div className="max-w-6xl mx-auto">
+      {loading ? (
+        <div>Carregando...</div>
+      ) : !editMode ? (
+        <ProviderList
+          providers={providers.map(p => ({ ...p, tenantName: isSuperAdmin ? empresas[p.tenant_id || ''] : undefined, active: false }))}
+          onEdit={(prov: ProviderListItem) => { setEditMode(true); setProvider({ ...prov, provider_type: 'evolution' }); setShowModal(true); }}
+          onDelete={(id: string) => setDeleteId(id)}
+          loading={loading}
+          isSuperAdmin={isSuperAdmin}
+          onCreate={() => { setProvider(null); setShowModal(true); }}
+        />
+      ) : null}
+      {success && <div className="mt-4 text-green-600">{success}</div>}
+      <ConfirmationModal
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={() => deleteId && handleDelete(deleteId)}
+        title="Remover configuração do servidor?"
+        confirmText="Remover"
+        cancelText="Cancelar"
+        isLoading={formLoading}
+      >
+        Tem certeza que deseja remover a configuração do servidor WhatsApp API? Esta ação não poderá ser desfeita.
+      </ConfirmationModal>
       <ProviderModal
         open={showModal}
         onClose={() => { setShowModal(false); setEditMode(false); setProvider(null); }}

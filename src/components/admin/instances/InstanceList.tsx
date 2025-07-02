@@ -7,21 +7,18 @@ import { ConnectionModal } from "./QRCodeComponents";
 import { ConfirmationModal } from "@/components/ui";
 import { useInstanceActions } from "@/hooks/useInstanceActions";
 import { useInstances } from "@/hooks/useInstances";
+import { useTenants } from "@/hooks/useTenants";
 import { instanceService } from "@/services/instanceService";
 import { Plus, Filter, X } from "lucide-react";
 import { useAgents } from '@/hooks/useAgents';
 import { InstanceCard } from "./InstanceCard";
 import { InstanceDetailsModal } from "./InstanceDetailsModal";
+import { AdminListLayout } from '@/components/layout/AdminListLayout';
 
 interface InstanceListProps {
   isSuperAdmin: boolean;
   tenantId?: string;
 }
-
-const statusDisplay: { [key: string]: string } = {
-  open: 'Conectado',
-  close: 'Desconectado',
-};
 
 // Função para normalizar status - qualquer status diferente de 'open' é tratado como 'close'
 const normalizeStatus = (status: string): 'open' | 'close' => {
@@ -70,13 +67,23 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
   const [modalState, dispatchModal] = useReducer(modalReducer, { type: 'NONE' });
   const { actionLoading, handleAction } = useInstanceActions();
   
-  const { instances, empresas, loading } = useInstances({
+  const { data: instances, loading } = useInstances({
     isSuperAdmin,
     tenantId,
     refreshKey,
   });
 
-  const { agentes } = useAgents({ isSuperAdmin, tenantId });
+  const { data: empresas } = useTenants(isSuperAdmin);
+
+  const { data: agentes } = useAgents({ isSuperAdmin, tenantId });
+
+  // Converter array de empresas para objeto para manter compatibilidade
+  const empresasMap = useMemo(() => {
+    return empresas.reduce((acc, tenant) => {
+      acc[tenant.id] = tenant.name;
+      return acc;
+    }, {} as Record<string, string>);
+  }, [empresas]);
   
   // Estados dos filtros
   const [filterStatus, setFilterStatus] = useState<string>('');
@@ -122,23 +129,6 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
     setRefreshKey(k => k + 1);
   };
 
-  // Função para atualizar status da instância na Evolution e no banco
-  const handleUpdateStatus = async (instanceName: string) => {
-    try {
-      const response = await fetch(`/api/whatsapp-instances/status?instanceName=${encodeURIComponent(instanceName)}`);
-      const data = await response.json();
-      if (response.ok) {
-        setRefreshKey(k => k + 1);
-      } else {
-        toast.error(data.error || 'Erro ao atualizar status');
-      }
-    } catch (err: unknown) {
-      toast.error((err as Error)?.message || 'Erro ao atualizar status');
-    }
-  };
-
-
-
   // Filtrar instâncias
   const filteredInstances = useMemo(() => {
     return instances.filter(inst => {
@@ -162,27 +152,86 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
   const hasActiveFilters = filterStatus || filterEmpresa || filterSearch;
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <button 
-            className={`px-3 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${
-              showFilters 
-                ? 'bg-brand-green-light text-white' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-            onClick={() => setShowFilters(!showFilters)}
+    <AdminListLayout
+      icon={<Plus className="w-5 h-5 text-white" />}
+      pageTitle={isSuperAdmin ? 'Gerenciar Instâncias' : 'Minhas Instâncias'}
+      pageDescription={isSuperAdmin ? 'Gerencie todas as instâncias do sistema' : 'Gerencie suas instâncias'}
+      cardTitle={isSuperAdmin ? 'Instâncias WhatsApp' : 'Minhas Instâncias'}
+      cardDescription={isSuperAdmin ? 'Gerencie e monitore todas as instâncias conectadas ao WhatsApp' : 'Gerencie e monitore suas instâncias conectadas ao WhatsApp'}
+      actionButton={
+        (isSuperAdmin || tenantId) && (
+          <button
+            className="px-3 py-2 text-sm font-medium rounded-md bg-brand-green-light text-white flex items-center gap-2"
+            onClick={() => dispatchModal({ type: 'OPEN_CREATE' })}
           >
-            <Filter className="w-4 h-4" />
-            Filtros
-            {hasActiveFilters && (
-              <span className="ml-1 px-2 py-0.5 text-xs bg-red-500 text-white rounded-full">
-                {[filterStatus, filterEmpresa, filterSearch].filter(Boolean).length}
-              </span>
-            )}
+            <Plus className="w-4 h-4" />
+            Nova Instância
           </button>
-          
-          {hasActiveFilters && (
+        )
+      }
+      filtersOpen={showFilters}
+      onToggleFilters={() => setShowFilters(!showFilters)}
+    >
+      <AdminListLayout.Filters>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+            >
+              <option value="">Todos os status</option>
+              <option value="open">Conectado</option>
+              <option value="close">Desconectado</option>
+            </select>
+          </div>
+          {isSuperAdmin && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Empresa</label>
+              <select
+                value={filterEmpresa}
+                onChange={(e) => setFilterEmpresa(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+              >
+                <option value="">Todas as empresas</option>
+                {Object.entries(empresasMap).map(([id, name]) => (
+                  <option key={id} value={id}>{name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Buscar por nome ou descrição</label>
+            <input
+              type="text"
+              value={filterSearch}
+              onChange={(e) => setFilterSearch(e.target.value)}
+              placeholder="Digite o nome ou descrição..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+            />
+          </div>
+        </div>
+        {hasActiveFilters && (
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div className="flex items-center gap-2 text-sm text-blue-800">
+              <Filter className="w-4 h-4" />
+              <span className="font-medium">Filtros ativos:</span>
+              {filterStatus && (
+                <span className="px-2 py-1 bg-blue-100 rounded text-xs">Status: {filterStatus === 'open' ? 'Conectado' : 'Desconectado'}</span>
+              )}
+              {filterEmpresa && (
+                <span className="px-2 py-1 bg-blue-100 rounded text-xs">Empresa: {empresasMap[filterEmpresa]}</span>
+              )}
+              {filterSearch && (
+                <span className="px-2 py-1 bg-blue-100 rounded text-xs">Busca: &quot;{filterSearch}&quot;</span>
+              )}
+              <span className="text-blue-600">({filteredInstances.length} de {instances.length} instâncias)</span>
+            </div>
+          </div>
+        )}
+        {hasActiveFilters && (
+          <div className="mt-2 flex justify-end">
             <button 
               className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-2"
               onClick={clearFilters}
@@ -190,206 +239,106 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
               <X className="w-4 h-4" />
               Limpar
             </button>
-          )}
-        </div>
-        
-        <button
-          className="px-4 py-2 text-sm font-semibold text-white bg-brand-gray-dark rounded-md hover:bg-brand-gray-deep transition-colors flex items-center gap-2 whitespace-nowrap"
-          onClick={() => dispatchModal({ type: 'OPEN_CREATE' })}
-        >
-          <Plus className="w-4 h-4" />
-          Nova Instância
-        </button>
-      </div>
-
-      {/* Filtros */}
-      {showFilters && (
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
-              </label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
-              >
-                <option value="">Todos os status</option>
-                <option value="open">Conectado</option>
-                <option value="close">Desconectado</option>
-              </select>
-            </div>
-            
-            {isSuperAdmin && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Empresa
-                </label>
-                <select
-                  value={filterEmpresa}
-                  onChange={(e) => setFilterEmpresa(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
-                >
-                  <option value="">Todas as empresas</option>
-                  {Object.entries(empresas).map(([id, name]) => (
-                    <option key={id} value={id}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Buscar por nome ou descrição
-              </label>
-              <input
-                type="text"
-                value={filterSearch}
-                onChange={(e) => setFilterSearch(e.target.value)}
-                placeholder="Digite o nome da instância ou descrição..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
-              />
-            </div>
           </div>
-        </div>
-      )}
-
-      {/* Resumo dos filtros */}
-      {hasActiveFilters && (
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-          <div className="flex items-center gap-2 text-sm text-blue-800">
-            <Filter className="w-4 h-4" />
-            <span className="font-medium">Filtros ativos:</span>
-            {filterStatus && (
-              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
-                Status: {statusDisplay[filterStatus]}
-              </span>
-            )}
-            {filterEmpresa && (
-              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
-                Empresa: {empresas[filterEmpresa]}
-              </span>
-            )}
-            {filterSearch && (
-              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
-                Busca: &quot;{filterSearch}&quot;
-              </span>
-            )}
-            <span className="text-blue-600">
-              ({filteredInstances.length} de {instances.length} instâncias)
-            </span>
+        )}
+      </AdminListLayout.Filters>
+      <AdminListLayout.List>
+        {loading ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-green-light"></div>
           </div>
-        </div>
-      )}
-
-      {loading ? (
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-green-light mx-auto"></div>
-          <p className="mt-2 text-gray-600">Carregando instâncias...</p>
-        </div>
-      ) : (
-        <>
-          {filteredInstances.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredInstances.map((inst) => {
-                const isLoading = actionLoading === inst.instanceName;
-                const empresaName = isSuperAdmin && inst.tenant_id ? empresas[inst.tenant_id] : undefined;
-                const agenteVinculado = (agentes as import('@/services/agentService').Agent[]).find((a: import('@/services/agentService').Agent) => a.id === inst.agent_id);
-                
-                return (
-                  <InstanceCard
-                    key={inst.id}
-                    instance={inst}
-                    onViewDetails={handleViewDetails}
-                    onConnect={handleConnect}
-                    onDisconnect={handleDisconnect}
-                    isLoading={isLoading}
-                    empresaName={empresaName}
-                    agentName={agenteVinculado ? agenteVinculado.title : undefined}
-                    onRequestDelete={() => dispatchModal({ type: 'OPEN_DELETE', payload: inst })}
-                  />
-                );
-              })}
+        ) : filteredInstances.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredInstances.map((instance: Instance) => {
+              const isLoading = actionLoading === instance.instanceName;
+              const empresaName = isSuperAdmin && instance.tenant_id ? empresasMap[instance.tenant_id] : undefined;
+              const agenteVinculado = (agentes as unknown as Array<{ id: string; title: string }>).find((a) => a.id === instance.agent_id);
+              return (
+                <InstanceCard
+                  key={instance.id}
+                  instance={instance}
+                  onViewDetails={handleViewDetails}
+                  onConnect={handleConnect}
+                  onDisconnect={handleDisconnect}
+                  isLoading={isLoading}
+                  empresaName={empresaName}
+                  agentName={agenteVinculado ? agenteVinculado.title : undefined}
+                  onRequestDelete={() => dispatchModal({ type: 'OPEN_DELETE', payload: instance })}
+                />
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <div className="w-12 h-12 mx-auto mb-4 text-gray-300">
+              <Plus className="w-12 h-12" />
             </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              <div className="w-12 h-12 mx-auto mb-4 text-gray-300">
-                <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path d="M22 16.92V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2.08a2 2 0 0 1 1.09-1.79l7-3.11a2 2 0 0 1 1.82 0l7 3.11A2 2 0 0 1 22 16.92z"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-              </div>
-              <p className="font-medium">
-                {hasActiveFilters ? 'Nenhuma instância encontrada com os filtros aplicados' : 'Nenhuma instância encontrada'}
-              </p>
-              <p className="text-sm">
-                {hasActiveFilters 
-                  ? 'Tente ajustar os filtros ou use o botão "Limpar" para remover os filtros.'
-                  : 'Use o botão "Nova Instância" para criar a primeira.'
-                }
-              </p>
-            </div>
-          )}
-        </>
-      )}
-      <InstanceModal
-        isOpen={modalState.type === 'CREATE'}
-        onClose={closeModal}
-        onSave={handleSave}
-        tenants={isSuperAdmin ? Object.entries(empresas).map(([id, name]) => ({ id, name })) : []}
-        tenantId={tenantId}
-        isSuperAdmin={isSuperAdmin}
-      />
-
-      <InstanceDetailsModal
-        instance={modalState.type === 'DETAILS' ? modalState.payload : null}
-        isOpen={modalState.type === 'DETAILS'}
-        onClose={closeModal}
-        onRefresh={() => setRefreshKey(k => k + 1)}
-        empresaName={modalState.type === 'DETAILS' && modalState.payload.tenant_id ? empresas[modalState.payload.tenant_id] : undefined}
-      />
-      {modalState.type === 'CONNECT' && (
-        <ConnectionModal
-          qr={modalState.payload.qr}
-          code={modalState.payload.code}
+            <p className="font-medium">
+              {hasActiveFilters ? 'Nenhuma instância encontrada com os filtros aplicados' : 'Nenhuma instância encontrada'}
+            </p>
+            <p className="text-sm">
+              {hasActiveFilters 
+                ? 'Tente ajustar os filtros ou use o botão "Limpar" para remover os filtros.'
+                : ''
+              }
+            </p>
+          </div>
+        )}
+        <InstanceModal
+          isOpen={modalState.type === 'CREATE'}
           onClose={closeModal}
-          onStatusUpdate={() => {
-            if (modalState.payload.instanceName) {
-              handleUpdateStatus(modalState.payload.instanceName);
-            }
-          }}
+          onSave={handleSave}
+          tenants={Object.entries(empresasMap).map(([id, name]) => ({ id, name }))}
+          tenantId={tenantId}
+          isSuperAdmin={isSuperAdmin}
         />
-      )}
-        <ConfirmationModal
-        isOpen={modalState.type === 'DELETE'}
-          onClose={closeModal}
-        onConfirm={() => handleDelete(modalState.type === 'DELETE' ? modalState.payload.instanceName : '')}
-        title="Remover instância"
-        confirmText="Remover"
-        cancelText="Cancelar"
-        isLoading={actionLoading === (modalState.type === 'DELETE' ? modalState.payload.instanceName : '')}
-        >
-        <p>
-          Tem certeza que deseja remover a instância <span className="font-semibold">&quot;{modalState.type === 'DELETE' ? modalState.payload.instanceName : ''}&quot;</span>? Esta ação não pode ser desfeita.
-        </p>
-        </ConfirmationModal>
-        <ConfirmationModal
-        isOpen={modalState.type === 'DISCONNECT'}
-          onClose={closeModal}
-        onConfirm={() => handleDisconnect(modalState.type === 'DISCONNECT' ? modalState.payload.instanceName : '')}
-          title="Confirmar Desconexão"
-          confirmText="Desconectar"
-        cancelText="Cancelar"
-        isLoading={actionLoading === (modalState.type === 'DISCONNECT' ? modalState.payload.instanceName : '')}
-        >
-        <p>
-          Tem certeza que deseja desconectar a instância <span className="font-semibold">&quot;{modalState.type === 'DISCONNECT' ? modalState.payload.instanceName : ''}&quot;</span>?
-        </p>
-        </ConfirmationModal>
-
-    </div>
+        {modalState.type === 'DETAILS' && (
+          <InstanceDetailsModal
+            instance={modalState.payload}
+            isOpen={modalState.type === 'DETAILS'}
+            onClose={closeModal}
+            onRefresh={() => setRefreshKey(k => k + 1)}
+            empresaName={modalState.payload.tenant_id ? empresasMap[modalState.payload.tenant_id] : ''}
+          />
+        )}
+        {modalState.type === 'CONNECT' && (
+          <ConnectionModal
+            qr={modalState.payload.qr}
+            code={modalState.payload.code}
+            onClose={closeModal}
+            instanceName={modalState.payload.instanceName}
+          />
+        )}
+        {modalState.type === 'DISCONNECT' && (
+          <ConfirmationModal
+            isOpen={modalState.type === 'DISCONNECT'}
+            onClose={closeModal}
+            onConfirm={() => handleDisconnect(modalState.payload.instanceName)}
+            title="Desconectar Instância"
+            confirmText="Desconectar"
+            cancelText="Cancelar"
+            isLoading={actionLoading === modalState.payload.instanceName}
+          >
+            <p>Tem certeza que deseja desconectar a instância <span className="font-semibold">{modalState.payload.instanceName}</span>?</p>
+          </ConfirmationModal>
+        )}
+        {modalState.type === 'DELETE' && (
+          <ConfirmationModal
+            isOpen={modalState.type === 'DELETE'}
+            onClose={closeModal}
+            onConfirm={() => handleDelete(modalState.payload.instanceName)}
+            title="Deletar Instância"
+            confirmText="Deletar"
+            cancelText="Cancelar"
+            isLoading={actionLoading === modalState.payload.instanceName}
+          >
+            <p>Tem certeza que deseja deletar a instância <span className="font-semibold">{modalState.payload.instanceName}</span>? Esta ação não pode ser desfeita.</p>
+          </ConfirmationModal>
+        )}
+      </AdminListLayout.List>
+    </AdminListLayout>
   );
-} 
+}
+
+// Padrão: Este componente utiliza o layout padrão de listas administrativas (AdminListLayout) para garantir consistência visual e estrutural em todo o painel.
+// ... existing code ... 
