@@ -132,6 +132,10 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
     return true;
   });
 
+  // Separar menus comuns e exclusivos do superadmin
+  const commonNavItems = navItems.filter(item => !item.superAdminOnly);
+  const superAdminNavItems = navItems.filter(item => item.superAdminOnly);
+
   const handleLogout = async () => {
     try {
       const supabase = createClient();
@@ -209,80 +213,203 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
         </div>
         {/* Navigation */}
         <nav className="flex-grow p-2 overflow-y-auto">
-          <ul className="space-y-1">
-            {filteredNavItems.map((item) => {
-              const hasChildren = item.children && item.children.length > 0;
-              const isChildActive = hasChildren && item.children!.some(child => pathname === child.href);
-              const isItemActive = (pathname === item.href) || isChildActive;
-              const isExpanded = expandedItems.has(item.href);
-
-              // Filtrar itens filhos baseado no role do usuário
-              const filteredChildren = hasChildren
-                ? item.children!.filter(child => {
-                  // Se o item filho é apenas para super admin, verificar se o usuário é super admin
-                  if (child.superAdminOnly) {
-                    return userRole === 'super_admin';
-                  }
-
-                  // Se não tem restrições, mostrar para todos
-                  return true;
-                })
-                : [];
-
-              return (
-                <li key={item.href}>
-                  <div className="relative">
-                    <Link
-                      href={hasChildren ? '#' : item.href}
-                      onClick={hasChildren ? (e) => { e.preventDefault(); toggleExpanded(item.href); } : (isMobile ? () => setDrawerOpen(false) : undefined)}
-                      className={`flex items-center gap-3 p-3 rounded-lg transition-colors duration-200 select-none
-                        ${isItemActive ? 'bg-brand-green-light text-white font-semibold' : 'text-gray-300 hover:bg-brand-gray-dark hover:text-white'}
-                      `}
-                    >
-                      <item.icon className="w-5 h-5 flex-shrink-0" />
-                      {showText && <span className="ml-0 flex-1 text-left">{item.label}</span>}
-                      {hasChildren && showText && (
-                        <div className="flex items-center gap-2 ml-auto">
-                          {filteredChildren.length > 0 && (
-                            <Badge variant="default" className="text-xs">
-                              {filteredChildren.length}
-                            </Badge>
+          {userRole === 'super_admin' ? (
+            <>
+              <ul className="space-y-1">
+                {commonNavItems.map((item) => {
+                  const hasChildren = item.children && item.children.length > 0;
+                  const isChildActive = hasChildren && item.children!.some(child => pathname === child.href);
+                  const isItemActive = (pathname === item.href) || isChildActive;
+                  const isExpanded = expandedItems.has(item.href);
+                  const filteredChildren = hasChildren
+                    ? item.children!.filter(child => true)
+                    : [];
+                  return (
+                    <li key={item.href}>
+                      <div className="relative">
+                        <Link
+                          href={hasChildren ? '#' : item.href}
+                          onClick={hasChildren ? (e) => { e.preventDefault(); toggleExpanded(item.href); } : (isMobile ? () => setDrawerOpen(false) : undefined)}
+                          className={`flex items-center gap-3 p-3 rounded-lg transition-colors duration-200 select-none
+                            ${isItemActive ? 'bg-brand-green-light text-white font-semibold' : 'text-gray-300 hover:bg-brand-gray-dark hover:text-white'}
+                          `}
+                        >
+                          <item.icon className="w-5 h-5 flex-shrink-0" />
+                          {showText && <span className="ml-0 flex-1 text-left">{item.label}</span>}
+                          {hasChildren && showText && (
+                            <div className="flex items-center gap-2 ml-auto">
+                              {filteredChildren.length > 0 && (
+                                <Badge variant="default" className="text-xs">
+                                  {filteredChildren.length}
+                                </Badge>
+                              )}
+                              {isExpanded ? (
+                                <ChevronDown className="w-4 h-4" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4" />
+                              )}
+                            </div>
                           )}
-                          {isExpanded ? (
-                            <ChevronDown className="w-4 h-4" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4" />
+                        </Link>
+                        {/* Submenu */}
+                        {hasChildren && isExpanded && showText && (
+                          <ul className="ml-7 mt-1 space-y-1">
+                            {filteredChildren.map((child: SidebarItem) => {
+                              const isChildActive = pathname === child.href;
+                              return (
+                                <li key={child.href}>
+                                  <Link
+                                    href={child.href}
+                                    onClick={isMobile ? () => setDrawerOpen(false) : undefined}
+                                    className={`flex items-center gap-2 p-2 rounded-lg transition-colors duration-200 text-sm
+                                      ${isChildActive ? 'bg-brand-green-light/20 text-brand-green-light font-medium' : 'text-gray-400 hover:bg-brand-gray-dark hover:text-white'}
+                                    `}
+                                  >
+                                    <child.icon className="w-4 h-4 flex-shrink-0" />
+                                    <span>{child.label}</span>
+                                  </Link>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+              {commonNavItems.length > 0 && superAdminNavItems.length > 0 && (
+                <hr className="my-4 border-t-1 border-white/30 w-full" />
+              )}
+              <ul className="space-y-1">
+                {superAdminNavItems.map((item) => {
+                  const hasChildren = item.children && item.children.length > 0;
+                  const isChildActive = hasChildren && item.children!.some(child => pathname === child.href);
+                  const isItemActive = (pathname === item.href) || isChildActive;
+                  const isExpanded = expandedItems.has(item.href);
+                  const filteredChildren = hasChildren
+                    ? item.children!.filter(child => true)
+                    : [];
+                  return (
+                    <li key={item.href}>
+                      <div className="relative">
+                        <Link
+                          href={hasChildren ? '#' : item.href}
+                          onClick={hasChildren ? (e) => { e.preventDefault(); toggleExpanded(item.href); } : (isMobile ? () => setDrawerOpen(false) : undefined)}
+                          className={`flex items-center gap-3 p-3 rounded-lg transition-colors duration-200 select-none
+                            ${isItemActive ? 'bg-brand-green-light text-white font-semibold' : 'text-gray-300 hover:bg-brand-gray-dark hover:text-white'}
+                          `}
+                        >
+                          <item.icon className="w-5 h-5 flex-shrink-0" />
+                          {showText && <span className="ml-0 flex-1 text-left">{item.label}</span>}
+                          {hasChildren && showText && (
+                            <div className="flex items-center gap-2 ml-auto">
+                              {filteredChildren.length > 0 && (
+                                <Badge variant="default" className="text-xs">
+                                  {filteredChildren.length}
+                                </Badge>
+                              )}
+                              {isExpanded ? (
+                                <ChevronDown className="w-4 h-4" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4" />
+                              )}
+                            </div>
                           )}
-                        </div>
+                        </Link>
+                        {/* Submenu */}
+                        {hasChildren && isExpanded && showText && (
+                          <ul className="ml-7 mt-1 space-y-1">
+                            {filteredChildren.map((child: SidebarItem) => {
+                              const isChildActive = pathname === child.href;
+                              return (
+                                <li key={child.href}>
+                                  <Link
+                                    href={child.href}
+                                    onClick={isMobile ? () => setDrawerOpen(false) : undefined}
+                                    className={`flex items-center gap-2 p-2 rounded-lg transition-colors duration-200 text-sm
+                                      ${isChildActive ? 'bg-brand-green-light/20 text-brand-green-light font-medium' : 'text-gray-400 hover:bg-brand-gray-dark hover:text-white'}
+                                    `}
+                                  >
+                                    <child.icon className="w-4 h-4 flex-shrink-0" />
+                                    <span>{child.label}</span>
+                                  </Link>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          ) : (
+            <ul className="space-y-1">
+              {filteredNavItems.map((item) => {
+                const hasChildren = item.children && item.children.length > 0;
+                const isChildActive = hasChildren && item.children!.some(child => pathname === child.href);
+                const isItemActive = (pathname === item.href) || isChildActive;
+                const isExpanded = expandedItems.has(item.href);
+                const filteredChildren = hasChildren
+                  ? item.children!.filter(child => true)
+                  : [];
+                return (
+                  <li key={item.href}>
+                    <div className="relative">
+                      <Link
+                        href={hasChildren ? '#' : item.href}
+                        onClick={hasChildren ? (e) => { e.preventDefault(); toggleExpanded(item.href); } : (isMobile ? () => setDrawerOpen(false) : undefined)}
+                        className={`flex items-center gap-3 p-3 rounded-lg transition-colors duration-200 select-none
+                          ${isItemActive ? 'bg-brand-green-light text-white font-semibold' : 'text-gray-300 hover:bg-brand-gray-dark hover:text-white'}
+                        `}
+                      >
+                        <item.icon className="w-5 h-5 flex-shrink-0" />
+                        {showText && <span className="ml-0 flex-1 text-left">{item.label}</span>}
+                        {hasChildren && showText && (
+                          <div className="flex items-center gap-2 ml-auto">
+                            {filteredChildren.length > 0 && (
+                              <Badge variant="default" className="text-xs">
+                                {filteredChildren.length}
+                              </Badge>
+                            )}
+                            {isExpanded ? (
+                              <ChevronDown className="w-4 h-4" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4" />
+                            )}
+                          </div>
+                        )}
+                      </Link>
+                      {/* Submenu */}
+                      {hasChildren && isExpanded && showText && (
+                        <ul className="ml-7 mt-1 space-y-1">
+                          {filteredChildren.map((child: SidebarItem) => {
+                            const isChildActive = pathname === child.href;
+                            return (
+                              <li key={child.href}>
+                                <Link
+                                  href={child.href}
+                                  onClick={isMobile ? () => setDrawerOpen(false) : undefined}
+                                  className={`flex items-center gap-2 p-2 rounded-lg transition-colors duration-200 text-sm
+                                    ${isChildActive ? 'bg-brand-green-light/20 text-brand-green-light font-medium' : 'text-gray-400 hover:bg-brand-gray-dark hover:text-white'}
+                                  `}
+                                >
+                                  <child.icon className="w-4 h-4 flex-shrink-0" />
+                                  <span>{child.label}</span>
+                                </Link>
+                              </li>
+                            );
+                          })}
+                        </ul>
                       )}
-                    </Link>
-                    {/* Submenu */}
-                    {hasChildren && isExpanded && showText && (
-                      <ul className="ml-7 mt-1 space-y-1">
-                        {filteredChildren.map((child: SidebarItem) => {
-                          const isChildActive = pathname === child.href;
-                          return (
-                            <li key={child.href}>
-                              <Link
-                                href={child.href}
-                                onClick={isMobile ? () => setDrawerOpen(false) : undefined}
-                                className={`flex items-center gap-2 p-2 rounded-lg transition-colors duration-200 text-sm
-                                  ${isChildActive ? 'bg-brand-green-light/20 text-brand-green-light font-medium' : 'text-gray-400 hover:bg-brand-gray-dark hover:text-white'}
-                                `}
-                              >
-                                <child.icon className="w-4 h-4 flex-shrink-0" />
-                                <span>{child.label}</span>
-                              </Link>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </nav>
         {/* User Profile Section - sempre visível no rodapé do sidebar no mobile */}
         <div className={`p-4 border-t border-brand-gray-dark transition-all duration-300 mt-auto ${isCollapsed && !isMobile ? 'flex flex-col items-center' : ''}`}>
