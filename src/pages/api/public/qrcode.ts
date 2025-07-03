@@ -16,6 +16,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Hash inválida' });
   }
 
+  console.log('Hash recebida:', hash);
+
   // Buscar instância pela hash
   const { data: instance, error } = await supabase
     .from('whatsapp_instances')
@@ -23,28 +25,62 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     .eq('public_hash', hash)
     .single();
 
+  console.log('Resultado da busca:', instance, error);
+
   if (error || !instance) {
     return res.status(404).json({ error: 'Link invalido!' });
   }
 
-  if (instance.status !== 'close') {
-    return res.status(400).json({ error: 'Link invalido!' });
+  // Buscar status real na Evolution API
+  const apikey = process.env.EVOLUTION_API_KEY;
+  const statusUrl = `${process.env.EVOLUTION_API_URL}/instance/connectionState/${encodeURIComponent(instance.instanceName)}`;
+  const statusRes = await fetch(statusUrl, { headers: { apikey: apikey || '' } });
+  const statusData = await statusRes.json();
+  let realStatus = statusData.status || statusData.state || (statusData.instance && (statusData.instance.status || statusData.instance.state)) || 'close';
+
+  // Normalizar status
+  realStatus = realStatus === 'open' ? 'open' : 'close';
+
+  // Atualizar status no banco local
+  await supabase
+    .from('whatsapp_instances')
+    .update({ status: realStatus, updated_at: new Date().toISOString() })
+    .eq('public_hash', hash);
+
+  // Agora use realStatus para decidir se pode gerar QR Code
+  if (realStatus !== 'close') {
+    return res.status(200).json({ instanceName: instance.instanceName, status: realStatus });
   }
 
-  // Montar baseUrl absoluta
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
-
-  // Buscar QR Code da instância (reutilizando endpoint interno)
-  const response = await fetch(`${baseUrl}/api/whatsapp-instances/connect`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ instanceName: instance.instanceName, forceRegenerate: true }),
+  // Buscar QR Code diretamente na Evolution API
+  const evolutionUrl = `${process.env.EVOLUTION_API_URL}/instance/connect/${encodeURIComponent(instance.instanceName)}`;
+  const response = await fetch(evolutionUrl, {
+    method: 'GET',
+    headers: { 'apikey': apikey || '' },
   });
   const data = await response.json();
-  if (!response.ok || !data.base64) {
+
+  // Extrair QR Code
+  let qrCodeData = null;
+  if (data.qrcode) qrCodeData = data.qrcode;
+  else if (data.qr) qrCodeData = data.qr;
+  else if (data.base64) qrCodeData = data.base64;
+  else if (typeof data === 'string') qrCodeData = data;
+  else if (data.response && data.response.qrcode) qrCodeData = data.response.qrcode;
+  else if (data.response && data.response.qr) qrCodeData = data.response.qr;
+
+  if (!qrCodeData) {
     return res.status(500).json({ error: 'Não foi possível gerar o QR Code.' });
   }
 
-  return res.status(200).json({ qrcode: data.base64 });
+  // Salvar o JSON completo retornado da Evolution API
+  await supabase
+    .from('whatsapp_instances')
+    .update({
+      qrcode: JSON.stringify(data),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('public_hash', hash);
+
+  return res.status(200).json({ qrcode: qrCodeData, instanceName: instance.instanceName });
 } 

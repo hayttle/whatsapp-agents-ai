@@ -106,6 +106,11 @@ class InstanceService {
       body: JSON.stringify({ id, ...updateData }),
     });
   }
+
+  async getInstanceByName(instanceName: string): Promise<Instance | null> {
+    const data = await this.makeRequest<InstanceListResponse>(`/api/whatsapp-instances/list`);
+    return data.instances.find((inst) => inst.instanceName === instanceName) || null;
+  }
 }
 
 export const instanceService = new InstanceService(); 

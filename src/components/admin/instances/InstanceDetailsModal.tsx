@@ -9,6 +9,7 @@ import { useAgents } from '@/hooks/useAgents';
 import { agentService } from "@/services/agentService";
 import { instanceService } from "@/services/instanceService";
 import { useState, useEffect } from "react";
+import { ConnectionModal } from './QRCodeComponents';
 
 interface InstanceDetailsModalProps {
   instance: Instance | null;
@@ -18,12 +19,12 @@ interface InstanceDetailsModalProps {
   empresaName?: string;
 }
 
-export function InstanceDetailsModal({ 
-  instance, 
-  isOpen, 
-  onClose, 
+export function InstanceDetailsModal({
+  instance,
+  isOpen,
+  onClose,
   onRefresh,
-  empresaName 
+  empresaName
 }: InstanceDetailsModalProps) {
   const { actionLoading, handleAction } = useInstanceActions();
   const { data: agentes } = useAgents({ isSuperAdmin: true, tenantId: instance?.tenant_id });
@@ -44,27 +45,41 @@ export function InstanceDetailsModal({
   const isNative = localInstance.provider_type === 'nativo';
   const agenteVinculado = agentes.find(a => a.id === localInstance.agent_id);
 
+  const [loadingAction, setLoadingAction] = useState<null | "connect" | "disconnect" | "remove" | "status" | "saveAgent" | "unlinkAgent">(null);
+  const [qrData, setQrData] = useState<{ qr: string | null, code: string | null }>({ qr: null, code: null });
+  const [showQrModal, setShowQrModal] = useState(false);
+
   const handleConnect = (instanceName: string) => handleAction(async () => {
+    setLoadingAction("connect");
     const data = await instanceService.connectInstance(instanceName);
     if (data && (data.base64 || data.pairingCode)) {
+      setQrData({ qr: data.base64 || null, code: data.pairingCode || null });
+      setShowQrModal(true);
       toast.success('QR Code gerado com sucesso!');
       onRefresh();
     } else {
       toast.error('Não foi possível obter os dados de conexão.');
     }
+    setLoadingAction(null);
   }, instanceName);
 
   const handleDisconnect = (instanceName: string) => handleAction(async () => {
+    setLoadingAction("disconnect");
     await instanceService.disconnectInstance(instanceName);
     toast.success('Instância desconectada com sucesso.');
+    const updated = await instanceService.getInstanceByName(instanceName);
+    if (updated) setLocalInstance(updated);
     onRefresh();
+    setLoadingAction(null);
   }, instanceName);
 
   const handleDelete = (instanceName: string) => handleAction(async () => {
+    setLoadingAction("remove");
     await instanceService.deleteInstance(instanceName);
     toast.success("Instância deletada com sucesso!");
     onRefresh();
     onClose();
+    setLoadingAction(null);
   }, instanceName);
 
   const handleUpdateStatus = async (instanceName: string) => {
@@ -73,6 +88,8 @@ export function InstanceDetailsModal({
       const data = await response.json();
       if (response.ok) {
         toast.success('Status atualizado com sucesso!');
+        const updated = await instanceService.getInstanceByName(instanceName);
+        if (updated) setLocalInstance(updated);
         onRefresh();
       } else {
         toast.error(data.error || 'Erro ao atualizar status');
@@ -166,12 +183,10 @@ export function InstanceDetailsModal({
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalHeader>
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-            isConnected ? 'bg-green-100' : 'bg-gray-100'
-          }`}>
-            <MessageSquare className={`w-5 h-5 ${
-              isConnected ? 'text-green-600' : 'text-gray-500'
-            }`} />
+          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isConnected ? 'bg-green-100' : 'bg-gray-100'
+            }`}>
+            <MessageSquare className={`w-5 h-5 ${isConnected ? 'text-green-600' : 'text-gray-500'
+              }`} />
           </div>
           <div>
             <h2 className="text-xl font-semibold text-gray-900">{localInstance.instanceName}</h2>
@@ -384,7 +399,7 @@ export function InstanceDetailsModal({
           >
             Fechar
           </Button>
-          
+
           <Button
             variant="secondary"
             onClick={() => handleUpdateStatus(localInstance.instanceName)}
@@ -397,7 +412,7 @@ export function InstanceDetailsModal({
             <Button
               variant="warning"
               onClick={() => handleDisconnect(localInstance.instanceName)}
-              loading={actionLoading === localInstance.instanceName}
+              loading={loadingAction === "disconnect"}
               leftIcon={<PowerOff className="w-4 h-4" />}
             >
               Desconectar
@@ -406,7 +421,7 @@ export function InstanceDetailsModal({
             <Button
               variant="primary"
               onClick={() => handleConnect(localInstance.instanceName)}
-              loading={actionLoading === localInstance.instanceName}
+              loading={loadingAction === "connect"}
               leftIcon={<Power className="w-4 h-4" />}
             >
               Conectar
@@ -416,13 +431,22 @@ export function InstanceDetailsModal({
           <Button
             variant="destructive"
             onClick={() => handleDelete(localInstance.instanceName)}
-            loading={actionLoading === localInstance.instanceName}
+            loading={loadingAction === "remove"}
             leftIcon={<Trash2 className="w-4 h-4" />}
           >
             Remover
           </Button>
         </div>
       </ModalFooter>
+
+      {showQrModal && (
+        <ConnectionModal
+          qr={qrData.qr}
+          code={qrData.code}
+          onClose={() => setShowQrModal(false)}
+          onStatusUpdate={onRefresh}
+        />
+      )}
     </Modal>
   );
 } 
