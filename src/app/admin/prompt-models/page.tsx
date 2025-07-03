@@ -5,7 +5,7 @@ import { PromptModelManager } from '@/components/admin/prompt-models';
 import { useUserRole } from '@/hooks/useUserRole';
 
 const PromptModelsPage = () => {
-  const { userRole, isSuperAdmin, isLoading, error } = useUserRole();
+  const { isSuperAdmin, isLoading, error } = useUserRole();
 
   if (isLoading) {
     return (
@@ -27,8 +27,7 @@ const PromptModelsPage = () => {
   if (!isSuperAdmin) {
     return (
       <div className="p-8 text-center text-red-600">
-        Acesso restrito ao super admin.<br />
-        <span className="text-xs text-gray-500">(role: {userRole})</span>
+        Acesso restrito ao super admin.
       </div>
     );
   }

@@ -21,18 +21,18 @@ interface AgentListProps {
 
 export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
   const [deleteAgent, setDeleteAgent] = useState<Agent | null>(null);
-  
+
   // Estados dos filtros
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterEmpresa, setFilterEmpresa] = useState<string>('');
   const [filterSearch, setFilterSearch] = useState<string>('');
   const [filterType, setFilterType] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
-  
-  const { 
-    data: agentes, 
-    loading, 
-    error, 
+
+  const {
+    data: agentes,
+    loading,
+    error,
     refetch,
     toggleAgentStatus,
     deleteAgent: deleteAgentFromHook
@@ -59,17 +59,17 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
       return acc;
     }, {} as Record<string, { instanceName: string; status: string }>);
   }, [instancias]);
-  
+
   const { actionLoading, handleAction } = useActions();
 
   // Filtrar agentes
   const filteredAgents = useMemo(() => {
     return agentes.filter((agente: Agent) => {
-      const matchesStatus = !filterStatus || 
-        (filterStatus === 'active' && agente.active) || 
+      const matchesStatus = !filterStatus ||
+        (filterStatus === 'active' && agente.active) ||
         (filterStatus === 'inactive' && !agente.active);
       const matchesEmpresa = !filterEmpresa || agente.tenant_id === filterEmpresa;
-      const matchesSearch = !filterSearch || 
+      const matchesSearch = !filterSearch ||
         agente.title.toLowerCase().includes(filterSearch.toLowerCase()) ||
         (agente.description && agente.description.toLowerCase().includes(filterSearch.toLowerCase()));
       const matchesType = !filterType || agente.agent_type === filterType;
@@ -116,10 +116,10 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
       actionButton={
         (isSuperAdmin || tenantId) && (
           <Link href="/admin/agentes/novo">
-            <Button 
+            <Button
               variant="add"
-              leftIcon={<Plus className="w-4 h-4" />}
             >
+              <Plus className="w-4 h-4" />
               Novo Agente
             </Button>
           </Link>
@@ -209,13 +209,13 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
         {/* Limpar filtros */}
         {hasActiveFilters && (
           <div className="mt-2 flex justify-end">
-            <button 
-              className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-2"
+            <Button
+              variant="secondary"
               onClick={clearFilters}
+              leftIcon={<X className="w-4 h-4" />}
             >
-              <X className="w-4 h-4" />
               Limpar
-            </button>
+            </Button>
           </div>
         )}
       </AdminListLayout.Filters>
@@ -228,9 +228,9 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
           <Alert variant="error" title="Erro ao carregar agentes">
             {error}
             <div className="mt-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={refetch}
                 disabled={loading}
               >
@@ -279,7 +279,7 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                       </span>
                       {isSuperAdmin && empresasMap[agente.tenant_id] && (
                         <span className="flex items-center gap-1 text-xs mt-1">
-                          <Building className="w-3 h-3"/>
+                          <Building className="w-3 h-3" />
                           {empresasMap[agente.tenant_id]}
                         </span>
                       )}
@@ -295,9 +295,9 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                   <CardFooter className="flex flex-wrap items-center justify-end gap-2 pt-2 pb-2 px-0 bg-transparent">
                     <Tooltip content="Editar">
                       <Link href={`/admin/agentes/${agente.id}/configuracao`}>
-                        <Button 
-                          variant="secondary" 
-                          size="sm" 
+                        <Button
+                          variant="secondary"
+                          size="sm"
                           className="flex items-center gap-2"
                           leftIcon={<Edit className="w-4 h-4" />}
                           aria-label="Editar"
@@ -307,11 +307,11 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                       </Link>
                     </Tooltip>
                     <Tooltip content="Deletar">
-                      <Button 
-                        variant="destructive" 
-                        size="sm" 
+                      <Button
+                        variant="destructive"
+                        size="sm"
                         className="flex items-center gap-2"
-                        onClick={() => setDeleteAgent(agente)} 
+                        onClick={() => setDeleteAgent(agente)}
                         disabled={isLoading}
                         leftIcon={<Trash2 className="w-4 h-4" />}
                         aria-label="Deletar"
@@ -333,7 +333,7 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
               {hasActiveFilters ? 'Nenhum agente encontrado com os filtros aplicados' : 'Nenhum agente encontrado'}
             </p>
             <p className="text-sm">
-              {hasActiveFilters 
+              {hasActiveFilters
                 ? 'Tente ajustar os filtros ou use o botão "Limpar" para remover os filtros.'
                 : ''
               }

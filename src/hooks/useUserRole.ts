@@ -40,7 +40,6 @@ export function useUserRole(): UseUserRoleReturn {
         
         setUserRole(role);
         setUserData(data.user);
-        console.log('[useUserRole] Role do usuário:', role);
       } else {
         console.error('[useUserRole] Erro ao buscar dados do usuário:', response.status);
         setError('Erro ao buscar dados do usuário');

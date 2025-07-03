@@ -1,103 +1,179 @@
-import { redirect } from "next/navigation";
-import { LogoutButton } from '@/components/ui';
+"use client";
+
+import { useDashboard } from '@/hooks/useDashboard';
+import { useUserRole } from '@/hooks/useUserRole';
+
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/brand';
-import { Bot, MessageSquare, Users, Settings } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { Bot, MessageSquare, Users, Settings, MessageCircleMore, Activity, UserCheck, UserX } from 'lucide-react';
 
-export default async function DashboardPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+export default function DashboardPage() {
+  const { isSuperAdmin, userData, isLoading: userLoading } = useUserRole();
+  const { stats, isLoading: statsLoading, error } = useDashboard();
 
-  if (!user) {
-    redirect("/login");
+  const isLoading = userLoading || statsLoading;
+
+  if (isLoading) {
+    return (
+      <div className="max-w-6xl mx-auto p-8">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-green-light"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-6xl mx-auto p-8">
+        <div className="text-center">
+          <p className="text-red-600">Erro ao carregar dashboard: {error}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-brand-gray-dark mb-2">Dashboard</h1>
-        <p className="text-gray-600">Bem-vindo de volta, {user.email}</p>
+        <p className="text-gray-600">
+          Bem-vindo de volta, {userData?.name || userData?.email}
+          {isSuperAdmin && <span className="ml-2 text-brand-green-light font-medium">(Super Admin)</span>}
+        </p>
       </div>
 
+      {/* Cards de estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Instâncias Ativas</CardTitle>
-            <MessageSquare className="h-4 w-4 text-brand-green-light" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-brand-gray-dark">3</div>
-            <p className="text-xs text-gray-600">+2 desde o último mês</p>
-          </CardContent>
-        </Card>
+        {isSuperAdmin ? (
+          // Dashboard para Super Admin
+          <>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Instâncias Nativas</CardTitle>
+                <MessageSquare className="h-4 w-4 text-brand-green-light" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-brand-gray-dark">{stats.instancesInternal}</div>
+                <p className="text-xs text-gray-600">Instâncias internas</p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Agentes de IA</CardTitle>
-            <Bot className="h-4 w-4 text-brand-green-light" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-brand-gray-dark">12</div>
-            <p className="text-xs text-gray-600">+5 desde o último mês</p>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Instâncias Externas</CardTitle>
+                <MessageCircleMore className="h-4 w-4 text-blue-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-brand-gray-dark">{stats.instancesExternal}</div>
+                <p className="text-xs text-gray-600">Instâncias externas</p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Mensagens Hoje</CardTitle>
-            <MessageSquare className="h-4 w-4 text-brand-green-light" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-brand-gray-dark">1,234</div>
-            <p className="text-xs text-gray-600">+12% desde ontem</p>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Agentes Nativos</CardTitle>
+                <Bot className="h-4 w-4 text-brand-green-light" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-brand-gray-dark">{stats.agentsInternal}</div>
+                <p className="text-xs text-gray-600">Agentes de IA</p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Usuários</CardTitle>
-            <Users className="h-4 w-4 text-brand-green-light" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-brand-gray-dark">8</div>
-            <p className="text-xs text-gray-600">+1 desde o último mês</p>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Agentes Externos</CardTitle>
+                <Bot className="h-4 w-4 text-purple-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-brand-gray-dark">{stats.agentsExternal}</div>
+                <p className="text-xs text-gray-600">Agentes webhook</p>
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          // Dashboard para Usuário Comum
+          <>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Instâncias Ativas</CardTitle>
+                <MessageSquare className="h-4 w-4 text-brand-green-light" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-brand-gray-dark">{stats.instancesActive}</div>
+                <p className="text-xs text-gray-600">Conectadas ao WhatsApp</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Instâncias Inativas</CardTitle>
+                <MessageSquare className="h-4 w-4 text-gray-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-brand-gray-dark">{stats.instancesInactive}</div>
+                <p className="text-xs text-gray-600">Desconectadas</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Agentes Criados</CardTitle>
+                <Bot className="h-4 w-4 text-brand-green-light" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-brand-gray-dark">{stats.agentsTotal}</div>
+                <p className="text-xs text-gray-600">Total de agentes</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Status Geral</CardTitle>
+                <Activity className="h-4 w-4 text-brand-green-light" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-brand-gray-dark">
+                  {stats.instancesActive > 0 ? 'Ativo' : 'Inativo'}
+                </div>
+                <p className="text-xs text-gray-600">
+                  {stats.instancesActive > 0 ? 'Sistema operacional' : 'Nenhuma instância ativa'}
+                </p>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Atividade Recente</CardTitle>
-            <CardDescription>Últimas ações realizadas no sistema</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-brand-green-light rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Nova instância conectada</p>
-                  <p className="text-xs text-gray-600">Loja Principal - 2 minutos atrás</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-brand-green-light rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Agente de IA criado</p>
-                  <p className="text-xs text-gray-600">Atendimento Vendas - 15 minutos atrás</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-brand-green-light rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Configuração atualizada</p>
-                  <p className="text-xs text-gray-600">Webhook Settings - 1 hora atrás</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Cards adicionais para Super Admin */}
+      {isSuperAdmin && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Usuários Ativos</CardTitle>
+              <UserCheck className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-brand-gray-dark">{stats.usersActive}</div>
+              <p className="text-xs text-gray-600">Usuários com atividade recente</p>
+            </CardContent>
+          </Card>
 
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Usuários Inativos</CardTitle>
+              <UserX className="h-4 w-4 text-gray-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-brand-gray-dark">{stats.usersInactive}</div>
+              <p className="text-xs text-gray-600">Usuários sem atividade recente</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Ações Rápidas */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Ações Rápidas</CardTitle>
@@ -119,27 +195,68 @@ export default async function DashboardPage() {
                   <p className="text-xs text-gray-600">Criar IA</p>
                 </div>
               </a>
-              <a href="/admin/usuarios" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-brand-green-light hover:bg-brand-green-light/5 transition-colors">
-                <Users className="h-5 w-5 text-brand-green-light" />
-                <div>
-                  <p className="text-sm font-medium">Usuários</p>
-                  <p className="text-xs text-gray-600">Gerenciar equipe</p>
-                </div>
-              </a>
-              <a href="/admin/empresas" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-brand-green-light hover:bg-brand-green-light/5 transition-colors">
-                <Settings className="h-5 w-5 text-brand-green-light" />
-                <div>
-                  <p className="text-sm font-medium">Configurações</p>
-                  <p className="text-xs text-gray-600">Sistema</p>
-                </div>
-              </a>
+              {isSuperAdmin && (
+                <>
+                  <a href="/admin/usuarios" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-brand-green-light hover:bg-brand-green-light/5 transition-colors">
+                    <Users className="h-5 w-5 text-brand-green-light" />
+                    <div>
+                      <p className="text-sm font-medium">Usuários</p>
+                      <p className="text-xs text-gray-600">Gerenciar equipe</p>
+                    </div>
+                  </a>
+                  <a href="/admin/empresas" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-brand-green-light hover:bg-brand-green-light/5 transition-colors">
+                    <Settings className="h-5 w-5 text-brand-green-light" />
+                    <div>
+                      <p className="text-sm font-medium">Empresas</p>
+                      <p className="text-xs text-gray-600">Gerenciar tenants</p>
+                    </div>
+                  </a>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      <div className="mt-8 flex justify-center">
-        <LogoutButton />
+        <Card>
+          <CardHeader>
+            <CardTitle>Resumo do Sistema</CardTitle>
+            <CardDescription>Visão geral do status atual</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Total de Instâncias:</span>
+                <span className="font-medium">
+                  {isSuperAdmin
+                    ? stats.instancesInternal + stats.instancesExternal
+                    : stats.instancesActive + stats.instancesInactive
+                  }
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Total de Agentes:</span>
+                <span className="font-medium">
+                  {isSuperAdmin
+                    ? stats.agentsInternal + stats.agentsExternal
+                    : stats.agentsTotal
+                  }
+                </span>
+              </div>
+              {isSuperAdmin && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Total de Usuários:</span>
+                  <span className="font-medium">{stats.usersActive + stats.usersInactive}</span>
+                </div>
+              )}
+              <div className="pt-2 border-t">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-brand-green-light rounded-full"></div>
+                  <span className="text-sm text-gray-600">Sistema operacional</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -6,7 +6,6 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import {
   Home,
-  Settings,
   Users,
   Building2,
   Bot,
@@ -299,12 +298,14 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                 <p className="text-xs text-gray-400 truncate">
                   {userEmail}
                 </p>
-                <Badge
-                  variant="success"
-                  className="text-xs mt-1"
-                >
-                  {userRole === 'super_admin' ? 'Super Admin' : 'Usuário'}
-                </Badge>
+                {userRole === 'super_admin' && (
+                  <Badge
+                    variant="success"
+                    className="text-xs mt-1"
+                  >
+                    Super Admin
+                  </Badge>
+                )}
               </div>
             )}
           </div>

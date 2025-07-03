@@ -15,11 +15,11 @@ interface PromptModelListProps {
   isSuperAdmin: boolean;
 }
 
-type ModalState = 
+type ModalState =
   | { type: 'NONE' }
   | { type: 'DELETE', payload: PromptModel };
 
-type ModalAction = 
+type ModalAction =
   | { type: 'OPEN_DELETE', payload: PromptModel }
   | { type: 'CLOSE' };
 
@@ -67,15 +67,15 @@ export const PromptModelList: React.FC<PromptModelListProps> = ({ onEdit, isSupe
       cardTitle="Lista de Modelos de Prompt"
       cardDescription="Visualize, edite e remova modelos de prompt."
       actionButton={isSuperAdmin && (
-        <Button 
-          variant="add" 
-          onClick={() => onEdit && onEdit({} as PromptModel)}
-          leftIcon={<Plus className="w-4 h-4" />}>
+        <Button
+          variant="add"
+          onClick={() => onEdit && onEdit({} as PromptModel)}>
+          <Plus className="w-4 h-4" />
           Novo Modelo
         </Button>
       )}
       filtersOpen={false}
-      onToggleFilters={() => {}}
+      onToggleFilters={() => { }}
     >
       <AdminListLayout.List>
         {models.length === 0 ? (
@@ -112,7 +112,7 @@ export const PromptModelList: React.FC<PromptModelListProps> = ({ onEdit, isSupe
                         variant="destructive"
                         disabled={isLoading}
                         loading={isLoading}
-                        title="Excluir modelo"
+                        title="Remover modelo"
                       />
                     </div>
                   )}
@@ -121,7 +121,7 @@ export const PromptModelList: React.FC<PromptModelListProps> = ({ onEdit, isSupe
             })}
           </ul>
         )}
-        {/* Modal de confirmação de exclusão */}
+        {/* Modal de confirmação de remoção */}
         <ConfirmationModal
           isOpen={modalState.type === 'DELETE'}
           onClose={closeModal}
@@ -132,7 +132,7 @@ export const PromptModelList: React.FC<PromptModelListProps> = ({ onEdit, isSupe
           isLoading={actionLoading === (modalState.type === 'DELETE' ? modalState.payload.id : '')}
         >
           <p>
-            Tem certeza que deseja remover o modelo de prompt <span className="font-semibold">&quot;{modalState.type === 'DELETE' ? modalState.payload.name : ''}&quot;</span>? 
+            Tem certeza que deseja remover o modelo de prompt <span className="font-semibold">&quot;{modalState.type === 'DELETE' ? modalState.payload.name : ''}&quot;</span>?
             Esta ação não pode ser desfeita.
           </p>
         </ConfirmationModal>

@@ -48,30 +48,29 @@ export function UserProfileModal({ isOpen, onClose, user }: UserProfileModalProp
             <p className="text-gray-600">{user.email}</p>
           </div>
         </div>
-        
+
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Mail className="w-4 h-4 text-gray-400" />
             <span className="text-sm">{user.email}</span>
           </div>
-          
-          <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4 text-gray-400" />
-            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      (user.role as string) === 'super_admin' ? 'bg-purple-100 text-purple-800' :
-        'bg-gray-100 text-gray-800'
-            }`}>
-              {roleDisplay[user.role] || user.role}
-            </span>
-          </div>
-          
+
+          {user.role === 'super_admin' && (
+            <div className="flex items-center gap-2">
+              <Shield className="w-4 h-4 text-gray-400" />
+              <span className="px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                {roleDisplay[user.role]}
+              </span>
+            </div>
+          )}
+
           {user.role === 'user' && empresaNome && (
             <div className="flex items-center gap-2">
               <Building className="w-4 h-4 text-gray-400" />
               <span className="text-sm">{empresaNome}</span>
             </div>
           )}
-          
+
           <div className="text-xs text-gray-500">
             Criado em: {new Date(user.created_at).toLocaleDateString('pt-BR')}
           </div>

@@ -54,31 +54,31 @@ export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantI
       if (!name.trim()) {
         throw new Error('Nome é obrigatório');
       }
-      
+
       if (!email.trim()) {
         throw new Error('E-mail é obrigatório');
       }
-      
+
       // Validação de e-mail
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         throw new Error('E-mail inválido');
       }
-      
+
       if (!isEditing && !senha.trim()) {
         throw new Error('Senha é obrigatória para novos usuários');
       }
-      
+
       if (!isEditing && senha.length < 6) {
         throw new Error('Senha deve ter pelo menos 6 caracteres');
       }
-      
+
       // Validação de role
       const validRoles = isSuperAdmin ? ['super_admin', 'user'] : ['user'];
       if (!validRoles.includes(role)) {
         throw new Error('Papel inválido');
       }
-      
+
       // Validação de empresa para super admin
       if (isSuperAdmin && empresa && role !== 'super_admin') {
         const validEmpresas = empresas.map(emp => emp.id);
@@ -86,17 +86,17 @@ export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantI
           throw new Error('Empresa inválida');
         }
       }
-      
+
       // Validação de tenant para user (apenas se não for super_admin)
       if (role !== 'super_admin' && !isSuperAdmin && !tenantId) {
         throw new Error('Tenant ID é obrigatório para usuários');
       }
-      
+
       // Validação de empresa para usuários normais quando super admin está criando
       if (isSuperAdmin && role !== 'super_admin' && !empresa) {
         throw new Error('Empresa é obrigatória para usuários que não são super admin');
       }
-      
+
       // Validação final do formulário
       if (!name.trim() || !email.trim() || !role) {
         throw new Error('Todos os campos obrigatórios devem ser preenchidos');
@@ -116,7 +116,7 @@ export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantI
           if (senha.length < 6) {
             throw new Error('Nova senha deve ter pelo menos 6 caracteres');
           }
-          
+
           // Para atualização de senha, vamos usar a API
           try {
             const response = await fetch('/api/users/update', {
@@ -197,7 +197,7 @@ export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantI
               {error}
             </Alert>
           )}
-          
+
           <Input
             label="Nome completo"
             name="name"
@@ -207,7 +207,7 @@ export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantI
             required
             leftIcon={<User className="h-4 w-4" />}
           />
-          
+
           <Input
             label="E-mail"
             type="email"
@@ -217,7 +217,7 @@ export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantI
             required
             leftIcon={<Mail className="h-4 w-4" />}
           />
-          
+
           <Input
             label={isEditing ? "Nova senha (opcional)" : "Senha"}
             type="password"
@@ -227,7 +227,7 @@ export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantI
             required={!isEditing}
             leftIcon={<Lock className="h-4 w-4" />}
           />
-          
+
           <Select
             label="Papel"
             value={role}
@@ -238,7 +238,7 @@ export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantI
             {isSuperAdmin && <option value="super_admin">Super Admin</option>}
             <option value="user">Usuário</option>
           </Select>
-          
+
           {isSuperAdmin && role !== 'super_admin' && (
             <Select
               label="Empresa"

@@ -3,11 +3,11 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { UserProfileModal } from "@/components/admin/users/UserProfileModal";
 import { Button, Badge, Card, CardContent } from "@/components/brand";
-import { 
-  Bell, 
-  Search, 
-  Settings, 
-  User, 
+import {
+  Bell,
+  Search,
+  Settings,
+  User,
   LogOut,
   MessageSquare,
   Menu
@@ -139,7 +139,7 @@ export function Navbar() {
         >
           <MessageSquare className="w-4 h-4" />
         </button>
-        
+
         <div className="hidden md:flex items-center gap-2">
           <span className="font-bold text-lg text-brand-gray-dark">AI Agents</span>
           <Badge variant="success" className="text-xs">v1.0</Badge>
@@ -162,8 +162,8 @@ export function Navbar() {
         <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
           <Bell className="w-5 h-5 text-gray-600" />
           {notifications.length > 0 && (
-            <Badge 
-              variant="error" 
+            <Badge
+              variant="error"
               className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-xs"
             >
               {notifications.length}
@@ -172,7 +172,7 @@ export function Navbar() {
         </button>
 
         {/* Settings */}
-        <button 
+        <button
           className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
           onClick={() => router.push('/admin')}
         >
@@ -216,12 +216,14 @@ export function Navbar() {
                       <p className="text-sm text-gray-500 truncate">
                         {user.email}
                       </p>
-                      <Badge 
-                        variant="success" 
-                        className="text-xs mt-1"
-                      >
-                                {user.role === 'super_admin' ? 'Super Admin' : 'Usuário'}
-                      </Badge>
+                      {user.role === 'super_admin' && (
+                        <Badge
+                          variant="success"
+                          className="text-xs mt-1"
+                        >
+                          Super Admin
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -235,7 +237,7 @@ export function Navbar() {
                     <User className="w-4 h-4" />
                     Meu perfil
                   </button>
-                  
+
                   <button
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 text-left text-sm text-brand-gray-dark transition-colors"
                     onClick={() => { router.push('/admin'); setShowMenu(false); }}
@@ -243,9 +245,9 @@ export function Navbar() {
                     <Settings className="w-4 h-4" />
                     Configurações
                   </button>
-                  
+
                   <div className="border-t border-gray-100 my-2" />
-                  
+
                   <Button
                     onClick={handleLogout}
                     variant="outline"

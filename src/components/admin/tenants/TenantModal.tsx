@@ -6,6 +6,8 @@ import { Building2, Mail, Phone, FileText, Save } from "lucide-react";
 import { TenantModalProps } from './types';
 
 const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tenant }) => {
+  console.log('TenantModal renderizado com isOpen:', isOpen);
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [cpfCnpj, setCpfCnpj] = useState("");
@@ -42,7 +44,7 @@ const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tena
     try {
       const url = tenant ? `/api/tenants/update` : `/api/tenants/create`;
       const method = tenant ? 'PUT' : 'POST';
-      
+
       const payload = {
         ...(tenant && { id: tenant.id }),
         name,
@@ -94,7 +96,7 @@ const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tena
               {error}
             </Alert>
           )}
-          
+
           <Input
             label="Nome da empresa"
             name="name"
@@ -104,7 +106,7 @@ const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tena
             required
             leftIcon={<Building2 className="h-4 w-4" />}
           />
-          
+
           <div>
             <label className="block text-sm font-medium mb-1">Tipo</label>
             <select
@@ -117,7 +119,7 @@ const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tena
               <option value="JURIDICA">Jurídica</option>
             </select>
           </div>
-          
+
           <Input
             label="E-mail"
             type="email"
@@ -127,7 +129,7 @@ const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tena
             required
             leftIcon={<Mail className="h-4 w-4" />}
           />
-          
+
           <Input
             label="CPF/CNPJ"
             placeholder="Ex: 12.345.678/0001-90"
@@ -136,7 +138,7 @@ const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tena
             required
             leftIcon={<FileText className="h-4 w-4" />}
           />
-          
+
           <Input
             label="Telefone"
             type="tel"

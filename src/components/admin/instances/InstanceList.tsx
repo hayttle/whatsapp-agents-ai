@@ -10,6 +10,7 @@ import { useInstances } from "@/hooks/useInstances";
 import { useTenants } from "@/hooks/useTenants";
 import { instanceService } from "@/services/instanceService";
 import { Plus, Filter, X } from "lucide-react";
+import { Button } from "@/components/brand";
 import { useAgents } from '@/hooks/useAgents';
 import { InstanceCard } from "./InstanceCard";
 import { InstanceDetailsModal } from "./InstanceDetailsModal";
@@ -26,7 +27,7 @@ const normalizeStatus = (status: string): 'open' | 'close' => {
 };
 
 // --- Step 4: Update State, Action, and Reducer ---
-type ModalState = 
+type ModalState =
   | { type: 'NONE' }
   | { type: 'CREATE' }
   | { type: 'DELETE', payload: Instance }
@@ -34,7 +35,7 @@ type ModalState =
   | { type: 'CONNECT', payload: { qr: string | null; code: string | null; instanceName: string } }
   | { type: 'DETAILS', payload: Instance };
 
-type ModalAction = 
+type ModalAction =
   | { type: 'OPEN_CREATE' }
   | { type: 'OPEN_DELETE', payload: Instance }
   | { type: 'OPEN_DISCONNECT', payload: Instance }
@@ -66,7 +67,7 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [modalState, dispatchModal] = useReducer(modalReducer, { type: 'NONE' });
   const { actionLoading, handleAction } = useInstanceActions();
-  
+
   const { data: instances, loading } = useInstances({
     isSuperAdmin,
     tenantId,
@@ -84,7 +85,7 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
       return acc;
     }, {} as Record<string, string>);
   }, [empresas]);
-  
+
   // Estados dos filtros
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterEmpresa, setFilterEmpresa] = useState<string>('');
@@ -93,7 +94,7 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
 
   const handleConnect = (instanceName: string, forceRegenerate = false) => handleAction(async () => {
     const data = await instanceService.connectInstance(instanceName, forceRegenerate);
-    
+
     if (data && (data.base64 || data.pairingCode)) {
       dispatchModal({ type: 'OPEN_CONNECT', payload: { qr: data.base64 || null, code: data.pairingCode || null, instanceName } });
     } else {
@@ -123,7 +124,7 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
   const closeModal = () => {
     dispatchModal({ type: 'CLOSE' });
   };
-  
+
   const handleSave = () => {
     closeModal();
     setRefreshKey(k => k + 1);
@@ -134,7 +135,7 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
     return instances.filter(inst => {
       const matchesStatus = !filterStatus || normalizeStatus(inst.status) === filterStatus;
       const matchesEmpresa = !filterEmpresa || inst.tenant_id === filterEmpresa;
-      const matchesSearch = !filterSearch || 
+      const matchesSearch = !filterSearch ||
         inst.instanceName.toLowerCase().includes(filterSearch.toLowerCase()) ||
         (inst.description && inst.description.toLowerCase().includes(filterSearch.toLowerCase()));
       return matchesStatus && matchesEmpresa && matchesSearch;
@@ -160,13 +161,13 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
       cardDescription={isSuperAdmin ? 'Gerencie e monitore todas as instâncias conectadas ao WhatsApp' : 'Gerencie e monitore suas instâncias conectadas ao WhatsApp'}
       actionButton={
         (isSuperAdmin || tenantId) && (
-          <button
-            className="px-3 py-2 text-sm font-medium rounded-md bg-brand-green-light text-white flex items-center gap-2"
+          <Button
+            variant="add"
             onClick={() => dispatchModal({ type: 'OPEN_CREATE' })}
           >
             <Plus className="w-4 h-4" />
             Nova Instância
-          </button>
+          </Button>
         )
       }
       filtersOpen={showFilters}
@@ -232,7 +233,7 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
         )}
         {hasActiveFilters && (
           <div className="mt-2 flex justify-end">
-            <button 
+            <button
               className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-2"
               onClick={clearFilters}
             >
@@ -277,7 +278,7 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
               {hasActiveFilters ? 'Nenhuma instância encontrada com os filtros aplicados' : 'Nenhuma instância encontrada'}
             </p>
             <p className="text-sm">
-              {hasActiveFilters 
+              {hasActiveFilters
                 ? 'Tente ajustar os filtros ou use o botão "Limpar" para remover os filtros.'
                 : ''
               }

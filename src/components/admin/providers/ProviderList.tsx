@@ -62,9 +62,9 @@ export default function ProviderList({ providers, onEdit, onDelete, onCreate, lo
         <Button
           variant="add"
           onClick={onCreate}
-          leftIcon={<Plus className="w-4 h-4" />}
           type="button"
         >
+          <Plus className="w-4 h-4" />
           Novo Provedor
         </Button>
       )}
@@ -113,13 +113,13 @@ export default function ProviderList({ providers, onEdit, onDelete, onCreate, lo
         </div>
         {hasActiveFilters && (
           <div className="mt-4 flex gap-2">
-            <button 
-              className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-2"
+            <Button
+              variant="secondary"
               onClick={clearFilters}
+              leftIcon={<X className="w-4 h-4" />}
             >
-              <X className="w-4 h-4" />
               Limpar
-            </button>
+            </Button>
           </div>
         )}
       </AdminListLayout.Filters>
@@ -156,7 +156,7 @@ export default function ProviderList({ providers, onEdit, onDelete, onCreate, lo
               {hasActiveFilters ? 'Nenhum provedor encontrado com os filtros aplicados' : 'Nenhum provedor cadastrado'}
             </p>
             <p className="text-sm">
-              {hasActiveFilters 
+              {hasActiveFilters
                 ? 'Tente ajustar os filtros ou use o botão "Limpar" para remover os filtros.'
                 : 'Use o botão "Novo Provedor" para criar o primeiro.'
               }
