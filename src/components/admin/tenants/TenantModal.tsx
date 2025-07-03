@@ -5,6 +5,7 @@ import { Button, Alert, Input } from '@/components/brand';
 import { Building2, Mail, Phone, FileText, Save } from "lucide-react";
 import { TenantModalProps } from './types';
 import { COMPANY_TYPES, COMPANY_TYPE_OPTIONS } from './constants';
+import { validateCPF, validateCNPJ, formatCPF, formatCNPJ } from '@/lib/utils';
 
 const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tenant }) => {
   console.log('TenantModal renderizado com isOpen:', isOpen);
@@ -17,6 +18,13 @@ const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tena
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
+
+  // Handler para formatação automática de CPF/CNPJ
+  const handleCPFCNPJChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '');
+    const formatted = type === COMPANY_TYPES.FISICA ? formatCPF(value) : formatCNPJ(value);
+    setCpfCnpj(formatted);
+  };
 
   useEffect(() => {
     if (tenant) {
@@ -36,6 +44,11 @@ const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tena
     setError("");
   }, [tenant, isOpen]);
 
+  // Limpar CPF/CNPJ quando o tipo mudar
+  useEffect(() => {
+    setCpfCnpj("");
+  }, [type]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -43,6 +56,16 @@ const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tena
     setError("");
 
     try {
+      // Validar documento baseado no tipo
+      const documentValidation = type === COMPANY_TYPES.FISICA
+        ? validateCPF(cpfCnpj)
+        : validateCNPJ(cpfCnpj);
+
+      if (!documentValidation) {
+        const documentType = type === COMPANY_TYPES.FISICA ? 'CPF' : 'CNPJ';
+        throw new Error(`${documentType} inválido`);
+      }
+
       const url = tenant ? `/api/tenants/update` : `/api/tenants/create`;
       const method = tenant ? 'PUT' : 'POST';
 
@@ -135,10 +158,10 @@ const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tena
           />
 
           <Input
-            label="CPF/CNPJ"
-            placeholder="Ex: 12.345.678/0001-90"
+            label={type === COMPANY_TYPES.FISICA ? 'CPF' : 'CNPJ'}
+            placeholder={type === COMPANY_TYPES.FISICA ? '000.000.000-00' : '00.000.000/0000-00'}
             value={cpfCnpj}
-            onChange={e => setCpfCnpj(e.target.value)}
+            onChange={handleCPFCNPJChange}
             required
             leftIcon={<FileText className="h-4 w-4" />}
           />
