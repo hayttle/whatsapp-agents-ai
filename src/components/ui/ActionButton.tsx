@@ -4,7 +4,7 @@ import { LucideIcon, Loader2 } from 'lucide-react';
 interface ActionButtonProps {
   icon: LucideIcon;
   onClick: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'warning';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'warning' | 'iconDestructive';
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   loading?: boolean;
@@ -19,6 +19,7 @@ const variantStyles = {
   ghost: 'text-brand-gray-dark hover:bg-brand-gray-dark hover:text-white focus:ring-brand-gray-dark',
   destructive: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-600 shadow-sm',
   warning: 'bg-yellow-50 hover:bg-yellow-100 text-yellow-800 shadow-sm',
+  iconDestructive: 'bg-transparent border-none text-red-600 hover:text-red-700 hover:bg-red-50 focus:ring-red-600',
 };
 
 const sizeStyles = {
@@ -33,7 +34,7 @@ const iconSizes = {
   lg: 'w-5 h-5',
 };
 
-export const ActionButton: React.FC<Omit<ActionButtonProps, 'variant'> & { variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'warning' }> = ({
+export const ActionButton: React.FC<Omit<ActionButtonProps, 'variant'> & { variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'warning' | 'iconDestructive' }> = ({
   icon: Icon,
   onClick,
   variant = 'primary',
@@ -48,7 +49,7 @@ export const ActionButton: React.FC<Omit<ActionButtonProps, 'variant'> & { varia
   const sizeClass = sizeStyles[size];
   const iconSizeClass = iconSizes[size];
   const disabledClass = (disabled || loading) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer';
-  
+
   return (
     <button
       onClick={onClick}

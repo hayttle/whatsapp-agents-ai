@@ -166,15 +166,15 @@ export default function ProviderList({ providers, onEdit, onDelete, onCreate, lo
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredProviders.map((provider) => (
               <div key={provider.id} className="flex flex-col p-6 bg-white rounded-lg border shadow-sm hover:shadow-md transition-shadow">
-                {/* Header do card */}
-                <div className="flex items-center gap-3 mb-4">
-                  <Server className="w-6 h-6 text-brand-green-light" />
-                  <div className="flex-1">
+                {/* Header do card com badge alinhado */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <Server className="w-6 h-6 text-brand-green-light" />
                     <h3 className="font-semibold text-lg text-gray-900">{provider.name}</h3>
-                    <span className="inline-block mt-1 px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
-                      Evolution API
-                    </span>
                   </div>
+                  <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                    Evolution API
+                  </span>
                 </div>
 
                 {/* Informações do provedor */}
@@ -185,12 +185,10 @@ export default function ProviderList({ providers, onEdit, onDelete, onCreate, lo
                       <span className="text-sm text-gray-900">{provider.tenantName}</span>
                     </div>
                   )}
-
                   <div className="flex items-start gap-2">
                     <span className="text-sm font-medium text-gray-600 min-w-[60px]">URL:</span>
                     <span className="text-sm text-gray-900 break-all">{provider.server_url}</span>
                   </div>
-
                   <div className="flex items-start gap-2">
                     <span className="text-sm font-medium text-gray-600 min-w-[60px]">API Key:</span>
                     <span className="text-sm text-gray-900 font-mono">

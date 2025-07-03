@@ -368,14 +368,14 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
                               <ActionButton
                                 icon={Edit}
                                 onClick={() => dispatchModal({ type: 'OPEN_EDIT', payload: user })}
-                                variant="secondary"
+                                variant="ghost"
                                 disabled={isDeleteLoading || isToggleLoading}
                                 title="Editar"
                               />
                               <ActionButton
                                 icon={Trash2}
                                 onClick={() => dispatchModal({ type: 'OPEN_DELETE', payload: user })}
-                                variant="destructive"
+                                variant="iconDestructive"
                                 disabled={isDeleteLoading || isToggleLoading}
                                 loading={isDeleteLoading}
                                 title="Deletar"

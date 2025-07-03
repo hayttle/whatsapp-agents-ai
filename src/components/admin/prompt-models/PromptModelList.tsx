@@ -102,14 +102,14 @@ export const PromptModelList: React.FC<PromptModelListProps> = ({ onEdit, isSupe
                       <ActionButton
                         icon={Edit}
                         onClick={() => onEdit(model)}
-                        variant="secondary"
+                        variant="ghost"
                         disabled={isLoading}
                         title="Editar modelo"
                       />
                       <ActionButton
                         icon={Trash2}
                         onClick={() => dispatchModal({ type: 'OPEN_DELETE', payload: model })}
-                        variant="destructive"
+                        variant="iconDestructive"
                         disabled={isLoading}
                         loading={isLoading}
                         title="Remover modelo"

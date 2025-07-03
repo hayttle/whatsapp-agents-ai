@@ -255,14 +255,14 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
                               <ActionButton
                                 icon={Edit}
                                 onClick={() => dispatchModal({ type: 'OPEN_EDIT', payload: tenant })}
-                                variant="secondary"
+                                variant="ghost"
                                 disabled={isLoading}
                                 title="Editar"
                               />
                               <ActionButton
                                 icon={Trash2}
                                 onClick={() => dispatchModal({ type: 'OPEN_DELETE', payload: tenant })}
-                                variant="destructive"
+                                variant="iconDestructive"
                                 disabled={isLoading}
                                 loading={isLoading}
                                 title="Remover"
