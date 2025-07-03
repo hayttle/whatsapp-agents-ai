@@ -24,6 +24,7 @@ export interface AgentListResponse {
 export interface ApiResponse {
   success?: boolean;
   error?: string;
+  agent?: Agent;
 }
 
 class AgentService {
@@ -55,12 +56,8 @@ class AgentService {
   }
 
   async createAgent(agentData: Omit<Agent, 'id' | 'created_at' | 'updated_at'>): Promise<ApiResponse> {
-    // Determinar o endpoint baseado no agent_type
-    const endpoint = agentData.agent_type === 'external' 
-      ? "/api/agents/external/create"
-      : "/api/agents/internal/create";
-    
-    return this.makeRequest<ApiResponse>(endpoint, {
+    // Usar endpoint único para criação de agentes
+    return this.makeRequest<ApiResponse>("/api/agents/create", {
       method: "POST",
       body: JSON.stringify(agentData),
     });
@@ -97,6 +94,11 @@ class AgentService {
       method: "PUT",
       body: JSON.stringify({ id: agentId, active }),
     });
+  }
+
+  async getAgentById(agentId: string): Promise<Agent | null> {
+    const data = await this.makeRequest<{ agent: Agent }>(`/api/agents/${agentId}`);
+    return data.agent || null;
   }
 }
 

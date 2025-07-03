@@ -7,12 +7,15 @@ import { useActions } from "@/hooks/useActions";
 import { Agent } from "./types";
 import { ConfirmationModal } from "@/components/ui";
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Alert, Switch } from "@/components/brand";
-import { Bot, Plus, Edit, Trash2, Filter, X, AlertTriangle, Building } from "lucide-react";
+import { Bot, Plus, Trash2, Filter, X, AlertTriangle, Building } from "lucide-react";
 import { Tooltip } from '@/components/ui';
 import { toast } from "sonner";
 import Image from 'next/image';
 import Link from 'next/link';
 import { AdminListLayout } from '@/components/layout/AdminListLayout';
+import { FiBookOpen, FiSettings } from 'react-icons/fi';
+import { useRouter } from 'next/navigation';
+import AgentQuickCreateModal from './AgentQuickCreateModal';
 
 interface AgentListProps {
   isSuperAdmin: boolean;
@@ -21,6 +24,8 @@ interface AgentListProps {
 
 export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
   const [deleteAgent, setDeleteAgent] = useState<Agent | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const router = useRouter();
 
   // Estados dos filtros
   const [filterStatus, setFilterStatus] = useState<string>('');
@@ -106,6 +111,11 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
     `delete-${deleteAgent?.id}`
   );
 
+  const handleCreated = (agentId: string) => {
+    setModalOpen(false);
+    router.push(`/admin/agentes/${agentId}/configuracao`);
+  };
+
   return (
     <AdminListLayout
       icon={<Bot className="w-5 h-5 text-white" />}
@@ -115,14 +125,21 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
       cardDescription={isSuperAdmin ? 'Visualize e gerencie todos os agentes de inteligência artificial do sistema' : 'Visualize e gerencie seus agentes de inteligência artificial'}
       actionButton={
         (isSuperAdmin || tenantId) && (
-          <Link href="/admin/agentes/novo">
+          <>
             <Button
               variant="add"
+              onClick={() => setModalOpen(true)}
             >
               <Plus className="w-4 h-4" />
               Novo Agente
             </Button>
-          </Link>
+            <AgentQuickCreateModal
+              open={modalOpen}
+              onClose={() => setModalOpen(false)}
+              onCreated={handleCreated}
+              tenantId={tenantId || ''}
+            />
+          </>
         )
       }
       filtersOpen={showFilters}
@@ -288,16 +305,16 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                     )}
                   </CardContent>
                   <CardFooter className="flex flex-wrap items-center justify-end gap-2 pt-2 pb-2 px-0 bg-transparent">
-                    <Tooltip content="Editar">
+                    <Tooltip content="Ver detalhes e acessar conversas do agente">
                       <Link href={`/admin/agentes/${agente.id}/configuracao`}>
                         <Button
-                          variant="secondary"
+                          variant="outline"
                           size="sm"
                           className="flex items-center gap-2"
-                          leftIcon={<Edit className="w-4 h-4" />}
-                          aria-label="Editar"
+                          leftIcon={<FiSettings className="w-4 h-4" />}
+                          aria-label="Detalhes"
                         >
-                          Atualizar
+                          Configurar
                         </Button>
                       </Link>
                     </Tooltip>

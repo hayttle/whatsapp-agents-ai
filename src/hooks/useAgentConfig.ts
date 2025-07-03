@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PromptModel, getPromptModelById } from '@/services/promptModelService';
 
-interface AgentData {
+export interface AgentData {
   id: string;
   title: string;
   description?: string;
@@ -52,19 +52,21 @@ export function useAgentConfig({ agentId }: UseAgentConfigProps) {
       }
       
       const data = await response.json();
+      // Corrigir caso a resposta venha como { agent: { ... } }
+      const agentObj = data.agent || data;
       
       // Se o agente tem um modelo de prompt, buscar os dados do modelo
-      if (data.agent_model_id) {
+      if (agentObj.agent_model_id) {
         try {
-          const modelData = await getPromptModelById(data.agent_model_id);
-          data.prompt_models = modelData;
+          const modelData = await getPromptModelById(agentObj.agent_model_id);
+          agentObj.prompt_models = modelData;
         } catch (modelError) {
           console.warn('Erro ao carregar modelo de prompt:', modelError);
           // Não falhar se não conseguir carregar o modelo
         }
       }
       
-      setAgent(data);
+      setAgent(agentObj);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {

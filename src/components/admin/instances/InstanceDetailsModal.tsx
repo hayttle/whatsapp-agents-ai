@@ -26,15 +26,15 @@ export function InstanceDetailsModal({
   onRefresh,
   empresaName
 }: InstanceDetailsModalProps) {
-  const { actionLoading, handleAction } = useInstanceActions();
+  const { handleAction } = useInstanceActions();
   const { data: agentes } = useAgents({ isSuperAdmin: true, tenantId: instance?.tenant_id });
   const [selectedAgentId, setSelectedAgentId] = useState<string>("");
   const [savingAgent, setSavingAgent] = useState(false);
-
-  // Estado local para a instância exibida no modal
   const [localInstance, setLocalInstance] = useState<Instance | null>(instance);
+  const [loadingAction, setLoadingAction] = useState<null | "connect" | "disconnect" | "remove" | "status" | "saveAgent" | "unlinkAgent">(null);
+  const [qrData, setQrData] = useState<{ qr: string | null, code: string | null }>({ qr: null, code: null });
+  const [showQrModal, setShowQrModal] = useState(false);
 
-  // Sincronizar localInstance sempre que instance mudar
   useEffect(() => {
     setLocalInstance(instance);
   }, [instance]);
@@ -44,10 +44,6 @@ export function InstanceDetailsModal({
   const isConnected = localInstance.status === 'open';
   const isNative = localInstance.provider_type === 'nativo';
   const agenteVinculado = agentes.find(a => a.id === localInstance.agent_id);
-
-  const [loadingAction, setLoadingAction] = useState<null | "connect" | "disconnect" | "remove" | "status" | "saveAgent" | "unlinkAgent">(null);
-  const [qrData, setQrData] = useState<{ qr: string | null, code: string | null }>({ qr: null, code: null });
-  const [showQrModal, setShowQrModal] = useState(false);
 
   const handleConnect = (instanceName: string) => handleAction(async () => {
     setLoadingAction("connect");

@@ -12,56 +12,42 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
       return res.status(403).json({ error: 'Forbidden - Insufficient permissions' });
     }
 
-    const { tenant_id, title, webhookUrl, description, active, instance_id } = req.body;
+    const { tenant_id, title, description, agent_type, webhookUrl } = req.body;
 
-    // Validação para agentes externos
-    if (!tenant_id || !title || !webhookUrl) {
-      return res.status(400).json({ error: 'Missing required fields for external agent' });
+    if (!tenant_id || !title || !agent_type) {
+      return res.status(400).json({ error: 'Missing required fields for agent' });
     }
-
-    // Verificar permissões de tenant
+    if (agent_type === 'external' && !webhookUrl) {
+      return res.status(400).json({ error: 'Missing webhookUrl for external agent' });
+    }
     if (auth.user.role !== 'super_admin' && tenant_id !== auth.user.tenant_id) {
       return res.status(403).json({ error: 'Forbidden - Cannot create agent for different tenant' });
     }
 
+    const insertData: Record<string, unknown> = {
+      tenant_id,
+      title,
+      description: description || null,
+      agent_type,
+    };
+    if (agent_type === 'external') {
+      insertData.webhookUrl = webhookUrl;
+    }
+
     const { data: agent, error } = await auth.supabase
       .from('agents')
-      .insert({
-        tenant_id,
-        title,
-        webhookUrl,
-        description: description || null,
-        agent_type: 'external',
-        active: active ?? true,
-        instance_id: instance_id || null,
-        prompt: ''
-      })
+      .insert(insertData)
       .select()
       .single();
 
     if (error) {
-      console.error('[Agents External Create] Erro ao criar agente externo:', error);
+      console.error('[Agents Create] Erro ao criar agente:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
 
-    // Log de auditoria
-    // logAuditAction(
-    //   'CREATE_EXTERNAL_AGENT',
-    //   'agents',
-    //   agent.id,
-    //   auth.user.id,
-    //   auth.user.email,
-    //   { 
-    //     agent_title: agent.title,
-    //     tenant_id: agent.tenant_id,
-    //     webhook_url: agent.webhookUrl,
-    //     method: req.method 
-    //   }
-    // );
-
     return res.status(201).json({ success: true, agent });
   } catch (error) {
-    console.error('[Agents External Create] Erro inesperado:', error);
+    console.error('[Agents Create] Erro inesperado:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

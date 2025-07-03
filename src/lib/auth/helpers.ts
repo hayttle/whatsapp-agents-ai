@@ -43,22 +43,20 @@ export async function authenticateUser(
     );
 
     // Verificar autenticação
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (authError || !user) {
-      console.log('[Auth] Usuário não autenticado:', authError?.message);
+    if (!user) {
       return null;
     }
 
     // Buscar dados do usuário na tabela users
-    const { error: userError, data: userData } = await supabase
+    const { data: userData } = await supabase
       .from('users')
       .select('id, email, name, role, tenant_id, created_at, updated_at')
       .eq('email', user.email)
       .single();
 
-    if (userError || !userData) {
-      console.log('[Auth] Usuário não encontrado na tabela users:', userError?.message);
+    if (!userData) {
       return null;
     }
 
@@ -66,8 +64,7 @@ export async function authenticateUser(
       user: userData as AuthenticatedUser,
       supabase
     };
-  } catch (error) {
-    console.error('[Auth] Erro na autenticação:', error);
+  } catch {
     return null;
   }
 }

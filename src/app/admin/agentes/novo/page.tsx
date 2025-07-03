@@ -1,18 +1,45 @@
 'use client';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import AgentQuickCreateModal from '@/components/admin/agents/AgentQuickCreateModal';
 
 export default function NovoAgentePage() {
   const router = useRouter();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [tenantId, setTenantId] = useState('');
 
   useEffect(() => {
-    // Redirecionar para a página de configuração com ID temporário
-    router.replace('/admin/agentes/novo/configuracao');
-  }, [router]);
+    async function fetchTenantId() {
+      try {
+        const res = await fetch('/api/users/current');
+        const data = await res.json();
+        setTenantId(data.tenant_id || '');
+      } catch {
+        setTenantId('');
+      }
+    }
+    fetchTenantId();
+  }, []);
+
+  const handleCreated = (agentId: string) => {
+    setModalOpen(false);
+    router.push(`/admin/agentes/${agentId}/configuracao`);
+  };
 
   return (
-    <div className="flex justify-center items-center min-h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-green-light"></div>
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <button
+        className="bg-brand-green-light text-white px-6 py-3 rounded font-bold mb-6"
+        onClick={() => setModalOpen(true)}
+      >
+        Criar agente
+      </button>
+      <AgentQuickCreateModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onCreated={handleCreated}
+        tenantId={tenantId}
+      />
     </div>
   );
 } 

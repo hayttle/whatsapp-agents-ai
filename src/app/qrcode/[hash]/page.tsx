@@ -10,15 +10,6 @@ const getInstanceNameByHash = async (hash: string) => {
   return { instanceName: data.instanceName, status: data.status };
 };
 
-const getInstanceStatus = async (instanceName: string) => {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
-  const url = `${baseUrl}/api/whatsapp-instances/status?instanceName=${encodeURIComponent(instanceName)}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('Erro ao consultar status da instância');
-  const data = await res.json();
-  return data.status;
-};
-
 export default function QrCodePage({ params }: { params: Promise<{ hash: string }> }) {
   const { hash } = use(params);
   const [qrcode, setQrcode] = useState<string | null>(null);
@@ -73,12 +64,12 @@ export default function QrCodePage({ params }: { params: Promise<{ hash: string 
             setQrcode('');
           }
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Se a mensagem de erro for exatamente a de instância conectada, exibe amigável
-        if (err.message && err.message.includes('instância já conectada')) {
+        if (err instanceof Error && err.message.includes('instância já conectada')) {
           setError('QR Code inválido ou instância já conectada.');
         } else {
-          setError(err.message || 'Link invalido!');
+          setError(err instanceof Error ? err.message : 'Link invalido!');
         }
       }
     })();

@@ -8,8 +8,6 @@ import { COMPANY_TYPES, COMPANY_TYPE_OPTIONS } from './constants';
 import { validateCPF, validateCNPJ, formatCPF, formatCNPJ } from '@/lib/utils';
 
 const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tenant }) => {
-  console.log('TenantModal renderizado com isOpen:', isOpen);
-
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [cpfCnpj, setCpfCnpj] = useState("");

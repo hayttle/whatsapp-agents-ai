@@ -24,6 +24,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
       return res.status(404).json({ error: 'Agent not found' });
     }
 
+    if (!agent) {
+      return res.status(404).json({ error: 'Agente não encontrado' });
+    }
+
     // Verificar permissões de tenant
     if (auth.user.role !== 'super_admin' && agent.tenant_id !== auth.user.tenant_id) {
       return res.status(403).json({ error: 'Forbidden - Cannot access agent from different tenant' });
@@ -34,7 +38,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
       // Remover: logAuditAction(...);
     }
 
-    return res.status(200).json(agent);
+    return res.status(200).json({ agent });
   } catch (error) {
     console.error('[Agents Get] Erro inesperado:', error);
     return res.status(500).json({ error: 'Internal server error' });

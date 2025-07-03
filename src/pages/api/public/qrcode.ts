@@ -16,16 +16,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Hash inválida' });
   }
 
-  console.log('Hash recebida:', hash);
-
   // Buscar instância pela hash
   const { data: instance, error } = await supabase
     .from('whatsapp_instances')
     .select('instanceName, status')
     .eq('public_hash', hash)
     .single();
-
-  console.log('Resultado da busca:', instance, error);
 
   if (error || !instance) {
     return res.status(404).json({ error: 'Link invalido!' });
