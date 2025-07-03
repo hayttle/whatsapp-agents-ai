@@ -5,6 +5,7 @@ export interface User {
   role: 'user' | 'super_admin';
   tenant_id?: string;
   created_at: string;
+  status?: 'active' | 'inactive';
 }
 
 export interface Empresa {

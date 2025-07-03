@@ -33,6 +33,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: error.message });
   }
 
+  // Buscar o usuário na tabela users e checar status
+  const { data: userDb, error: userDbError } = await supabase
+    .from('users')
+    .select('id, email, name, role, tenant_id, status')
+    .eq('email', email)
+    .single();
+
+  if (userDbError || !userDb) {
+    return res.status(404).json({ error: 'Usuário não encontrado no banco de dados.' });
+  }
+
+  if (userDb.status !== 'active') {
+    return res.status(403).json({ error: 'Seu usuário está inativo. Entre em contato com o administrador.' });
+  }
+
   // Força o set de cookies de sessão
   await supabase.auth.getUser();
 

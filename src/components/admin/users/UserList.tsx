@@ -6,7 +6,7 @@ import { ConfirmationModal } from "@/components/ui";
 import { ActionButton } from "@/components/ui";
 import { useActions } from "@/hooks/useActions";
 import { tenantService } from "@/services/tenantService";
-import { Users, Plus, Edit, Trash2, Mail, User, Shield, Building, Filter, X } from "lucide-react";
+import { Users, Plus, Edit, Trash2, Mail, User, Shield, Building, Filter, X, Power, PowerOff } from "lucide-react";
 import { Button } from "@/components/brand";
 import { userService } from "@/services/userService";
 import { User as UserType, Empresa } from "./types";
@@ -61,6 +61,7 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
   // Estados dos filtros
   const [filterRole, setFilterRole] = useState<string>('');
   const [filterEmpresa, setFilterEmpresa] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
 
   const { actionLoading, handleAction } = useActions();
@@ -105,18 +106,20 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
     return users.filter(user => {
       const matchesRole = !filterRole || user.role === filterRole;
       const matchesEmpresa = !filterEmpresa || user.tenant_id === filterEmpresa;
-      return matchesRole && matchesEmpresa;
+      const matchesStatus = !filterStatus || user.status === filterStatus;
+      return matchesRole && matchesEmpresa && matchesStatus;
     });
-  }, [users, filterRole, filterEmpresa]);
+  }, [users, filterRole, filterEmpresa, filterStatus]);
 
   // Limpar filtros
   const clearFilters = () => {
     setFilterRole('');
     setFilterEmpresa('');
+    setFilterStatus('');
   };
 
   // Verificar se há filtros ativos
-  const hasActiveFilters = filterRole || filterEmpresa;
+  const hasActiveFilters = filterRole || filterEmpresa || filterStatus;
 
   const handleDelete = (userId: string) => handleAction(async () => {
     // Deletar usuário usando a API
@@ -158,6 +161,22 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
     name
   }));
 
+  // Alternar status do usuário
+  const handleToggleStatus = (user: UserType) => handleAction(async () => {
+    const newStatus = user.status === 'active' ? 'inactive' : 'active';
+    const response = await fetch('/api/users/update', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: user.id, status: newStatus })
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Erro ao atualizar status do usuário');
+    }
+    toast.success(`Usuário ${newStatus === 'active' ? 'ativado' : 'desativado'} com sucesso!`);
+    setRefreshKey(k => k + 1);
+  }, user.id);
+
   return (
     <>
       <AdminListLayout
@@ -181,7 +200,7 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
         onToggleFilters={() => setShowFilters(!showFilters)}
       >
         <AdminListLayout.Filters>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Papel
@@ -212,6 +231,20 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
                     {name}
                   </option>
                 ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Status
+              </label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
+              >
+                <option value="">Todos</option>
+                <option value="active">Ativo</option>
+                <option value="inactive">Inativo</option>
               </select>
             </div>
           </div>
@@ -253,6 +286,11 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
                         Empresa: {empresas[filterEmpresa]}
                       </span>
                     )}
+                    {filterStatus && (
+                      <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                        Status: {filterStatus === 'active' ? 'Ativo' : 'Inativo'}
+                      </span>
+                    )}
                     <span className="text-blue-600">
                       ({filteredUsers.length} de {users.length} usuários)
                     </span>
@@ -266,6 +304,7 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
                     <th className="px-4 py-3 border text-left">E-mail</th>
                     <th className="px-4 py-3 border text-left">Papel</th>
                     <th className="px-4 py-3 border text-left">Empresa</th>
+                    <th className="px-4 py-3 border text-left">Status</th>
                     <th className="px-4 py-3 border text-left">Ações</th>
                   </tr>
                 </thead>
@@ -304,6 +343,9 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
                             </div>
                           </td>
                           <td className="px-4 py-3 border">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>{user.status === 'active' ? 'Ativo' : 'Inativo'}</span>
+                          </td>
+                          <td className="px-4 py-3 border">
                             <div className="flex gap-2 items-center">
                               <ActionButton
                                 icon={Edit}
@@ -320,6 +362,16 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
                                 loading={isLoading}
                                 title="Deletar"
                               />
+                              {isSuperAdmin && (
+                                <ActionButton
+                                  icon={user.status === 'active' ? PowerOff : Power}
+                                  onClick={() => handleToggleStatus(user)}
+                                  variant={user.status === 'active' ? 'warning' : 'secondary'}
+                                  disabled={isLoading}
+                                  loading={isLoading}
+                                  title={user.status === 'active' ? 'Desativar' : 'Ativar'}
+                                />
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -327,7 +379,7 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={5} className="text-center py-8 text-gray-500">
+                      <td colSpan={6} className="text-center py-8 text-gray-500">
                         <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                         <p className="font-medium">
                           {hasActiveFilters ? 'Nenhum usuário encontrado com os filtros aplicados' : 'Nenhum usuário encontrado'}

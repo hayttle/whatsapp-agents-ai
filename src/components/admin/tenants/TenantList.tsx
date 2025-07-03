@@ -163,21 +163,7 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
         onToggleFilters={() => setShowFilters(!showFilters)}
       >
         <AdminListLayout.Filters>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
-              </label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
-              >
-                <option value="">Todos os status</option>
-                <option value="active">Ativa</option>
-                <option value="inactive">Inativa</option>
-              </select>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Tipo
@@ -262,7 +248,6 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
                     <th className="px-4 py-3 border text-left">CPF/CNPJ</th>
                     <th className="px-4 py-3 border text-left">Telefone</th>
                     <th className="px-4 py-3 border text-left">Tipo</th>
-                    <th className="px-4 py-3 border text-left">Status</th>
                     <th className="px-4 py-3 border text-left">Ações</th>
                   </tr>
                 </thead>
@@ -283,11 +268,6 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
                           <td className="px-4 py-3 border">{tenant.phone || '-'}</td>
                           <td className="px-4 py-3 border">{tenant.type === 'company' ? 'Empresa' : 'Pessoa'}</td>
                           <td className="px-4 py-3 border">
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${tenant.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                              {tenant.status === 'active' ? 'Ativa' : 'Inativa'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 border">
                             <div className="flex gap-2 items-center">
                               <ActionButton
                                 icon={Edit}
@@ -302,15 +282,7 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
                                 variant="destructive"
                                 disabled={isLoading}
                                 loading={isLoading}
-                                title="Deletar"
-                              />
-                              <ActionButton
-                                icon={tenant.status === 'active' ? PowerOff : Power}
-                                onClick={() => handleToggleStatus(tenant)}
-                                variant={tenant.status === 'active' ? 'warning' : 'secondary'}
-                                disabled={isLoading}
-                                loading={isLoading}
-                                title={tenant.status === 'active' ? 'Desativar' : 'Ativar'}
+                                title="Remover"
                               />
                             </div>
                           </td>
@@ -319,7 +291,7 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={7} className="text-center py-8 text-gray-500">
+                      <td colSpan={6} className="text-center py-8 text-gray-500">
                         <Building2 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                         <p className="font-medium">
                           {hasActiveFilters ? 'Nenhuma empresa encontrada com os filtros aplicados' : 'Nenhuma empresa encontrada'}
