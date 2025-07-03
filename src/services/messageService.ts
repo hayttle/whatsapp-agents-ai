@@ -10,7 +10,6 @@ export async function getContactsWithLastMessage(agentId: string, tenantId: stri
     .eq('agent_id', agentId)
     .neq('whatsapp_number', '')
     .order('created_at', { ascending: false });
-  console.log('[getContactsWithLastMessage] numbers:', numbers, 'errorNumbers:', errorNumbers, 'agentId:', agentId, 'tenantId:', tenantId);
   if (errorNumbers) throw errorNumbers;
   const uniqueNumbers = Array.from(new Set((numbers || []).map((m: any) => m.whatsapp_number)));
   // 2. Para cada número, buscar a última mensagem
@@ -23,10 +22,7 @@ export async function getContactsWithLastMessage(agentId: string, tenantId: stri
       .eq('whatsapp_number', number)
       .order('created_at', { ascending: false })
       .limit(1);
-    if (errorMsg) {
-      console.log('[getContactsWithLastMessage] errorMsg:', errorMsg, 'number:', number);
-      continue;
-    }
+    if (errorMsg) continue;
     if (lastMsg && lastMsg[0]) {
       contacts.push({
         whatsapp_number: number,

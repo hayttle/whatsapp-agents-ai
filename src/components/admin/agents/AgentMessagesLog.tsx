@@ -2,22 +2,32 @@ import React, { useState } from 'react';
 import { AgentChatView } from './AgentChatView';
 import { useAgentContacts } from '@/hooks/useAgentContacts';
 import { useAgentMessages } from '@/hooks/useAgentMessages';
-import { User } from 'lucide-react';
+import { User, RefreshCw } from 'lucide-react';
 
-function AgentContactsSidebar({ contacts, selectedId, onSelect, loading }: {
+function AgentContactsSidebar({ contacts, selectedId, onSelect, loading, onRefresh, refreshing }: {
   contacts: any[];
   selectedId: string;
   onSelect: (id: string) => void;
   loading: boolean;
+  onRefresh: () => void;
+  refreshing: boolean;
 }) {
   return (
-    <aside className="w-80 border-r bg-white h-[70vh] flex flex-col">
-      <div className="p-4 border-b">
+    <aside className="w-96 border-r bg-white h-[70vh] flex flex-col">
+      <div className="p-4 border-b flex items-center justify-between">
         <input
           type="text"
           placeholder="Buscar contato..."
           className="w-full px-3 py-2 rounded bg-gray-50 border text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
         />
+        <button
+          className={`ml-2 p-2 rounded hover:bg-gray-100 transition ${refreshing ? 'animate-spin' : ''}`}
+          title="Atualizar conversas"
+          onClick={onRefresh}
+          disabled={refreshing}
+        >
+          <RefreshCw className="w-5 h-5 text-gray-500" />
+        </button>
       </div>
       <div className="flex-1 overflow-y-auto">
         {loading ? (
@@ -53,10 +63,11 @@ function AgentContactsSidebar({ contacts, selectedId, onSelect, loading }: {
 }
 
 export const AgentMessagesLog: React.FC<{ agentId: string }> = ({ agentId }) => {
-  const { contacts, loading: loadingContacts, error: errorContacts } = useAgentContacts(agentId);
+  const { contacts, loading: loadingContacts, error: errorContacts, refetch: refetchContacts } = useAgentContacts(agentId);
   const [selectedNumber, setSelectedNumber] = useState<string>('');
   const selected = selectedNumber || (contacts[0]?.whatsapp_number ?? '');
-  const { messages, loading: loadingMessages, error: errorMessages } = useAgentMessages(agentId, selected);
+  const { messages, loading: loadingMessages, error: errorMessages, refetch: refetchMessages } = useAgentMessages(agentId, selected);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Fallback para selecionar o primeiro contato automaticamente
   React.useEffect(() => {
@@ -65,6 +76,16 @@ export const AgentMessagesLog: React.FC<{ agentId: string }> = ({ agentId }) => 
     }
   }, [contacts, selectedNumber]);
 
+  // Atualiza mensagens ao atualizar contatos
+  const handleRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => {
+      refetchContacts();
+      refetchMessages();
+      setRefreshing(false);
+    }, 2000);
+  };
+
   return (
     <div className="flex bg-gray-50 rounded-lg border shadow-sm overflow-hidden">
       <AgentContactsSidebar
@@ -72,6 +93,8 @@ export const AgentMessagesLog: React.FC<{ agentId: string }> = ({ agentId }) => 
         selectedId={selected}
         onSelect={setSelectedNumber}
         loading={loadingContacts}
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
       />
       <div className="flex-1">
         {loadingMessages ? (

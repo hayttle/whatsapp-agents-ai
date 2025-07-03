@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 export function useAgentContacts(agentId: string) {
   const [contacts, setContacts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchContacts = useCallback(() => {
     if (!agentId) return;
     setLoading(true);
     setError(null);
@@ -18,5 +18,9 @@ export function useAgentContacts(agentId: string) {
       .finally(() => setLoading(false));
   }, [agentId]);
 
-  return { contacts, loading, error };
+  useEffect(() => {
+    fetchContacts();
+  }, [fetchContacts]);
+
+  return { contacts, loading, error, refetch: fetchContacts };
 } 

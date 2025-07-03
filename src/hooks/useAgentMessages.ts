@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 export function useAgentMessages(agentId: string, whatsappNumber: string) {
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchMessages = useCallback(() => {
     if (!agentId || !whatsappNumber) return;
     setLoading(true);
     setError(null);
@@ -18,5 +18,9 @@ export function useAgentMessages(agentId: string, whatsappNumber: string) {
       .finally(() => setLoading(false));
   }, [agentId, whatsappNumber]);
 
-  return { messages, loading, error };
+  useEffect(() => {
+    fetchMessages();
+  }, [fetchMessages]);
+
+  return { messages, loading, error, refetch: fetchMessages };
 } 
