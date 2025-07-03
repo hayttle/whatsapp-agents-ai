@@ -23,19 +23,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const supabase = createApiClient(req, res);
 
-    const { id, email, name, role, tenant_id } = req.body;
+    const { id, email, name, role, tenant_id, status } = req.body;
 
-    if (!id || !email || !name || !role) {
-      return res.status(400).json({ error: 'Campos obrigatórios faltando.' });
-    }
-    if (role !== 'super_admin' && !tenant_id) {
-      return res.status(400).json({ error: 'Usuários que não são super_admin devem ter uma empresa associada.' });
+    if (!id) {
+      return res.status(400).json({ error: 'ID do usuário é obrigatório.' });
     }
 
     // Verificar se o usuário existe
     const { data: existingUser } = await supabase
       .from('users')
-      .select('tenant_id')
+      .select('*')
       .eq('id', id)
       .single();
 
@@ -43,17 +40,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Verificar permissões para mudança de role
-    if (role === 'super_admin' && userData.role !== 'super_admin') {
-      return res.status(403).json({ error: 'Insufficient permissions to assign super_admin role' });
-    }
-
     // Preparar dados para atualização
     const updateData: Record<string, unknown> = {};
+    
+    // Atualizar apenas os campos fornecidos
     if (name !== undefined) updateData.name = name;
     if (email !== undefined) updateData.email = email;
-    if (role !== undefined) updateData.role = role;
+    if (role !== undefined) {
+      // Validações específicas para mudança de role
+      if (role !== 'super_admin' && !tenant_id) {
+        return res.status(400).json({ error: 'Usuários que não são super_admin devem ter uma empresa associada.' });
+      }
+      if (role === 'super_admin' && userData.role !== 'super_admin') {
+        return res.status(403).json({ error: 'Insufficient permissions to assign super_admin role' });
+      }
+      updateData.role = role;
+    }
     if (tenant_id !== undefined) updateData.tenant_id = role === 'super_admin' ? null : tenant_id;
+    if (status !== undefined && status === 'inactive' && id === userData.id) {
+      return res.status(400).json({ error: 'Você não pode desativar o próprio usuário.' });
+    }
+    if (status !== undefined) updateData.status = status;
+
+    // Verificar se há dados para atualizar
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'Nenhum campo fornecido para atualização.' });
+    }
 
     // Atualizar usuário
     const { data: updatedUser, error } = await supabase

@@ -6,11 +6,12 @@ import { ConfirmationModal } from "@/components/ui";
 import { ActionButton } from "@/components/ui";
 import { useActions } from "@/hooks/useActions";
 import { tenantService } from "@/services/tenantService";
-import { Users, Plus, Edit, Trash2, Mail, User, Shield, Building, Filter, X, Power, PowerOff } from "lucide-react";
+import { Users, Plus, Edit, Trash2, Mail, User, Shield, Building, Filter, X } from "lucide-react";
 import { Button } from "@/components/brand";
 import { userService } from "@/services/userService";
 import { User as UserType, Empresa } from "./types";
 import { AdminListLayout } from '@/components/layout/AdminListLayout';
+import { Switch } from "@/components/brand/Switch";
 
 interface UserListProps {
   isSuperAdmin: boolean;
@@ -57,6 +58,7 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
   const [empresas, setEmpresas] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Estados dos filtros
   const [filterRole, setFilterRole] = useState<string>('');
@@ -101,6 +103,13 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
     fetchData();
   }, [refreshKey, fetchData]);
 
+  // Buscar o usuário logado para impedir que ele desative a si mesmo
+  useEffect(() => {
+    userService.getCurrentUser().then((res) => {
+      setCurrentUserId(res.user?.id || null);
+    });
+  }, []);
+
   // Filtrar usuários
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
@@ -144,7 +153,7 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
     toast.success("Usuário deletado com sucesso!");
     setRefreshKey(k => k + 1);
     dispatchModal({ type: 'CLOSE' });
-  }, userId);
+  }, `delete-${userId}`);
 
   const closeModal = () => {
     dispatchModal({ type: 'CLOSE' });
@@ -175,7 +184,7 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
     }
     toast.success(`Usuário ${newStatus === 'active' ? 'ativado' : 'desativado'} com sucesso!`);
     setRefreshKey(k => k + 1);
-  }, user.id);
+  }, `toggle-status-${user.id}`);
 
   return (
     <>
@@ -311,7 +320,8 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
                 <tbody>
                   {filteredUsers.length > 0 ? (
                     filteredUsers.map((user) => {
-                      const isLoading = actionLoading === user.id;
+                      const isDeleteLoading = actionLoading === `delete-${user.id}`;
+                      const isToggleLoading = actionLoading === `toggle-status-${user.id}`;
                       return (
                         <tr key={user.id} className="border-t hover:bg-gray-50">
                           <td className="px-4 py-3 border font-medium">
@@ -343,7 +353,17 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
                             </div>
                           </td>
                           <td className="px-4 py-3 border">
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>{user.status === 'active' ? 'Ativo' : 'Inativo'}</span>
+                            <span className="flex items-center gap-2">
+                              <Switch
+                                checked={user.status === 'active'}
+                                onCheckedChange={() => {
+                                  if (!isSuperAdmin || user.id === currentUserId) return;
+                                  handleToggleStatus(user);
+                                }}
+                                disabled={!isSuperAdmin || isToggleLoading || user.id === currentUserId}
+                                id={`switch-status-${user.id}`}
+                              />
+                            </span>
                           </td>
                           <td className="px-4 py-3 border">
                             <div className="flex gap-2 items-center">
@@ -351,27 +371,17 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
                                 icon={Edit}
                                 onClick={() => dispatchModal({ type: 'OPEN_EDIT', payload: user })}
                                 variant="secondary"
-                                disabled={isLoading}
+                                disabled={isDeleteLoading || isToggleLoading}
                                 title="Editar"
                               />
                               <ActionButton
                                 icon={Trash2}
                                 onClick={() => dispatchModal({ type: 'OPEN_DELETE', payload: user })}
                                 variant="destructive"
-                                disabled={isLoading}
-                                loading={isLoading}
+                                disabled={isDeleteLoading || isToggleLoading}
+                                loading={isDeleteLoading}
                                 title="Deletar"
                               />
-                              {isSuperAdmin && (
-                                <ActionButton
-                                  icon={user.status === 'active' ? PowerOff : Power}
-                                  onClick={() => handleToggleStatus(user)}
-                                  variant={user.status === 'active' ? 'warning' : 'secondary'}
-                                  disabled={isLoading}
-                                  loading={isLoading}
-                                  title={user.status === 'active' ? 'Desativar' : 'Ativar'}
-                                />
-                              )}
                             </div>
                           </td>
                         </tr>
@@ -422,7 +432,7 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
         title="Confirmar Remoção"
         confirmText="Remover"
         cancelText="Cancelar"
-        isLoading={actionLoading === (modalState.type === 'DELETE' ? modalState.payload?.id : '')}
+        isLoading={actionLoading === (modalState.type === 'DELETE' ? `delete-${modalState.payload?.id}` : '')}
       >
         <p>
           Tem certeza que deseja remover o usuário <span className="font-semibold">&quot;{modalState.type === 'DELETE' ? modalState.payload?.name : ''}&quot;</span>?

@@ -6,7 +6,7 @@ import { ConfirmationModal } from "@/components/ui";
 import { ActionButton } from "@/components/ui";
 import { useActions } from "@/hooks/useActions";
 import { tenantService, Tenant } from "@/services/tenantService";
-import { Building2, Plus, Edit, Trash2, Power, PowerOff, Filter, X } from "lucide-react";
+import { Building2, Plus, Edit, Trash2, Filter, X } from "lucide-react";
 import { Button } from "@/components/brand";
 import { AdminListLayout } from '@/components/layout/AdminListLayout';
 
@@ -109,27 +109,6 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
       throw err;
     }
   }, tenantId);
-
-  const handleToggleStatus = (tenant: Tenant) => handleAction(async () => {
-    try {
-      const newStatus = tenant.status === 'active' ? 'inactive' : 'active';
-      await tenantService.updateTenant({
-        id: tenant.id,
-        name: tenant.name,
-        email: tenant.email,
-        cpf_cnpj: tenant.cpf_cnpj || '',
-        phone: tenant.phone || '',
-        type: tenant.type,
-        status: newStatus,
-      });
-      toast.success(`Empresa ${newStatus === 'active' ? 'ativada' : 'desativada'} com sucesso!`);
-      setRefreshKey(k => k + 1);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
-      toast.error(errorMessage);
-      throw err;
-    }
-  }, tenant.id);
 
   const closeModal = () => {
     dispatchModal({ type: 'CLOSE' });
