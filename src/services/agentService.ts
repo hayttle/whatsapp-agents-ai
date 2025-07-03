@@ -3,8 +3,7 @@ export interface Agent {
   tenant_id: string;
   instance_id?: string | null;
   title: string;
-  prompt: string;
-  fallback_message?: string;
+  prompt?: string;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -55,7 +54,7 @@ class AgentService {
     return this.makeRequest<AgentListResponse>(url);
   }
 
-  async createAgent(agentData: Omit<Agent, 'id' | 'created_at' | 'updated_at'>): Promise<ApiResponse> {
+  async createAgent(agentData: Omit<Agent, 'id' | 'created_at' | 'updated_at' | 'prompt' | 'fallback_message'> & { prompt?: string }): Promise<ApiResponse> {
     // Usar endpoint único para criação de agentes
     return this.makeRequest<ApiResponse>("/api/agents/create", {
       method: "POST",

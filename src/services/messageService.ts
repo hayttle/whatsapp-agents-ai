@@ -1,0 +1,52 @@
+import { createClient } from '@/lib/supabase/server';
+
+export async function getContactsWithLastMessage(agentId: string, tenantId: string, supabase: any) {
+  // Busca a última mensagem de cada contato (whatsapp_number) para o agente
+  // Como Supabase não suporta group by + max diretamente, fazemos em duas etapas:
+  // 1. Buscar todos os números distintos
+  const { data: numbers, error: errorNumbers } = await supabase
+    .from('messages')
+    .select('whatsapp_number')
+    .eq('agent_id', agentId)
+    .neq('whatsapp_number', '')
+    .order('created_at', { ascending: false });
+  console.log('[getContactsWithLastMessage] numbers:', numbers, 'errorNumbers:', errorNumbers, 'agentId:', agentId, 'tenantId:', tenantId);
+  if (errorNumbers) throw errorNumbers;
+  const uniqueNumbers = Array.from(new Set((numbers || []).map((m: any) => m.whatsapp_number)));
+  // 2. Para cada número, buscar a última mensagem
+  const contacts = [];
+  for (const number of uniqueNumbers) {
+    const { data: lastMsg, error: errorMsg } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('agent_id', agentId)
+      .eq('whatsapp_number', number)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (errorMsg) {
+      console.log('[getContactsWithLastMessage] errorMsg:', errorMsg, 'number:', number);
+      continue;
+    }
+    if (lastMsg && lastMsg[0]) {
+      contacts.push({
+        whatsapp_number: number,
+        last_message: lastMsg[0].text,
+        last_message_at: lastMsg[0].created_at,
+        sender: lastMsg[0].sender,
+      });
+    }
+  }
+  return contacts;
+}
+
+export async function getMessagesByContact(agentId: string, whatsappNumber: string, tenantId: string, supabase: any) {
+  // Busca todas as mensagens entre o agente e o contato
+  const { data, error } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('agent_id', agentId)
+    .eq('whatsapp_number', whatsappNumber)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data;
+} 

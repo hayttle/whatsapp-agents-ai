@@ -1,4 +1,5 @@
 import React from 'react';
+import { User } from 'lucide-react';
 
 interface Contact {
   name: string;
@@ -22,7 +23,13 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({ contact, messages 
     <div className="flex flex-col h-[70vh] bg-white rounded-lg border shadow-sm overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 px-6 py-4 border-b bg-gray-50">
-        <img src={contact.avatar} alt={contact.name} className="w-10 h-10 rounded-full object-cover" />
+        {contact.avatar ? (
+          <img src={contact.avatar} alt={contact.name} className="w-10 h-10 rounded-full object-cover" />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+            <User className="w-6 h-6 text-gray-400" />
+          </div>
+        )}
         <span className="font-semibold text-lg text-gray-900">{contact.name}</span>
       </div>
       {/* Mensagens */}
@@ -39,7 +46,10 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({ contact, messages 
                   : 'bg-gray-100 text-gray-900 rounded-bl-none'}`}
             >
               {msg.text}
-              <div className="text-xs text-white mt-1 text-right">
+              <div className={`text-xs mt-1 text-right ${msg.sender === 'ai'
+                ? 'text-white'
+                : 'text-gray-500'
+                }`}>
                 {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
