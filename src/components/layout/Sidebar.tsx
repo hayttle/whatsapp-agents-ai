@@ -219,7 +219,11 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                 {commonNavItems.map((item) => {
                   const hasChildren = item.children && item.children.length > 0;
                   const isChildActive = hasChildren && item.children!.some(subItem => pathname === subItem.href);
-                  const isItemActive = (pathname === item.href) || isChildActive;
+                  const isItemActive = (
+                    pathname === item.href ||
+                    (item.href === '/admin/agentes' && (pathname?.startsWith('/admin/agentes') || false)) ||
+                    isChildActive
+                  );
                   const isExpanded = expandedItems.has(item.href);
                   const filteredChildren = hasChildren
                     ? item.children!.filter(Boolean)
@@ -285,7 +289,11 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                 {superAdminNavItems.map((item) => {
                   const hasChildren = item.children && item.children.length > 0;
                   const isChildActive = hasChildren && item.children!.some(subItem => pathname === subItem.href);
-                  const isItemActive = (pathname === item.href) || isChildActive;
+                  const isItemActive = (
+                    pathname === item.href ||
+                    (item.href === '/admin/agentes' && (pathname?.startsWith('/admin/agentes') || false)) ||
+                    isChildActive
+                  );
                   const isExpanded = expandedItems.has(item.href);
                   const filteredChildren = hasChildren
                     ? item.children!.filter(Boolean)
@@ -350,7 +358,11 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
               {filteredNavItems.map((item) => {
                 const hasChildren = item.children && item.children.length > 0;
                 const isChildActive = hasChildren && item.children!.some(subItem => pathname === subItem.href);
-                const isItemActive = (pathname === item.href) || isChildActive;
+                const isItemActive = (
+                  pathname === item.href ||
+                  (item.href === '/admin/agentes' && (pathname?.startsWith('/admin/agentes') || false)) ||
+                  isChildActive
+                );
                 const isExpanded = expandedItems.has(item.href);
                 const filteredChildren = hasChildren
                   ? item.children!.filter(Boolean)
