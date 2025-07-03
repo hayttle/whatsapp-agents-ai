@@ -165,26 +165,66 @@ export default function ProviderList({ providers, onEdit, onDelete, onCreate, lo
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredProviders.map((provider) => (
-              <div key={provider.id} className="flex flex-col p-4 bg-white rounded-lg border shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <Server className="w-5 h-5 text-brand-green-light" />
-                  <span className="font-semibold">{provider.name}</span>
-                  <span className="ml-2 px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-800">Evolution API</span>
-                </div>
-                {isSuperAdmin && provider.tenantName && (
-                  <div>
-                    <span className="font-semibold">Empresa:</span> {provider.tenantName}
+              <div key={provider.id} className="flex flex-col p-6 bg-white rounded-lg border shadow-sm hover:shadow-md transition-shadow">
+                {/* Header do card */}
+                <div className="flex items-center gap-3 mb-4">
+                  <Server className="w-6 h-6 text-brand-green-light" />
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg text-gray-900">{provider.name}</h3>
+                    <span className="inline-block mt-1 px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                      Evolution API
+                    </span>
                   </div>
-                )}
-                <div>
-                  <span className="font-semibold">URL:</span> {provider.server_url}
                 </div>
-                <div>
-                  <span className="font-semibold">API Key:</span> {'*'.repeat(provider.api_key.length)}
+
+                {/* Informações do provedor */}
+                <div className="space-y-3 mb-6">
+                  {isSuperAdmin && provider.tenantName && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-sm font-medium text-gray-600 min-w-[60px]">Empresa:</span>
+                      <span className="text-sm text-gray-900">{provider.tenantName}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-start gap-2">
+                    <span className="text-sm font-medium text-gray-600 min-w-[60px]">URL:</span>
+                    <span className="text-sm text-gray-900 break-all">{provider.server_url}</span>
+                  </div>
+
+                  <div className="flex items-start gap-2">
+                    <span className="text-sm font-medium text-gray-600 min-w-[60px]">API Key:</span>
+                    <span className="text-sm text-gray-900 font-mono">
+                      {provider.api_key.length > 20
+                        ? `${'*'.repeat(8)}...${'*'.repeat(8)}`
+                        : '*'.repeat(provider.api_key.length)
+                      }
+                    </span>
+                  </div>
                 </div>
-                <div className="flex gap-2 mt-4">
-                  <Button onClick={() => onEdit(provider)} variant="outline" size="sm" leftIcon={<Edit className="w-4 h-4" />}>Editar</Button>
-                  <Button onClick={() => onDelete(provider.id)} variant="destructive" size="sm" leftIcon={<Trash2 className="w-4 h-4" />}>Remover</Button>
+
+                {/* Separador visual */}
+                <div className="border-t border-gray-200 mb-4"></div>
+
+                {/* Botões de ação */}
+                <div className="flex gap-3 mt-auto">
+                  <Button
+                    onClick={() => onEdit(provider)}
+                    variant="outline"
+                    size="sm"
+                    leftIcon={<Edit className="w-4 h-4" />}
+                    className="flex-1"
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    onClick={() => onDelete(provider.id)}
+                    variant="destructive"
+                    size="sm"
+                    leftIcon={<Trash2 className="w-4 h-4" />}
+                    className="flex-1"
+                  >
+                    Remover
+                  </Button>
                 </div>
               </div>
             ))}
