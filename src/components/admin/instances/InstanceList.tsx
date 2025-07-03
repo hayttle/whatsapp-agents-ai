@@ -174,7 +174,7 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
       onToggleFilters={() => setShowFilters(!showFilters)}
     >
       <AdminListLayout.Filters>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
             <select
@@ -213,25 +213,37 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
             />
           </div>
         </div>
-      </AdminListLayout.Filters>
-      {hasActiveFilters && (
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-          <div className="flex items-center gap-2 text-sm text-blue-800">
-            <Filter className="w-4 h-4" />
-            <span className="font-medium">Filtros ativos:</span>
-            {filterStatus && (
-              <span className="px-2 py-1 bg-blue-100 rounded text-xs">Status: {filterStatus === 'open' ? 'Conectado' : 'Desconectado'}</span>
-            )}
-            {filterEmpresa && (
-              <span className="px-2 py-1 bg-blue-100 rounded text-xs">Empresa: {empresasMap[filterEmpresa]}</span>
-            )}
-            {filterSearch && (
-              <span className="px-2 py-1 bg-blue-100 rounded text-xs">Busca: &quot;{filterSearch}&quot;</span>
-            )}
-            <span className="text-blue-600">({filteredInstances.length} de {instances.length} instâncias)</span>
+        {hasActiveFilters && (
+          <div className="mt-4 mb-2">
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md flex items-center gap-2 text-sm text-blue-800">
+              <Filter className="w-4 h-4" />
+              <span className="font-medium">Filtros ativos:</span>
+              {filterStatus && (
+                <span className="px-2 py-1 bg-blue-100 rounded text-xs">Status: {filterStatus === 'open' ? 'Conectado' : 'Desconectado'}</span>
+              )}
+              {filterEmpresa && (
+                <span className="px-2 py-1 bg-blue-100 rounded text-xs">Empresa: {empresasMap[filterEmpresa]}</span>
+              )}
+              {filterSearch && (
+                <span className="px-2 py-1 bg-blue-100 rounded text-xs">Busca: "{filterSearch}"</span>
+              )}
+              <span className="text-blue-600">({filteredInstances.length} de {instances.length} instâncias)</span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+        {hasActiveFilters && (
+          <div className="flex gap-2 mb-4">
+            <Button
+              variant="secondary"
+              onClick={clearFilters}
+              className="flex items-center gap-2"
+            >
+              <X className="w-4 h-4" />
+              Limpar
+            </Button>
+          </div>
+        )}
+      </AdminListLayout.Filters>
       <AdminListLayout.List>
         {loading ? (
           <div className="flex justify-center items-center py-8">

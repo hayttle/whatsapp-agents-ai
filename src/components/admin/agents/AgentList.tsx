@@ -129,8 +129,7 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
       onToggleFilters={() => setShowFilters(!showFilters)}
     >
       <AdminListLayout.Filters>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Status */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
             <select
@@ -143,7 +142,6 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
               <option value="inactive">Inativos</option>
             </select>
           </div>
-          {/* Tipo */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
             <select
@@ -156,7 +154,6 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
               <option value="external">Externo (n8n)</option>
             </select>
           </div>
-          {/* Empresa */}
           {isSuperAdmin && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Empresa</label>
@@ -172,8 +169,7 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
               </select>
             </div>
           )}
-          {/* Busca */}
-          <div>
+          <div className="md:col-span-3">
             <label className="block text-sm font-medium text-gray-700 mb-2">Buscar por nome ou descrição</label>
             <input
               type="text"
@@ -185,8 +181,8 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
           </div>
         </div>
         {hasActiveFilters && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <div className="flex items-center gap-2 text-sm text-blue-800">
+          <div className="mt-4 mb-2">
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md flex items-center gap-2 text-sm text-blue-800">
               <Filter className="w-4 h-4" />
               <span className="font-medium">Filtros ativos:</span>
               {filterStatus && (
@@ -199,14 +195,14 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                 <span className="px-2 py-1 bg-blue-100 rounded text-xs">Empresa: {empresasMap[filterEmpresa]}</span>
               )}
               {filterSearch && (
-                <span className="px-2 py-1 bg-blue-100 rounded text-xs">Busca: &quot;{filterSearch}&quot;</span>
+                <span className="px-2 py-1 bg-blue-100 rounded text-xs">Busca: "{filterSearch}"</span>
               )}
               <span className="text-blue-600">({filteredAgents.length} de {agentes.length} agentes)</span>
             </div>
           </div>
         )}
         {hasActiveFilters && (
-          <div className="mt-4 flex gap-2">
+          <div className="flex gap-2 mb-4">
             <Button
               variant="secondary"
               onClick={clearFilters}

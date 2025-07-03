@@ -256,7 +256,33 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
             </div>
           </div>
           {hasActiveFilters && (
-            <div className="mt-4 flex gap-2">
+            <div className="mt-4 mb-2">
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md flex items-center gap-2 text-sm text-blue-800">
+                <Filter className="w-4 h-4" />
+                <span className="font-medium">Filtros ativos:</span>
+                {filterRole && (
+                  <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                    Papel: {roleDisplay[filterRole]}
+                  </span>
+                )}
+                {filterEmpresa && (
+                  <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                    Empresa: {empresas[filterEmpresa]}
+                  </span>
+                )}
+                {filterStatus && (
+                  <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                    Status: {filterStatus === 'active' ? 'Ativo' : 'Inativo'}
+                  </span>
+                )}
+                <span className="text-blue-600">
+                  ({filteredUsers.length} de {users.length} usuários)
+                </span>
+              </div>
+            </div>
+          )}
+          {hasActiveFilters && (
+            <div className="flex gap-2 mb-4">
               <Button
                 variant="secondary"
                 onClick={clearFilters}
@@ -277,33 +303,6 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
             <div className="text-red-500 text-center py-4">{error}</div>
           ) : (
             <>
-              {/* Resumo dos filtros */}
-              {hasActiveFilters && (
-                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                  <div className="flex items-center gap-2 text-sm text-blue-800">
-                    <Filter className="w-4 h-4" />
-                    <span className="font-medium">Filtros ativos:</span>
-                    {filterRole && (
-                      <span className="px-2 py-1 bg-blue-100 rounded text-xs">
-                        Papel: {roleDisplay[filterRole]}
-                      </span>
-                    )}
-                    {filterEmpresa && (
-                      <span className="px-2 py-1 bg-blue-100 rounded text-xs">
-                        Empresa: {empresas[filterEmpresa]}
-                      </span>
-                    )}
-                    {filterStatus && (
-                      <span className="px-2 py-1 bg-blue-100 rounded text-xs">
-                        Status: {filterStatus === 'active' ? 'Ativo' : 'Inativo'}
-                      </span>
-                    )}
-                    <span className="text-blue-600">
-                      ({filteredUsers.length} de {users.length} usuários)
-                    </span>
-                  </div>
-                </div>
-              )}
               <table className="min-w-full text-sm border">
                 <thead>
                   <tr className="bg-gray-100">

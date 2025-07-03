@@ -72,12 +72,10 @@ export default function ProviderList({ providers, onEdit, onDelete, onCreate, lo
       onToggleFilters={() => setShowFilters(!showFilters)}
     >
       <AdminListLayout.Filters>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {isSuperAdmin && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Empresa
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Empresa</label>
               <select
                 value={filterEmpresa}
                 onChange={(e) => setFilterEmpresa(e.target.value)}
@@ -99,9 +97,7 @@ export default function ProviderList({ providers, onEdit, onDelete, onCreate, lo
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Buscar por nome
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Buscar por nome</label>
             <input
               type="text"
               value={filterSearch}
@@ -112,7 +108,28 @@ export default function ProviderList({ providers, onEdit, onDelete, onCreate, lo
           </div>
         </div>
         {hasActiveFilters && (
-          <div className="mt-4 flex gap-2">
+          <div className="mt-4 mb-2">
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md flex items-center gap-2 text-sm text-blue-800">
+              <Filter className="w-4 h-4" />
+              <span className="font-medium">Filtros ativos:</span>
+              {filterEmpresa && (
+                <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                  Empresa: {providers.find(p => p.tenant_id === filterEmpresa)?.tenantName || filterEmpresa}
+                </span>
+              )}
+              {filterSearch && (
+                <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                  Busca: "{filterSearch}"
+                </span>
+              )}
+              <span className="text-blue-600">
+                ({filteredProviders.length} de {providers.length} provedores)
+              </span>
+            </div>
+          </div>
+        )}
+        {hasActiveFilters && (
+          <div className="flex gap-2 mb-4">
             <Button
               variant="secondary"
               onClick={clearFilters}
@@ -124,27 +141,6 @@ export default function ProviderList({ providers, onEdit, onDelete, onCreate, lo
           </div>
         )}
       </AdminListLayout.Filters>
-      {hasActiveFilters && (
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-          <div className="flex items-center gap-2 text-sm text-blue-800">
-            <Filter className="w-4 h-4" />
-            <span className="font-medium">Filtros ativos:</span>
-            {filterEmpresa && (
-              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
-                Empresa: {providers.find(p => p.tenant_id === filterEmpresa)?.tenantName || filterEmpresa}
-              </span>
-            )}
-            {filterSearch && (
-              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
-                Busca: &quot;{filterSearch}&quot;
-              </span>
-            )}
-            <span className="text-blue-600">
-              ({filteredProviders.length} de {providers.length} provedores)
-            </span>
-          </div>
-        </div>
-      )}
       <AdminListLayout.List>
         {/* Lista ou grid de provedores */}
         {filteredProviders.length === 0 ? (
