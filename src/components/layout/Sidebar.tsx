@@ -98,7 +98,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   useEffect(() => {
     // Expande o item de menu pai se a rota atual for uma de suas filhas
     const activeParent = navItems.find(item =>
-      item.children?.some(child => pathname === child.href)
+      item.children?.some(subItem => pathname === subItem.href)
     );
     if (activeParent) {
       setExpandedItems(prev => new Set(prev).add(activeParent.href));
@@ -218,11 +218,11 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
               <ul className="space-y-1">
                 {commonNavItems.map((item) => {
                   const hasChildren = item.children && item.children.length > 0;
-                  const isChildActive = hasChildren && item.children!.some(child => pathname === child.href);
+                  const isChildActive = hasChildren && item.children!.some(subItem => pathname === subItem.href);
                   const isItemActive = (pathname === item.href) || isChildActive;
                   const isExpanded = expandedItems.has(item.href);
                   const filteredChildren = hasChildren
-                    ? item.children!.filter(child => true)
+                    ? item.children!.filter(Boolean)
                     : [];
                   return (
                     <li key={item.href}>
@@ -254,19 +254,19 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                         {/* Submenu */}
                         {hasChildren && isExpanded && showText && (
                           <ul className="ml-7 mt-1 space-y-1">
-                            {filteredChildren.map((child: SidebarItem) => {
-                              const isChildActive = pathname === child.href;
+                            {filteredChildren.map((subItem) => {
+                              const isChildActive = pathname === subItem.href;
                               return (
-                                <li key={child.href}>
+                                <li key={subItem.href}>
                                   <Link
-                                    href={child.href}
+                                    href={subItem.href}
                                     onClick={isMobile ? () => setDrawerOpen(false) : undefined}
                                     className={`flex items-center gap-2 p-2 rounded-lg transition-colors duration-200 text-sm
                                       ${isChildActive ? 'bg-brand-green-light/20 text-brand-green-light font-medium' : 'text-gray-400 hover:bg-brand-gray-dark hover:text-white'}
                                     `}
                                   >
-                                    <child.icon className="w-4 h-4 flex-shrink-0" />
-                                    <span>{child.label}</span>
+                                    <subItem.icon className="w-4 h-4 flex-shrink-0" />
+                                    <span>{subItem.label}</span>
                                   </Link>
                                 </li>
                               );
@@ -284,11 +284,11 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
               <ul className="space-y-1">
                 {superAdminNavItems.map((item) => {
                   const hasChildren = item.children && item.children.length > 0;
-                  const isChildActive = hasChildren && item.children!.some(child => pathname === child.href);
+                  const isChildActive = hasChildren && item.children!.some(subItem => pathname === subItem.href);
                   const isItemActive = (pathname === item.href) || isChildActive;
                   const isExpanded = expandedItems.has(item.href);
                   const filteredChildren = hasChildren
-                    ? item.children!.filter(child => true)
+                    ? item.children!.filter(Boolean)
                     : [];
                   return (
                     <li key={item.href}>
@@ -320,19 +320,19 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                         {/* Submenu */}
                         {hasChildren && isExpanded && showText && (
                           <ul className="ml-7 mt-1 space-y-1">
-                            {filteredChildren.map((child: SidebarItem) => {
-                              const isChildActive = pathname === child.href;
+                            {filteredChildren.map((subItem) => {
+                              const isChildActive = pathname === subItem.href;
                               return (
-                                <li key={child.href}>
+                                <li key={subItem.href}>
                                   <Link
-                                    href={child.href}
+                                    href={subItem.href}
                                     onClick={isMobile ? () => setDrawerOpen(false) : undefined}
                                     className={`flex items-center gap-2 p-2 rounded-lg transition-colors duration-200 text-sm
                                       ${isChildActive ? 'bg-brand-green-light/20 text-brand-green-light font-medium' : 'text-gray-400 hover:bg-brand-gray-dark hover:text-white'}
                                     `}
                                   >
-                                    <child.icon className="w-4 h-4 flex-shrink-0" />
-                                    <span>{child.label}</span>
+                                    <subItem.icon className="w-4 h-4 flex-shrink-0" />
+                                    <span>{subItem.label}</span>
                                   </Link>
                                 </li>
                               );
@@ -349,11 +349,11 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
             <ul className="space-y-1">
               {filteredNavItems.map((item) => {
                 const hasChildren = item.children && item.children.length > 0;
-                const isChildActive = hasChildren && item.children!.some(child => pathname === child.href);
+                const isChildActive = hasChildren && item.children!.some(subItem => pathname === subItem.href);
                 const isItemActive = (pathname === item.href) || isChildActive;
                 const isExpanded = expandedItems.has(item.href);
                 const filteredChildren = hasChildren
-                  ? item.children!.filter(child => true)
+                  ? item.children!.filter(Boolean)
                   : [];
                 return (
                   <li key={item.href}>
@@ -385,19 +385,19 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                       {/* Submenu */}
                       {hasChildren && isExpanded && showText && (
                         <ul className="ml-7 mt-1 space-y-1">
-                          {filteredChildren.map((child: SidebarItem) => {
-                            const isChildActive = pathname === child.href;
+                          {filteredChildren.map((subItem) => {
+                            const isChildActive = pathname === subItem.href;
                             return (
-                              <li key={child.href}>
+                              <li key={subItem.href}>
                                 <Link
-                                  href={child.href}
+                                  href={subItem.href}
                                   onClick={isMobile ? () => setDrawerOpen(false) : undefined}
                                   className={`flex items-center gap-2 p-2 rounded-lg transition-colors duration-200 text-sm
                                     ${isChildActive ? 'bg-brand-green-light/20 text-brand-green-light font-medium' : 'text-gray-400 hover:bg-brand-gray-dark hover:text-white'}
                                   `}
                                 >
-                                  <child.icon className="w-4 h-4 flex-shrink-0" />
-                                  <span>{child.label}</span>
+                                  <subItem.icon className="w-4 h-4 flex-shrink-0" />
+                                  <span>{subItem.label}</span>
                                 </Link>
                               </li>
                             );

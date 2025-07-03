@@ -225,7 +225,7 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
                 <span className="px-2 py-1 bg-blue-100 rounded text-xs">Empresa: {empresasMap[filterEmpresa]}</span>
               )}
               {filterSearch && (
-                <span className="px-2 py-1 bg-blue-100 rounded text-xs">Busca: "{filterSearch}"</span>
+                <span className="px-2 py-1 bg-blue-100 rounded text-xs">Busca: &quot;{filterSearch}&quot;</span>
               )}
               <span className="text-blue-600">({filteredInstances.length} de {instances.length} instâncias)</span>
             </div>

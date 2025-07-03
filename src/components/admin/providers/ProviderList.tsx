@@ -118,9 +118,7 @@ export default function ProviderList({ providers, onEdit, onDelete, onCreate, lo
                 </span>
               )}
               {filterSearch && (
-                <span className="px-2 py-1 bg-blue-100 rounded text-xs">
-                  Busca: "{filterSearch}"
-                </span>
+                <span className="px-2 py-1 bg-blue-100 rounded text-xs">Busca: &quot;{filterSearch}&quot;</span>
               )}
               <span className="text-blue-600">
                 ({filteredProviders.length} de {providers.length} provedores)
