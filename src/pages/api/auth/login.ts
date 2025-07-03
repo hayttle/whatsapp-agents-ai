@@ -45,7 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (userDb.status !== 'active') {
-    return res.status(403).json({ error: 'Seu usuário está inativo. Entre em contato com o administrador.' });
+    return res.status(403).json({ error: 'Seu usuário está inativo. Entre em contato com o suporte.' });
   }
 
   // Força o set de cookies de sessão
