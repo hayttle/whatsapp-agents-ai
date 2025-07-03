@@ -124,29 +124,28 @@ export default function ProviderList({ providers, onEdit, onDelete, onCreate, lo
           </div>
         )}
       </AdminListLayout.Filters>
-      <AdminListLayout.List>
-        {/* Resumo dos filtros */}
-        {hasActiveFilters && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <div className="flex items-center gap-2 text-sm text-blue-800">
-              <Filter className="w-4 h-4" />
-              <span className="font-medium">Filtros ativos:</span>
-              {filterEmpresa && (
-                <span className="px-2 py-1 bg-blue-100 rounded text-xs">
-                  Empresa: {providers.find(p => p.tenant_id === filterEmpresa)?.tenantName || filterEmpresa}
-                </span>
-              )}
-              {filterSearch && (
-                <span className="px-2 py-1 bg-blue-100 rounded text-xs">
-                  Busca: &quot;{filterSearch}&quot;
-                </span>
-              )}
-              <span className="text-blue-600">
-                ({filteredProviders.length} de {providers.length} provedores)
+      {hasActiveFilters && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <div className="flex items-center gap-2 text-sm text-blue-800">
+            <Filter className="w-4 h-4" />
+            <span className="font-medium">Filtros ativos:</span>
+            {filterEmpresa && (
+              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                Empresa: {providers.find(p => p.tenant_id === filterEmpresa)?.tenantName || filterEmpresa}
               </span>
-            </div>
+            )}
+            {filterSearch && (
+              <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                Busca: &quot;{filterSearch}&quot;
+              </span>
+            )}
+            <span className="text-blue-600">
+              ({filteredProviders.length} de {providers.length} provedores)
+            </span>
           </div>
-        )}
+        </div>
+      )}
+      <AdminListLayout.List>
         {/* Lista ou grid de provedores */}
         {filteredProviders.length === 0 ? (
           <div className="text-center py-8 text-gray-500">

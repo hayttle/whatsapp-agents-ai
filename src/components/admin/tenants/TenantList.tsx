@@ -187,6 +187,32 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
             </div>
           )}
         </AdminListLayout.Filters>
+        {hasActiveFilters && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div className="flex items-center gap-2 text-sm text-blue-800">
+              <Filter className="w-4 h-4" />
+              <span className="font-medium">Filtros ativos:</span>
+              {filterStatus && (
+                <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                  Status: {filterStatus === 'active' ? 'Ativa' : 'Inativa'}
+                </span>
+              )}
+              {filterType && (
+                <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                  Tipo: {COMPANY_TYPE_LABELS[filterType as keyof typeof COMPANY_TYPE_LABELS]}
+                </span>
+              )}
+              {filterSearch && (
+                <span className="px-2 py-1 bg-blue-100 rounded text-xs">
+                  Busca: {filterSearch}
+                </span>
+              )}
+              <span className="text-blue-600">
+                ({filteredTenants.length} de {tenants.length} empresas)
+              </span>
+            </div>
+          </div>
+        )}
         <AdminListLayout.List>
           {loading ? (
             <div className="flex justify-center items-center py-8">
@@ -196,33 +222,6 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
             <div className="text-red-500 text-center py-4">{error}</div>
           ) : (
             <>
-              {/* Resumo dos filtros */}
-              {hasActiveFilters && (
-                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                  <div className="flex items-center gap-2 text-sm text-blue-800">
-                    <Filter className="w-4 h-4" />
-                    <span className="font-medium">Filtros ativos:</span>
-                    {filterStatus && (
-                      <span className="px-2 py-1 bg-blue-100 rounded text-xs">
-                        Status: {filterStatus === 'active' ? 'Ativa' : 'Inativa'}
-                      </span>
-                    )}
-                    {filterType && (
-                      <span className="px-2 py-1 bg-blue-100 rounded text-xs">
-                        Tipo: {COMPANY_TYPE_LABELS[filterType as keyof typeof COMPANY_TYPE_LABELS]}
-                      </span>
-                    )}
-                    {filterSearch && (
-                      <span className="px-2 py-1 bg-blue-100 rounded text-xs">
-                        Busca: {filterSearch}
-                      </span>
-                    )}
-                    <span className="text-blue-600">
-                      ({filteredTenants.length} de {tenants.length} empresas)
-                    </span>
-                  </div>
-                </div>
-              )}
               <table className="min-w-full text-sm border">
                 <thead>
                   <tr className="bg-gray-100">

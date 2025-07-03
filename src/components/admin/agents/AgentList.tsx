@@ -184,9 +184,8 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
             />
           </div>
         </div>
-        {/* Resumo dos filtros */}
         {hasActiveFilters && (
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
             <div className="flex items-center gap-2 text-sm text-blue-800">
               <Filter className="w-4 h-4" />
               <span className="font-medium">Filtros ativos:</span>
