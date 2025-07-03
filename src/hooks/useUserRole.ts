@@ -14,7 +14,6 @@ interface UserData {
 interface UseUserRoleReturn {
   userRole: string | null;
   isSuperAdmin: boolean;
-  isAdmin: boolean;
   isLoading: boolean;
   error: string | null;
   userData: UserData | null;
@@ -61,12 +60,10 @@ export function useUserRole(): UseUserRoleReturn {
   }, []);
 
   const isSuperAdmin = userRole === 'super_admin';
-  const isAdmin = userRole === 'super_admin';
 
   return {
     userRole,
     isSuperAdmin,
-    isAdmin,
     isLoading,
     error,
     userData,

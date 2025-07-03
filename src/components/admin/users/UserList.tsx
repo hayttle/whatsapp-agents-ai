@@ -47,7 +47,6 @@ const modalReducer = (state: ModalState, action: ModalAction): ModalState => {
 
 const roleDisplay: { [key: string]: string } = {
   super_admin: 'Super Admin',
-  admin: 'Admin',
   user: 'Usuário',
 };
 
@@ -221,7 +220,6 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
               >
                 <option value="">Todos os papéis</option>
                 <option value="super_admin">Super Admin</option>
-                <option value="admin">Admin</option>
                 <option value="user">Usuário</option>
               </select>
             </div>
