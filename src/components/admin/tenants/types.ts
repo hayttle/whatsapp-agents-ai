@@ -1,10 +1,12 @@
+import { CompanyType } from './constants';
+
 export interface Tenant {
   id: string;
   name: string;
   email: string;
   cpf_cnpj?: string;
   phone?: string;
-  type: string;
+  type: CompanyType;
 }
 
 export interface TenantModalProps {

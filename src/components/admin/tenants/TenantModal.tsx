@@ -4,6 +4,7 @@ import { Modal, ModalBody, ModalFooter, ModalHeader } from '@/components/ui';
 import { Button, Alert, Input } from '@/components/brand';
 import { Building2, Mail, Phone, FileText, Save } from "lucide-react";
 import { TenantModalProps } from './types';
+import { COMPANY_TYPES, COMPANY_TYPE_OPTIONS } from './constants';
 
 const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tenant }) => {
   console.log('TenantModal renderizado com isOpen:', isOpen);
@@ -12,7 +13,7 @@ const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tena
   const [email, setEmail] = useState("");
   const [cpfCnpj, setCpfCnpj] = useState("");
   const [phone, setPhone] = useState("");
-  const [type, setType] = useState("FISICA");
+  const [type, setType] = useState<string>(COMPANY_TYPES.FISICA);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
@@ -23,13 +24,13 @@ const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tena
       setEmail(tenant.email || "");
       setCpfCnpj(tenant.cpf_cnpj || "");
       setPhone(tenant.phone || "");
-      setType(tenant.type || "FISICA");
+      setType(tenant.type || COMPANY_TYPES.FISICA);
     } else {
       setName("");
       setEmail("");
       setCpfCnpj("");
       setPhone("");
-      setType("JURIDICA");
+      setType(COMPANY_TYPES.JURIDICA);
     }
     setMsg("");
     setError("");
@@ -115,8 +116,11 @@ const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tena
               onChange={e => setType(e.target.value)}
               required
             >
-              <option value="FISICA">Física</option>
-              <option value="JURIDICA">Jurídica</option>
+              {COMPANY_TYPE_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
 

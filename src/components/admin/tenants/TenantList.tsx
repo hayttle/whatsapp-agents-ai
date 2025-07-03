@@ -9,6 +9,7 @@ import { tenantService, Tenant } from "@/services/tenantService";
 import { Building2, Plus, Edit, Trash2, Filter, X } from "lucide-react";
 import { Button } from "@/components/brand";
 import { AdminListLayout } from '@/components/layout/AdminListLayout';
+import { COMPANY_TYPE_LABELS, COMPANY_TYPE_OPTIONS } from './constants';
 
 interface TenantListProps {
   isSuperAdmin: boolean;
@@ -153,8 +154,11 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green-light focus:border-transparent"
               >
                 <option value="">Todos os tipos</option>
-                <option value="company">Empresa</option>
-                <option value="person">Pessoa</option>
+                {COMPANY_TYPE_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -205,7 +209,7 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
                     )}
                     {filterType && (
                       <span className="px-2 py-1 bg-blue-100 rounded text-xs">
-                        Tipo: {filterType === 'company' ? 'Empresa' : 'Pessoa'}
+                        Tipo: {COMPANY_TYPE_LABELS[filterType as keyof typeof COMPANY_TYPE_LABELS]}
                       </span>
                     )}
                     {filterSearch && (
@@ -245,7 +249,7 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
                           <td className="px-4 py-3 border">{tenant.email || '-'}</td>
                           <td className="px-4 py-3 border">{tenant.cpf_cnpj || '-'}</td>
                           <td className="px-4 py-3 border">{tenant.phone || '-'}</td>
-                          <td className="px-4 py-3 border">{tenant.type === 'company' ? 'Empresa' : 'Pessoa'}</td>
+                          <td className="px-4 py-3 border">{COMPANY_TYPE_LABELS[tenant.type as keyof typeof COMPANY_TYPE_LABELS] || tenant.type}</td>
                           <td className="px-4 py-3 border">
                             <div className="flex gap-2 items-center">
                               <ActionButton

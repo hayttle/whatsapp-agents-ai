@@ -1,6 +1,8 @@
+export type CompanyType = 'FISICA' | 'JURIDICA';
+
 export interface Tenant {
   id: string;
-  type: string;
+  type: CompanyType;
   name: string;
   cpf_cnpj?: string;
   phone?: string;
@@ -36,7 +38,7 @@ export interface CreateTenantData {
   email: string;
   cpf_cnpj: string;
   phone: string;
-  type?: string;
+  type?: CompanyType;
   address_street?: string;
   address_number?: string;
   address_complement?: string;
@@ -52,7 +54,7 @@ export interface UpdateTenantData {
   email: string;
   cpf_cnpj: string;
   phone: string;
-  type?: string;
+  type?: CompanyType;
   status?: string;
   address_street?: string;
   address_number?: string;
