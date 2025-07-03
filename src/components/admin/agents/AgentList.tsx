@@ -206,14 +206,14 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
             </div>
           </div>
         )}
-        {/* Limpar filtros */}
         {hasActiveFilters && (
-          <div className="mt-2 flex justify-end">
+          <div className="mt-4 flex gap-2">
             <Button
               variant="secondary"
               onClick={clearFilters}
-              leftIcon={<X className="w-4 h-4" />}
+              className="flex items-center gap-2"
             >
+              <X className="w-4 h-4" />
               Limpar
             </Button>
           </div>

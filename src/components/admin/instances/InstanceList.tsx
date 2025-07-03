@@ -232,14 +232,15 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
           </div>
         )}
         {hasActiveFilters && (
-          <div className="mt-2 flex justify-end">
-            <button
-              className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-2"
+          <div className="mt-4 flex gap-2">
+            <Button
+              variant="secondary"
               onClick={clearFilters}
+              className="flex items-center gap-2"
             >
               <X className="w-4 h-4" />
               Limpar
-            </button>
+            </Button>
           </div>
         )}
       </AdminListLayout.Filters>

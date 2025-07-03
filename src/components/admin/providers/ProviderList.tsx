@@ -116,8 +116,9 @@ export default function ProviderList({ providers, onEdit, onDelete, onCreate, lo
             <Button
               variant="secondary"
               onClick={clearFilters}
-              leftIcon={<X className="w-4 h-4" />}
+              className="flex items-center gap-2"
             >
+              <X className="w-4 h-4" />
               Limpar
             </Button>
           </div>
