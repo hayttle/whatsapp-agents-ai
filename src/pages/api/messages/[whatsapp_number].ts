@@ -21,7 +21,8 @@ export default withAuth(async (req, res, auth) => {
     );
     const messages = await getMessagesByContact(agent_id, whatsapp_number, auth.user.tenant_id!, supabase);
     return res.status(200).json({ messages });
-  } catch (error: any) {
-    return res.status(500).json({ error: error.message || 'Erro ao buscar mensagens' });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Erro ao buscar mensagens';
+    return res.status(500).json({ error: errorMessage });
   }
 }); 

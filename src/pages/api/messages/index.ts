@@ -20,8 +20,9 @@ export default withAuth(async (req, res, auth) => {
     );
     const contacts = await getContactsWithLastMessage(agent_id, auth.user.tenant_id!, supabase);
     return res.status(200).json({ contacts });
-  } catch (error: any) {
-    return res.status(500).json({ error: error.message || 'Erro ao buscar contatos' });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Erro ao buscar contatos';
+    return res.status(500).json({ error: errorMessage });
   }
 });
 
@@ -30,7 +31,7 @@ export async function handler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { agent_id, whatsapp_number, from, to, limit = 20, offset = 0, text } = req.query;
+  const { agent_id } = req.query;
 
   if (!agent_id || typeof agent_id !== 'string') {
     return res.status(400).json({ error: 'agent_id é obrigatório' });

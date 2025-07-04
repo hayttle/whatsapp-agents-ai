@@ -5,14 +5,21 @@ import { useAgentMessages } from '@/hooks/useAgentMessages';
 import { User, RefreshCw } from 'lucide-react';
 import { useInstances } from '@/hooks/useInstances';
 
+interface Contact {
+  whatsapp_number: string;
+  last_message?: string;
+  last_message_at?: string;
+  instance_id?: string;
+}
+
 function AgentContactsSidebar({ contacts, selectedId, onSelect, loading, onRefresh, refreshing, getAvatarUrl }: {
-  contacts: any[];
+  contacts: Contact[];
   selectedId: string;
   onSelect: (id: string) => void;
   loading: boolean;
   onRefresh: () => void;
   refreshing: boolean;
-  getAvatarUrl: (contact: any) => string;
+  getAvatarUrl: (contact: Contact) => string;
 }) {
   return (
     <aside className="w-96 border-r bg-white h-[70vh] flex flex-col">
@@ -23,7 +30,7 @@ function AgentContactsSidebar({ contacts, selectedId, onSelect, loading, onRefre
           className="w-full px-3 py-2 rounded bg-gray-50 border text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
         />
         <button
-          className={`ml-2 p-2 rounded hover:bg-gray-100 transition ${refreshing ? 'animate-spin' : ''}`}
+          className={`ml-2 p-2 rounded-full hover:bg-gray-100 transition ${refreshing ? 'animate-spin' : ''}`}
           title="Atualizar conversas"
           onClick={onRefresh}
           disabled={refreshing}
@@ -65,10 +72,10 @@ function AgentContactsSidebar({ contacts, selectedId, onSelect, loading, onRefre
 }
 
 export const AgentMessagesLog: React.FC<{ agentId: string }> = ({ agentId }) => {
-  const { contacts, loading: loadingContacts, error: errorContacts, refetch: refetchContacts } = useAgentContacts(agentId);
+  const { contacts, loading: loadingContacts, refetch: refetchContacts } = useAgentContacts(agentId);
   const [selectedNumber, setSelectedNumber] = useState<string>('');
   const selected = selectedNumber || (contacts[0]?.whatsapp_number ?? '');
-  const { messages, loading: loadingMessages, error: errorMessages, refetch: refetchMessages } = useAgentMessages(agentId, selected);
+  const { messages, loading: loadingMessages, refetch: refetchMessages } = useAgentMessages(agentId, selected);
   const [refreshing, setRefreshing] = useState(false);
 
   // Avatar cache: { [key: string]: string }
@@ -82,7 +89,7 @@ export const AgentMessagesLog: React.FC<{ agentId: string }> = ({ agentId }) => 
 
   // Mapeamento de instance_id para instanceName
   const instanceMap = useMemo(() => {
-    return instancias.reduce((acc: Record<string, string>, inst: any) => {
+    return instancias.reduce((acc: Record<string, string>, inst: { id: string; instanceName: string }) => {
       acc[inst.id] = inst.instanceName;
       return acc;
     }, {});
@@ -110,7 +117,7 @@ export const AgentMessagesLog: React.FC<{ agentId: string }> = ({ agentId }) => 
       if (data.avatar) {
         setAvatarCache(prev => ({ ...prev, [key]: data.avatar }));
       }
-    } catch (error) {
+    } catch {
       // Silenciosamente ignora erros de avatar
     } finally {
       loadingAvatars.current[key] = false;
@@ -128,7 +135,7 @@ export const AgentMessagesLog: React.FC<{ agentId: string }> = ({ agentId }) => 
   }, [contacts, instanceMap]);
 
   // Função utilitária para obter avatar do cache
-  const getAvatarUrl = (contact: any) => {
+  const getAvatarUrl = (contact: Contact) => {
     if (!contact.whatsapp_number || !contact.instance_id) return '';
     const instanceName = instanceMap[contact.instance_id];
     if (!instanceName) return '';
@@ -166,13 +173,11 @@ export const AgentMessagesLog: React.FC<{ agentId: string }> = ({ agentId }) => 
       <div className="flex-1">
         {loadingMessages ? (
           <div className="flex items-center justify-center h-full text-gray-400">Carregando mensagens...</div>
-        ) : errorMessages ? (
-          <div className="flex items-center justify-center h-full text-red-500">{errorMessages}</div>
         ) : (
           <AgentChatView
             contact={{
               name: selected,
-              avatar: getAvatarUrl(contacts.find(c => c.whatsapp_number === selected) || {})
+              avatar: getAvatarUrl(contacts.find(c => c.whatsapp_number === selected) || { whatsapp_number: '', last_message: '', last_message_at: '', instance_id: '' })
             }}
             messages={messages}
           />

@@ -1,7 +1,7 @@
 export interface Agent {
   id: string;
   title: string;
-  prompt: string;
+  prompt?: string;
   fallback_message?: string;
   active: boolean;
   instance_id?: string | null;

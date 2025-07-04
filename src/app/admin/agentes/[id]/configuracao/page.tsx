@@ -202,7 +202,7 @@ export default function AgentConfigPage() {
     try {
       await saveAgent({ active: !agent.active });
       toast.success(`Agente ${!agent.active ? 'ativado' : 'desativado'} com sucesso!`);
-    } catch (e) {
+    } catch {
       toast.error('Erro ao atualizar status do agente');
     }
   };

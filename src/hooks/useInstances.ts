@@ -39,7 +39,7 @@ export const useInstances = ({ isSuperAdmin, tenantId, refreshKey }: UseInstance
           if (res.ok && statusData.status && statusData.status !== inst.status) {
             inst.status = statusData.status;
           }
-        } catch (error) {
+        } catch {
           // Silenciosamente ignora erros de status
         }
       }));

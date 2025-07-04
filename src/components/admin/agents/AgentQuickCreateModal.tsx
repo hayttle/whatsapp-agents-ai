@@ -22,8 +22,8 @@ export default function AgentQuickCreateModal({ open, onClose, onCreated, tenant
   const [loading, setLoading] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState('');
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreate = async (_e: React.FormEvent) => {
+    _e.preventDefault();
     if (!title.trim()) return;
     if (agentType === 'external' && !webhookUrl.trim()) return;
     setLoading(true);
@@ -63,7 +63,7 @@ export default function AgentQuickCreateModal({ open, onClose, onCreated, tenant
             disabled={tenantsLoading}
           >
             <option value="">Selecione a empresa</option>
-            {tenants.map((tenant: any) => (
+            {tenants.map((tenant: { id: string; name?: string }) => (
               <option key={tenant.id} value={tenant.id}>{tenant.name || tenant.id}</option>
             ))}
           </Select>

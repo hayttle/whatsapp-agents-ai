@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import Image from 'next/image';
 import Link from 'next/link';
 import { AdminListLayout } from '@/components/layout/AdminListLayout';
-import { FiBookOpen, FiSettings } from 'react-icons/fi';
+import { FiSettings } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import AgentQuickCreateModal from './AgentQuickCreateModal';
 
@@ -251,7 +251,7 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
             </div>
           </Alert>
         ) : filteredAgents.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 p-4">
             {filteredAgents.map((agente: Agent) => {
               const isLoading = actionLoading?.startsWith(`toggle-${agente.id}`) || actionLoading?.startsWith(`delete-${agente.id}`);
               const instanceObj = agente.instance_id && instanciasMap[agente.instance_id]

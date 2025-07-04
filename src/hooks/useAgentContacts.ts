@@ -1,7 +1,14 @@
 import { useEffect, useState, useCallback } from 'react';
 
+interface Contact {
+  whatsapp_number: string;
+  last_message?: string;
+  last_message_at?: string;
+  instance_id?: string;
+}
+
 export function useAgentContacts(agentId: string) {
-  const [contacts, setContacts] = useState<any[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

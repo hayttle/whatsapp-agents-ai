@@ -1,5 +1,6 @@
-import { createClient } from '@/lib/supabase/server';
 
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getContactsWithLastMessage(agentId: string, tenantId: string, supabase: any) {
   // Primeiro, buscar o agente para obter o instance_id
   const { data: agent, error: agentError } = await supabase
@@ -20,7 +21,7 @@ export async function getContactsWithLastMessage(agentId: string, tenantId: stri
     .neq('whatsapp_number', '')
     .order('created_at', { ascending: false });
   if (errorNumbers) throw errorNumbers;
-  const uniqueNumbers = Array.from(new Set((numbers || []).map((m: any) => m.whatsapp_number)));
+  const uniqueNumbers = Array.from(new Set((numbers || []).map((m: { whatsapp_number: string }) => m.whatsapp_number)));
   // 2. Para cada número, buscar a última mensagem
   const contacts = [];
   for (const number of uniqueNumbers) {
@@ -45,6 +46,7 @@ export async function getContactsWithLastMessage(agentId: string, tenantId: stri
   return contacts;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getMessagesByContact(agentId: string, whatsappNumber: string, tenantId: string, supabase: any) {
   // Busca todas as mensagens entre o agente e o contato
   const { data, error } = await supabase

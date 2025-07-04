@@ -250,7 +250,7 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-green-light"></div>
           </div>
         ) : filteredInstances.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 p-4">
             {filteredInstances.map((instance: Instance) => {
               const isLoading = actionLoading === instance.instanceName;
               const empresaName = isSuperAdmin && instance.tenant_id ? empresasMap[instance.tenant_id] : undefined;
