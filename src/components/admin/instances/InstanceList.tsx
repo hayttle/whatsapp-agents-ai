@@ -9,7 +9,7 @@ import { useInstanceActions } from "@/hooks/useInstanceActions";
 import { useInstances } from "@/hooks/useInstances";
 import { useTenants } from "@/hooks/useTenants";
 import { instanceService } from "@/services/instanceService";
-import { Plus, Filter, X } from "lucide-react";
+import { Plus, Filter, X, Trash2 } from "lucide-react";
 import { Button } from "@/components/brand";
 import { useAgents } from '@/hooks/useAgents';
 import { InstanceCard } from "./InstanceCard";
@@ -329,12 +329,13 @@ export function InstanceList({ isSuperAdmin, tenantId }: InstanceListProps) {
             isOpen={modalState.type === 'DELETE'}
             onClose={closeModal}
             onConfirm={() => handleDelete(modalState.payload.instanceName)}
-            title="Deletar Instância"
-            confirmText="Deletar"
+            title="Remover instância?"
+            confirmText="Remover"
             cancelText="Cancelar"
+            confirmVariant="destructive"
             isLoading={actionLoading === modalState.payload.instanceName}
           >
-            <p>Tem certeza que deseja deletar a instância <span className="font-semibold">{modalState.payload.instanceName}</span>? Esta ação não pode ser desfeita.</p>
+            <p>Tem certeza que deseja remover a instância <span className="font-semibold">{modalState.payload.instanceName}</span>?<br />Esta ação não pode ser desfeita.</p>
           </ConfirmationModal>
         )}
       </AdminListLayout.List>

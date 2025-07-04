@@ -144,7 +144,6 @@ export function InstanceCard({
           size="sm"
           className="min-w-0 w-9 h-9 p-0 flex items-center justify-center"
           onClick={() => onRequestDelete(instance)}
-          loading={isLoading}
           leftIcon={<Trash2 className="w-4 h-4" />}
           aria-label="Remover"
           title="Remover"
