@@ -62,8 +62,7 @@ export const useAgents = ({ isSuperAdmin, tenantId }: UseAgentsProps) => {
       await agentService.deleteAgent(id);
       await fetchAgentes();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao remover agente';
-      throw new Error(errorMessage);
+      throw err;
     }
   }, [fetchAgentes]);
 

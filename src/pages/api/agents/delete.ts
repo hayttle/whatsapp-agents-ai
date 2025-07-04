@@ -41,6 +41,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
 
     if (error) {
       console.error('[Agents Delete] Erro ao deletar agente:', error);
+      
+      // Verificar se é um erro de foreign key constraint (mensagens vinculadas)
+      if (error.code === '23503' || 
+          error.message?.includes('violates foreign key constraint') ||
+          error.message?.includes('is still referenced from table')) {
+        return res.status(409).json({ 
+          error: 'Cannot delete agent - there are messages linked to this agent. Please delete the messages first.',
+          code: 'FOREIGN_KEY_CONSTRAINT'
+        });
+      }
+      
       return res.status(500).json({ error: 'Internal server error' });
     }
 

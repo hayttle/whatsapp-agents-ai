@@ -12,7 +12,7 @@ interface Contact {
   instance_id?: string;
 }
 
-function AgentContactsSidebar({ contacts, selectedId, onSelect, loading, onRefresh, refreshing, getAvatarUrl }: {
+function AgentContactsSidebar({ contacts, selectedId, onSelect, loading, onRefresh, refreshing, getAvatarUrl, searchTerm, onSearchChange }: {
   contacts: Contact[];
   selectedId: string;
   onSelect: (id: string) => void;
@@ -20,23 +20,33 @@ function AgentContactsSidebar({ contacts, selectedId, onSelect, loading, onRefre
   onRefresh: () => void;
   refreshing: boolean;
   getAvatarUrl: (contact: Contact) => string;
+  searchTerm: string;
+  onSearchChange: (term: string) => void;
 }) {
+
   return (
     <aside className="w-96 border-r bg-white h-[70vh] flex flex-col">
-      <div className="p-4 border-b flex items-center justify-between">
+      {/* Header com título e botão de atualizar */}
+      <div className="p-4 border-b">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-semibold text-gray-900">Conversas</h3>
+          <button
+            className={`p-2 rounded-full hover:bg-gray-100 transition ${refreshing ? 'animate-spin' : ''}`}
+            title="Atualizar conversas"
+            onClick={onRefresh}
+            disabled={refreshing}
+          >
+            <RefreshCw className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+        {/* Input de filtro */}
         <input
           type="text"
           placeholder="Buscar contato..."
+          value={searchTerm}
+          onChange={(e) => onSearchChange(e.target.value)}
           className="w-full px-3 py-2 rounded bg-gray-50 border text-sm focus:outline-none focus:ring-2 focus:ring-brand-green"
         />
-        <button
-          className={`ml-2 p-2 rounded-full hover:bg-gray-100 transition ${refreshing ? 'animate-spin' : ''}`}
-          title="Atualizar conversas"
-          onClick={onRefresh}
-          disabled={refreshing}
-        >
-          <RefreshCw className="w-5 h-5 text-gray-500" />
-        </button>
       </div>
       <div className="flex-1 overflow-y-auto">
         {loading ? (
@@ -77,6 +87,15 @@ export const AgentMessagesLog: React.FC<{ agentId: string }> = ({ agentId }) => 
   const selected = selectedNumber || (contacts[0]?.whatsapp_number ?? '');
   const { messages, loading: loadingMessages, refetch: refetchMessages } = useAgentMessages(agentId, selected);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+
+  // Filtrar contatos baseado no termo de busca
+  const filteredContacts = useMemo(() => {
+    return contacts.filter(contact =>
+      contact.whatsapp_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (contact.last_message && contact.last_message.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  }, [contacts, searchTerm]);
 
   // Avatar cache: { [key: string]: string }
   const [avatarCache, setAvatarCache] = useState<{ [key: string]: string }>({});
@@ -159,17 +178,35 @@ export const AgentMessagesLog: React.FC<{ agentId: string }> = ({ agentId }) => 
     }, 2000);
   };
 
+  // Limpar busca quando não há resultados
+  useEffect(() => {
+    if (searchTerm && filteredContacts.length === 0 && contacts.length > 0) {
+      // Opcional: limpar busca automaticamente após 3 segundos se não houver resultados
+      const timer = setTimeout(() => {
+        setSearchTerm('');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchTerm, filteredContacts.length, contacts.length]);
+
   return (
-    <div className="flex bg-gray-50 rounded-lg border shadow-sm overflow-hidden">
+    <div className="flex bg-gray-50 rounded-lg border shadow-sm overflow-hidden relative">
       <AgentContactsSidebar
-        contacts={contacts}
+        contacts={filteredContacts}
         selectedId={selected}
         onSelect={setSelectedNumber}
         loading={loadingContacts}
         onRefresh={handleRefresh}
         refreshing={refreshing}
         getAvatarUrl={getAvatarUrl}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
       />
+      {searchTerm && filteredContacts.length === 0 && contacts.length > 0 && (
+        <div className="absolute top-20 left-4 bg-yellow-50 border border-yellow-200 rounded-md p-3 text-sm text-yellow-800 z-10">
+          Nenhum contato encontrado para "{searchTerm}".
+        </div>
+      )}
       <div className="flex-1">
         {loadingMessages ? (
           <div className="flex items-center justify-center h-full text-gray-400">Carregando mensagens...</div>

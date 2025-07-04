@@ -102,50 +102,54 @@ export function InstanceCard({
 
       <CardFooter className="flex flex-wrap items-center justify-end gap-2 pt-2 pb-2 px-0 bg-transparent">
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
-          className="flex items-center gap-2"
+          className="min-w-0 w-9 h-9 p-0 flex items-center justify-center"
           onClick={() => onViewDetails(instance)}
           leftIcon={<Eye className="w-4 h-4" />}
           aria-label="Ver Detalhes"
+          title="Ver Detalhes"
         >
-          Detalhes
+          {''}
         </Button>
         {isConnected ? (
           <Button
             variant="warning"
             size="sm"
-            className="flex items-center gap-2"
+            className="min-w-0 w-9 h-9 p-0 flex items-center justify-center"
             onClick={() => onDisconnect(instance.instanceName)}
             loading={isLoading}
             leftIcon={<PowerOff className="w-4 h-4" />}
             aria-label="Desconectar"
+            title="Desconectar"
           >
-            Desconectar
+            {''}
           </Button>
         ) : (
           <Button
             variant="primary"
             size="sm"
-            className="flex items-center gap-2"
+            className="min-w-0 w-9 h-9 p-0 flex items-center justify-center"
             onClick={() => onConnect(instance.instanceName)}
             loading={isLoading}
             leftIcon={<Power className="w-4 h-4" />}
             aria-label="Conectar"
+            title="Conectar"
           >
-            Conectar
+            {''}
           </Button>
         )}
         <Button
           variant="destructive"
           size="sm"
-          className="flex items-center gap-2"
+          className="min-w-0 w-9 h-9 p-0 flex items-center justify-center"
           onClick={() => onRequestDelete(instance)}
           loading={isLoading}
           leftIcon={<Trash2 className="w-4 h-4" />}
           aria-label="Remover"
+          title="Remover"
         >
-          Remover
+          {''}
         </Button>
       </CardFooter>
     </Card>

@@ -104,9 +104,28 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
   const handleDelete = () => handleAction(
     async () => {
       if (!deleteAgent) return;
-      await deleteAgentFromHook(deleteAgent.id);
-      toast.success('Agente removido com sucesso!');
-      setDeleteAgent(null);
+      try {
+        await deleteAgentFromHook(deleteAgent.id);
+        toast.success('Agente removido com sucesso!');
+        setDeleteAgent(null);
+      } catch (err: any) {
+        // Verificar se é erro de constraint do banco (mensagens vinculadas)
+        const msg = err?.message || err?.error || '';
+        const errorCode = err?.code || err?.data?.code;
+
+        if (
+          errorCode === 'FOREIGN_KEY_CONSTRAINT' ||
+          msg.includes('violates foreign key constraint') ||
+          msg.includes('is still referenced from table') ||
+          msg.includes('23503') ||
+          err?.code === '23503' ||
+          msg.includes('Cannot delete agent - there are messages linked')
+        ) {
+          toast.error('Não é possível remover o agente pois existem mensagens vinculadas a ele. Exclua as mensagens antes de remover o agente.');
+        } else {
+          toast.error(msg || 'Erro ao remover agente.');
+        }
+      }
     },
     `delete-${deleteAgent?.id}`
   );

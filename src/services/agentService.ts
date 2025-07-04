@@ -39,7 +39,7 @@ class AgentService {
     const data = await response.json();
     
     if (!response.ok) {
-      throw new Error(data.error || `Erro na requisição: ${response.status}`);
+      throw { message: data.error || `Erro na requisição: ${response.status}`, code: data.code, error: data.error };
     }
 
     return data;
