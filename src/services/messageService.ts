@@ -1,5 +1,3 @@
-
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getContactsWithLastMessage(agentId: string, tenantId: string, supabase: any) {
   // Primeiro, buscar o agente para obter o instance_id
@@ -57,4 +55,16 @@ export async function getMessagesByContact(agentId: string, whatsappNumber: stri
     .order('created_at', { ascending: true });
   if (error) throw error;
   return data;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function deleteMessagesByContact(agentId: string, whatsappNumber: string, supabase: any) {
+  // Deleta todas as mensagens entre o agente e o contato
+  const { error } = await supabase
+    .from('messages')
+    .delete()
+    .eq('agent_id', agentId)
+    .eq('whatsapp_number', whatsappNumber);
+  if (error) throw error;
+  return { success: true };
 } 

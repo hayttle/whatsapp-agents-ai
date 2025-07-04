@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { AgentChatView } from './AgentChatView';
 import { useAgentContacts } from '@/hooks/useAgentContacts';
 import { useAgentMessages } from '@/hooks/useAgentMessages';
-import { User, RefreshCw } from 'lucide-react';
+import { User, RefreshCw, MoreVertical, Trash2, XCircle } from 'lucide-react';
 import { useInstances } from '@/hooks/useInstances';
+import { toast } from 'react-hot-toast';
+import { useRef as useClickAwayRef } from 'react';
 
 interface Contact {
   whatsapp_number: string;
@@ -12,7 +14,7 @@ interface Contact {
   instance_id?: string;
 }
 
-function AgentContactsSidebar({ contacts, selectedId, onSelect, loading, onRefresh, refreshing, getAvatarUrl, searchTerm, onSearchChange }: {
+function AgentContactsSidebar({ contacts, selectedId, onSelect, loading, onRefresh, refreshing, getAvatarUrl, searchTerm, onSearchChange, agentId, refetchContacts, refetchMessages }: {
   contacts: Contact[];
   selectedId: string;
   onSelect: (id: string) => void;
@@ -22,7 +24,47 @@ function AgentContactsSidebar({ contacts, selectedId, onSelect, loading, onRefre
   getAvatarUrl: (contact: Contact) => string;
   searchTerm: string;
   onSearchChange: (term: string) => void;
+  agentId: string;
+  refetchContacts: () => void;
+  refetchMessages: () => void;
 }) {
+  const [menuOpen, setMenuOpen] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Fecha menu ao clicar fora
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(null);
+      }
+    }
+    if (menuOpen) {
+      document.addEventListener('mousedown', handleClick);
+      return () => document.removeEventListener('mousedown', handleClick);
+    }
+  }, [menuOpen]);
+
+  async function handleDeleteConversation(whatsapp_number: string) {
+    setDeleting(true);
+    try {
+      const res = await fetch('/api/messages/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agent_id: agentId, whatsapp_number })
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'Erro ao apagar conversa');
+      toast.success('Conversa apagada com sucesso!');
+      setConfirmOpen(null);
+      refetchContacts();
+      refetchMessages();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao apagar conversa');
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   return (
     <aside className="w-96 border-r bg-white h-[70vh] flex flex-col">
@@ -54,27 +96,63 @@ function AgentContactsSidebar({ contacts, selectedId, onSelect, loading, onRefre
         ) : contacts.length === 0 ? (
           <div className="p-4 text-gray-400 text-sm">Nenhum contato encontrado.</div>
         ) : contacts.map(contact => (
-          <button
-            key={contact.whatsapp_number}
-            onClick={() => onSelect(contact.whatsapp_number)}
-            className={`w-full flex items-center gap-3 px-4 py-3 border-b text-left transition-colors
-              ${selectedId === contact.whatsapp_number ? 'bg-brand-green/10' : 'hover:bg-gray-50'}`}
-          >
-            {getAvatarUrl(contact) ? (
-              <img src={getAvatarUrl(contact)} alt={contact.whatsapp_number} className="w-10 h-10 rounded-full object-cover" />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                <User className="w-6 h-6 text-gray-400" />
+          <div key={contact.whatsapp_number} className="relative group">
+            <button
+              onClick={() => onSelect(contact.whatsapp_number)}
+              className={`w-full flex items-center gap-3 px-4 py-3 border-b text-left transition-colors ${selectedId === contact.whatsapp_number ? 'bg-brand-green/10' : 'hover:bg-gray-50'}`}
+            >
+              {getAvatarUrl(contact) ? (
+                <img src={getAvatarUrl(contact)} alt={contact.whatsapp_number} className="w-10 h-10 rounded-full object-cover" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                  <User className="w-6 h-6 text-gray-400" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="font-medium truncate text-gray-900">{contact.whatsapp_number}</div>
+                <div className="text-xs text-gray-500 truncate">{contact.last_message}</div>
+              </div>
+              <div className="text-xs text-gray-400 ml-2 whitespace-nowrap">
+                {contact.last_message_at ? new Date(contact.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+              </div>
+              {/* Botão de menu */}
+              <button
+                type="button"
+                className="ml-2 p-1 rounded hover:bg-gray-200"
+                onClick={e => { e.stopPropagation(); setMenuOpen(menuOpen === contact.whatsapp_number ? null : contact.whatsapp_number); }}
+              >
+                <MoreVertical className="w-5 h-5 text-gray-500" />
+              </button>
+            </button>
+            {/* Menu de ações */}
+            {menuOpen === contact.whatsapp_number && (
+              <div ref={menuRef} className="absolute right-4 top-12 z-20 bg-white border rounded shadow-md min-w-[180px]">
+                <button
+                  className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
+                  onClick={() => { setMenuOpen(null); setConfirmOpen(contact.whatsapp_number); }}
+                >
+                  <Trash2 className="w-4 h-4" /> Apagar conversa
+                </button>
               </div>
             )}
-            <div className="flex-1 min-w-0">
-              <div className="font-medium truncate text-gray-900">{contact.whatsapp_number}</div>
-              <div className="text-xs text-gray-500 truncate">{contact.last_message}</div>
-            </div>
-            <div className="text-xs text-gray-400 ml-2 whitespace-nowrap">
-              {contact.last_message_at ? new Date(contact.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-            </div>
-          </button>
+            {/* Modal de confirmação */}
+            {confirmOpen === contact.whatsapp_number && (
+              <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/30">
+                <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full">
+                  <h2 className="text-lg font-semibold mb-2">Apagar conversa?</h2>
+                  <p className="text-sm text-gray-600 mb-4">Tem certeza que deseja apagar todas as mensagens deste contato? Esta ação não pode ser desfeita.</p>
+                  <div className="flex justify-end gap-2">
+                    <button className="px-4 py-2 rounded bg-gray-100 text-gray-700 flex items-center gap-2" onClick={() => setConfirmOpen(null)} disabled={deleting}>
+                      <XCircle className="w-4 h-4" /> Cancelar
+                    </button>
+                    <button className="px-4 py-2 rounded bg-red-600 text-white flex items-center gap-2" onClick={() => handleDeleteConversation(contact.whatsapp_number)} disabled={deleting}>
+                      <Trash2 className="w-4 h-4" /> {deleting ? 'Apagando...' : 'Apagar'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         ))}
       </div>
     </aside>
@@ -201,6 +279,9 @@ export const AgentMessagesLog: React.FC<{ agentId: string }> = ({ agentId }) => 
         getAvatarUrl={getAvatarUrl}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
+        agentId={agentId}
+        refetchContacts={refetchContacts}
+        refetchMessages={refetchMessages}
       />
       {searchTerm && filteredContacts.length === 0 && contacts.length > 0 && (
         <div className="absolute top-20 left-4 bg-yellow-50 border border-yellow-200 rounded-md p-3 text-sm text-yellow-800 z-10">
