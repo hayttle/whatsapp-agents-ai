@@ -1,6 +1,6 @@
 "use client";
 import { Instance } from "./types";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/brand';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/brand';
 import { Button } from '@/components/brand';
 import { MessageSquare, ExternalLink, Eye, Power, PowerOff, Trash2 } from "lucide-react";
 
@@ -62,36 +62,34 @@ export function InstanceCard({
             )}
           </span>
         </CardTitle>
-        <CardDescription>
-          <div className="space-y-2 mt-3">
-            {/* Status da conexão */}
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Status:</span>
-              <span className={`px-2 py-1 text-xs font-medium rounded-full ${isConnected
-                ? 'bg-green-100 text-green-800'
-                : 'bg-red-100 text-red-800'
-                }`}>
-                {isConnected ? 'Conectado' : 'Desconectado'}
-              </span>
-            </div>
-
-            {/* Número do WhatsApp */}
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Número:</span>
-              <span className="text-sm font-medium text-gray-900 truncate ml-2">
-                {instance.phone_number || 'Não conectado'}
-              </span>
-            </div>
-
-            {/* Agente vinculado */}
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Agente:</span>
-              <span className="text-sm font-medium text-gray-900 truncate ml-2">
-                {agentName ? agentName : (instance.agent_id ? 'Vinculado' : 'Não vinculado')}
-              </span>
-            </div>
+        <div className="space-y-2 mt-3">
+          {/* Status da conexão */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">Status:</span>
+            <span className={`px-2 py-1 text-xs font-medium rounded-full ${isConnected
+              ? 'bg-green-100 text-green-800'
+              : 'bg-red-100 text-red-800'
+              }`}>
+              {isConnected ? 'Conectado' : 'Desconectado'}
+            </span>
           </div>
-        </CardDescription>
+
+          {/* Número do WhatsApp */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">Número:</span>
+            <span className="text-sm font-medium text-gray-900 truncate ml-2">
+              {instance.phone_number || 'Não conectado'}
+            </span>
+          </div>
+
+          {/* Agente vinculado */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">Agente:</span>
+            <span className="text-sm font-medium text-gray-900 truncate ml-2">
+              {agentName ? agentName : (instance.agent_id ? 'Vinculado' : 'Não vinculado')}
+            </span>
+          </div>
+        </div>
       </CardHeader>
 
       <CardContent className="flex-grow">
