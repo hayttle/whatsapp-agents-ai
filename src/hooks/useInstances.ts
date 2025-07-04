@@ -39,10 +39,12 @@ export const useInstances = ({ isSuperAdmin, tenantId, refreshKey }: UseInstance
           if (res.ok && statusData.status && statusData.status !== inst.status) {
             inst.status = statusData.status;
           }
-        } catch {}
+        } catch (error) {
+          // Silenciosamente ignora erros de status
+        }
       }));
-      setData(updatedInstances);
       
+      setData(updatedInstances);
       setError(null);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar instâncias';

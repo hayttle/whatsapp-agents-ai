@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { AgentChatView } from './AgentChatView';
 import { useAgentContacts } from '@/hooks/useAgentContacts';
 import { useAgentMessages } from '@/hooks/useAgentMessages';
 import { User, RefreshCw } from 'lucide-react';
+import { useInstances } from '@/hooks/useInstances';
 
-function AgentContactsSidebar({ contacts, selectedId, onSelect, loading, onRefresh, refreshing }: {
+function AgentContactsSidebar({ contacts, selectedId, onSelect, loading, onRefresh, refreshing, getAvatarUrl }: {
   contacts: any[];
   selectedId: string;
   onSelect: (id: string) => void;
   loading: boolean;
   onRefresh: () => void;
   refreshing: boolean;
+  getAvatarUrl: (contact: any) => string;
 }) {
   return (
     <aside className="w-96 border-r bg-white h-[70vh] flex flex-col">
@@ -41,8 +43,8 @@ function AgentContactsSidebar({ contacts, selectedId, onSelect, loading, onRefre
             className={`w-full flex items-center gap-3 px-4 py-3 border-b text-left transition-colors
               ${selectedId === contact.whatsapp_number ? 'bg-brand-green/10' : 'hover:bg-gray-50'}`}
           >
-            {contact.avatar ? (
-              <img src={contact.avatar} alt={contact.whatsapp_number} className="w-10 h-10 rounded-full object-cover" />
+            {getAvatarUrl(contact) ? (
+              <img src={getAvatarUrl(contact)} alt={contact.whatsapp_number} className="w-10 h-10 rounded-full object-cover" />
             ) : (
               <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
                 <User className="w-6 h-6 text-gray-400" />
@@ -68,6 +70,70 @@ export const AgentMessagesLog: React.FC<{ agentId: string }> = ({ agentId }) => 
   const selected = selectedNumber || (contacts[0]?.whatsapp_number ?? '');
   const { messages, loading: loadingMessages, error: errorMessages, refetch: refetchMessages } = useAgentMessages(agentId, selected);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Avatar cache: { [key: string]: string }
+  const [avatarCache, setAvatarCache] = useState<{ [key: string]: string }>({});
+  const loadingAvatars = useRef<{ [key: string]: boolean }>({});
+
+  // Supondo que o tenantId está disponível no contexto ou props, ajuste conforme necessário
+  const isSuperAdmin = false; // ou obtenha do contexto/props
+  const tenantId = undefined; // ou obtenha do contexto/props
+  const { data: instancias } = useInstances({ isSuperAdmin, tenantId });
+
+  // Mapeamento de instance_id para instanceName
+  const instanceMap = useMemo(() => {
+    return instancias.reduce((acc: Record<string, string>, inst: any) => {
+      acc[inst.id] = inst.instanceName;
+      return acc;
+    }, {});
+  }, [instancias]);
+
+  // Função para buscar avatar dinamicamente
+  const fetchAvatar = async (number: string, instance_id: string) => {
+    const instanceName = instanceMap[instance_id];
+    if (!instanceName) return;
+
+    const key = `${number}|${instanceName}`;
+    if (avatarCache[key] || loadingAvatars.current[key]) return;
+
+    loadingAvatars.current[key] = true;
+
+    try {
+      const res = await fetch('/api/contacts/avatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ number, instance: instanceName }),
+      });
+
+      const data = await res.json();
+
+      if (data.avatar) {
+        setAvatarCache(prev => ({ ...prev, [key]: data.avatar }));
+      }
+    } catch (error) {
+      // Silenciosamente ignora erros de avatar
+    } finally {
+      loadingAvatars.current[key] = false;
+    }
+  };
+
+  // Buscar avatar para todos os contatos ao carregar
+  useEffect(() => {
+    contacts.forEach(contact => {
+      if (contact.whatsapp_number && contact.instance_id) {
+        fetchAvatar(contact.whatsapp_number, contact.instance_id);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contacts, instanceMap]);
+
+  // Função utilitária para obter avatar do cache
+  const getAvatarUrl = (contact: any) => {
+    if (!contact.whatsapp_number || !contact.instance_id) return '';
+    const instanceName = instanceMap[contact.instance_id];
+    if (!instanceName) return '';
+    return avatarCache[`${contact.whatsapp_number}|${instanceName}`] || '';
+  };
 
   // Fallback para selecionar o primeiro contato automaticamente
   React.useEffect(() => {
@@ -95,6 +161,7 @@ export const AgentMessagesLog: React.FC<{ agentId: string }> = ({ agentId }) => 
         loading={loadingContacts}
         onRefresh={handleRefresh}
         refreshing={refreshing}
+        getAvatarUrl={getAvatarUrl}
       />
       <div className="flex-1">
         {loadingMessages ? (
@@ -105,7 +172,7 @@ export const AgentMessagesLog: React.FC<{ agentId: string }> = ({ agentId }) => 
           <AgentChatView
             contact={{
               name: selected,
-              avatar: '', // Pode ser ajustado para buscar avatar real
+              avatar: getAvatarUrl(contacts.find(c => c.whatsapp_number === selected) || {})
             }}
             messages={messages}
           />

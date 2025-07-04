@@ -7,15 +7,21 @@ export function useAgentContacts(agentId: string) {
 
   const fetchContacts = useCallback(() => {
     if (!agentId) return;
+    
     setLoading(true);
     setError(null);
+    
     fetch(`/api/messages?agent_id=${agentId}`)
       .then(res => res.json())
       .then(data => {
         setContacts(data.contacts || []);
       })
-      .catch(err => setError(err.message || 'Erro ao buscar contatos'))
-      .finally(() => setLoading(false));
+      .catch(err => {
+        setError(err.message || 'Erro ao buscar contatos');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [agentId]);
 
   useEffect(() => {

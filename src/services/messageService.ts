@@ -1,6 +1,15 @@
 import { createClient } from '@/lib/supabase/server';
 
 export async function getContactsWithLastMessage(agentId: string, tenantId: string, supabase: any) {
+  // Primeiro, buscar o agente para obter o instance_id
+  const { data: agent, error: agentError } = await supabase
+    .from('agents')
+    .select('instance_id')
+    .eq('id', agentId)
+    .single();
+  
+  if (agentError) throw agentError;
+  
   // Busca a última mensagem de cada contato (whatsapp_number) para o agente
   // Como Supabase não suporta group by + max diretamente, fazemos em duas etapas:
   // 1. Buscar todos os números distintos
@@ -29,6 +38,7 @@ export async function getContactsWithLastMessage(agentId: string, tenantId: stri
         last_message: lastMsg[0].text,
         last_message_at: lastMsg[0].created_at,
         sender: lastMsg[0].sender,
+        instance_id: agent.instance_id,
       });
     }
   }
