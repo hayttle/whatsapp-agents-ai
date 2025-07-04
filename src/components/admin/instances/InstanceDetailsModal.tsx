@@ -6,7 +6,6 @@ import { MessageSquare, ExternalLink, User, Phone, FileText, Link, RefreshCw, Tr
 import { toast } from "sonner";
 import { useInstanceActions } from "@/hooks/useInstanceActions";
 import { useAgents } from '@/hooks/useAgents';
-import { agentService } from "@/services/agentService";
 import { instanceService } from "@/services/instanceService";
 import { useState, useEffect } from "react";
 import { ConnectionModal } from './QRCodeComponents';
@@ -43,7 +42,13 @@ export function InstanceDetailsModal({
 
   const isConnected = localInstance.status === 'open';
   const isNative = localInstance.provider_type === 'nativo';
-  const agenteVinculado = agentes.find(a => a.id === localInstance.agent_id);
+
+
+
+  // Buscar agente vinculado tanto pelo agent_id da instância quanto pelo instance_id do agente
+  const agenteVinculado = agentes.find(a =>
+    a.id === localInstance.agent_id || a.instance_id === localInstance.id
+  );
 
   const handleConnect = (instanceName: string) => handleAction(async () => {
     setLoadingAction("connect");
@@ -99,49 +104,25 @@ export function InstanceDetailsModal({
     if (!selectedAgentId) return;
     setSavingAgent(true);
     try {
-      // Desvincular agente anterior, se houver
-      if (localInstance.agent_id) {
-        if (agenteVinculado?.agent_type === 'external') {
-          await agentService.updateAgent(localInstance.agent_id, {
-            title: agenteVinculado.title,
-            webhookUrl: agenteVinculado.webhookUrl,
-            tenant_id: agenteVinculado.tenant_id,
-            active: agenteVinculado.active,
-            instance_id: null,
-            description: agenteVinculado.description,
-            agent_type: agenteVinculado.agent_type
-          });
-        } else {
-          await agentService.updateAgent(localInstance.agent_id, { instance_id: null, agent_type: agenteVinculado?.agent_type });
-        }
+      // Usar a API genérica para vincular agente
+      const response = await fetch('/api/whatsapp-instances/update', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: localInstance.id, agent_id: selectedAgentId })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao vincular agente');
       }
-      // Atualizar agent_id da instância
-      await instanceService.updateInstance(localInstance.id, { agent_id: selectedAgentId, provider_type: localInstance.provider_type });
-      // Vincular novo agente
-      const novoAgente = agentes.find(a => a.id === selectedAgentId);
-      if (novoAgente?.agent_type === 'external') {
-        await agentService.updateAgent(selectedAgentId, {
-          title: novoAgente.title,
-          webhookUrl: novoAgente.webhookUrl,
-          tenant_id: novoAgente.tenant_id,
-          active: novoAgente.active,
-          instance_id: localInstance.id,
-          description: novoAgente.description,
-          agent_type: novoAgente.agent_type
-        });
-      } else {
-        await agentService.updateAgent(selectedAgentId, { instance_id: localInstance.id, agent_type: novoAgente?.agent_type });
-      }
+
       toast.success('Agente vinculado com sucesso!');
       setLocalInstance({ ...localInstance, agent_id: selectedAgentId });
       onRefresh();
       setSelectedAgentId("");
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'message' in err) {
-        toast.error('Erro ao vincular agente: ' + (err as { message: string }).message);
-      } else {
-        toast.error('Erro ao vincular agente.');
-      }
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao vincular agente';
+      toast.error(errorMessage);
     } finally {
       setSavingAgent(false);
     }
@@ -151,25 +132,24 @@ export function InstanceDetailsModal({
     if (!agenteVinculado) return;
     setSavingAgent(true);
     try {
-      await instanceService.updateInstance(localInstance.id, { agent_id: null, provider_type: localInstance.provider_type });
-      if (agenteVinculado.agent_type === 'external') {
-        await agentService.updateAgent(agenteVinculado.id, {
-          title: agenteVinculado.title,
-          webhookUrl: agenteVinculado.webhookUrl,
-          tenant_id: agenteVinculado.tenant_id,
-          active: agenteVinculado.active,
-          instance_id: null,
-          description: agenteVinculado.description,
-          agent_type: agenteVinculado.agent_type
-        });
-      } else {
-        await agentService.updateAgent(agenteVinculado.id, { instance_id: null, agent_type: agenteVinculado.agent_type });
+      // Usar a API genérica para desvincular agente
+      const response = await fetch('/api/whatsapp-instances/update', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: localInstance.id, agent_id: null })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao desvincular agente');
       }
+
       toast.success('Agente desvinculado com sucesso!');
       setLocalInstance({ ...localInstance, agent_id: null });
       onRefresh();
-    } catch {
-      toast.error('Erro ao desvincular agente.');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao desvincular agente';
+      toast.error(errorMessage);
     } finally {
       setSavingAgent(false);
     }
@@ -356,14 +336,17 @@ export function InstanceDetailsModal({
                       <option value="">Selecione um agente...</option>
                       {agentes
                         .filter(agent => {
+                          // Para instâncias nativas, mostrar apenas agentes internos
                           if (isNative) {
-                            return agent.agent_type === 'internal' || !agent.agent_type;
+                            return agent.agent_type === 'internal';
                           }
+                          // Para instâncias externas, mostrar apenas agentes externos
                           if (!isNative) {
                             return agent.agent_type === 'external';
                           }
                           return true;
                         })
+                        .filter(agent => !agent.instance_id) // Filtrar agentes que já estão vinculados a outras instâncias
                         .map((agent) => (
                           <option key={agent.id} value={agent.id}>
                             {agent.title} ({agent.agent_type === 'external' ? 'Externo' : 'Interno'})
