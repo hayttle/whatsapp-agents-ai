@@ -97,9 +97,9 @@ function AgentContactsSidebar({ contacts, selectedId, onSelect, loading, onRefre
           <div className="p-4 text-gray-400 text-sm">Nenhum contato encontrado.</div>
         ) : contacts.map(contact => (
           <div key={contact.whatsapp_number} className="relative group">
-            <button
+            <div
               onClick={() => onSelect(contact.whatsapp_number)}
-              className={`w-full flex items-center gap-3 px-4 py-3 border-b text-left transition-colors ${selectedId === contact.whatsapp_number ? 'bg-brand-green/10' : 'hover:bg-gray-50'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 border-b text-left transition-colors cursor-pointer ${selectedId === contact.whatsapp_number ? 'bg-brand-green/10' : 'hover:bg-gray-50'}`}
             >
               {getAvatarUrl(contact) ? (
                 <img src={getAvatarUrl(contact)} alt={contact.whatsapp_number} className="w-10 h-10 rounded-full object-cover" />
@@ -112,18 +112,19 @@ function AgentContactsSidebar({ contacts, selectedId, onSelect, loading, onRefre
                 <div className="font-medium truncate text-gray-900">{contact.whatsapp_number}</div>
                 <div className="text-xs text-gray-500 truncate">{contact.last_message}</div>
               </div>
-              <div className="text-xs text-gray-400 ml-2 whitespace-nowrap">
-                {contact.last_message_at ? new Date(contact.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+              <div className="flex items-center gap-2 ml-2">
+                <div className="text-xs text-gray-400 whitespace-nowrap">
+                  {contact.last_message_at ? new Date(contact.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                </div>
+                <button
+                  type="button"
+                  className="p-1 rounded hover:bg-gray-200"
+                  onClick={e => { e.stopPropagation(); setMenuOpen(menuOpen === contact.whatsapp_number ? null : contact.whatsapp_number); }}
+                >
+                  <MoreVertical className="w-5 h-5 text-gray-500" />
+                </button>
               </div>
-              {/* Botão de menu */}
-              <button
-                type="button"
-                className="ml-2 p-1 rounded hover:bg-gray-200"
-                onClick={e => { e.stopPropagation(); setMenuOpen(menuOpen === contact.whatsapp_number ? null : contact.whatsapp_number); }}
-              >
-                <MoreVertical className="w-5 h-5 text-gray-500" />
-              </button>
-            </button>
+            </div>
             {/* Menu de ações */}
             {menuOpen === contact.whatsapp_number && (
               <div ref={menuRef} className="absolute right-4 top-12 z-20 bg-white border rounded shadow-md min-w-[180px]">

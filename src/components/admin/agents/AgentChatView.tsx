@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { User } from 'lucide-react';
 
 interface Contact {
@@ -19,6 +19,14 @@ interface AgentChatViewProps {
 }
 
 export const AgentChatView: React.FC<AgentChatViewProps> = ({ contact, messages }) => {
+  const endOfMessagesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (endOfMessagesRef.current) {
+      endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
   return (
     <div className="flex flex-col h-[70vh] bg-white rounded-lg border shadow-sm overflow-hidden">
       {/* Header */}
@@ -55,6 +63,7 @@ export const AgentChatView: React.FC<AgentChatViewProps> = ({ contact, messages 
             </div>
           </div>
         ))}
+        <div ref={endOfMessagesRef} />
       </div>
     </div>
   );
