@@ -174,7 +174,68 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // 4. Força o set de cookies de sessão
+    // 4. Fazer login automático do usuário
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: user.password,
+    });
+
+    if (signInError) {
+      console.error('Erro ao fazer login automático:', signInError);
+      // Não falhar o cadastro por causa do login automático
+    }
+
+    // 5. Criar assinatura trial com expiração em 7 dias
+    const trialStartDate = new Date();
+    const trialEndDate = new Date();
+    trialEndDate.setDate(trialEndDate.getDate() + 7); // 7 dias de trial
+
+    // Calcular allowed_instances diretamente (evita dependência da função do banco)
+    const calculateAllowedInstances = (planType: string, quantity: number) => {
+      switch (planType) {
+        case 'starter':
+          return 2 * quantity;
+        case 'pro':
+          return 5 * quantity;
+        default:
+          return 0;
+      }
+    };
+
+    const trialSubscriptionData = {
+      tenant_id: tenant.id,
+      user_id: authUser.user.id,
+      asaas_subscription_id: null, // Trial não tem ID do Asaas
+      plan_name: 'Trial',
+      plan_type: 'starter',
+      quantity: 1,
+      allowed_instances: calculateAllowedInstances('starter', 1), // 2 instâncias para trial
+      status: 'TRIAL',
+      value: 0, // Trial é gratuito
+      price: 0,
+      cycle: 'MONTHLY',
+      started_at: trialStartDate.toISOString(),
+      next_due_date: trialEndDate.toISOString().split('T')[0], // Formato YYYY-MM-DD para campo date
+      paid_at: null,
+      invoice_url: null,
+      payment_method: null,
+    };
+
+    const { error: subscriptionError } = await supabase
+      .from('subscriptions')
+      .insert(trialSubscriptionData);
+
+    if (subscriptionError) {
+      // Se falhar ao criar assinatura trial, deletar usuário, tenant e usuário do Auth
+      await supabase.from('users').delete().eq('id', authUser.user.id);
+      await supabase.from('tenants').delete().eq('id', tenant.id);
+      await adminClient.auth.admin.deleteUser(authUser.user.id);
+      return res.status(500).json({ 
+        error: 'Erro ao criar assinatura trial: ' + subscriptionError.message 
+      });
+    }
+
+    // 6. Força o set de cookies de sessão
     await supabase.auth.getUser();
 
     return res.status(201).json({ 
