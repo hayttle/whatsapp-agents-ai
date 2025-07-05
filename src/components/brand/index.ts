@@ -12,4 +12,5 @@ export { PlanLimitsCard } from './PlanLimitsCard';
 export { Progress } from './Progress';
 export { LimitAlert } from './LimitAlert';
 export * from './Switch';
-export { PlanCard } from './PlanCard'; 
+export { PlanCard } from './PlanCard';
+export { TrialAlert } from './TrialAlert'; 

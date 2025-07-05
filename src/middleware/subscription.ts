@@ -67,6 +67,25 @@ export async function checkSubscriptionStatus(request: NextRequest) {
 
     // Se não há assinatura ou está suspensa/vencida
     if (subscriptionError || !subscription) {
+      // Verificar se o usuário está no período trial (7 dias após cadastro)
+      const { data: userData } = await supabase
+        .from('users')
+        .select('created_at')
+        .eq('id', user.id)
+        .single();
+
+      if (userData?.created_at) {
+        const userCreatedAt = new Date(userData.created_at);
+        const trialEnd = new Date(userCreatedAt);
+        trialEnd.setDate(trialEnd.getDate() + 7);
+        const now = new Date();
+
+        // Se ainda está no período trial, permitir acesso total
+        if (now <= trialEnd) {
+          return NextResponse.next();
+        }
+      }
+
       // Permitir acesso à página de assinatura
       if (pathname === '/assinatura') {
         return NextResponse.next();

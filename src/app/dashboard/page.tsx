@@ -3,6 +3,7 @@
 import { useDashboard } from '@/hooks/useDashboard';
 import { useUserRole } from '@/hooks/useUserRole';
 import { PlanLimitsCard } from '@/components/brand';
+import { TrialAlert } from '@/components/brand';
 import { useUsers } from '@/hooks/useUsers';
 import { useUsage } from '@/hooks/useUsage';
 import { useRouter } from 'next/navigation';
@@ -94,6 +95,9 @@ export default function DashboardPage() {
           {isSuperAdmin && <span className="ml-2 text-brand-green-light font-medium">(Super Admin)</span>}
         </p>
       </div>
+
+      {/* Alerta de Trial */}
+      <TrialAlert />
 
       {/* Cards de estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
