@@ -1,5 +1,6 @@
 import { ArrowRight, Bot, Zap, Settings, UserCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/brand";
+import { PlanList } from '@/components/brand/PlanList';
 
 export default function LandingPage() {
   return (
@@ -94,6 +95,11 @@ export default function LandingPage() {
               <ArrowRight className="w-5 h-5 ml-2" />
             </a>
           </div>
+        </section>
+
+        <section className="my-16">
+          <h2 className="text-2xl font-bold text-center mb-8">Planos e Assinaturas</h2>
+          <PlanList />
         </section>
       </main>
 

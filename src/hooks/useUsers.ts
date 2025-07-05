@@ -21,13 +21,17 @@ export const useUsers = () => {
       setCurrentUserRole(currentUserData.role);
       setCurrentUser(currentUserData.user);
 
-      // Buscar lista de usuários
-      const data = await userService.listUsers();
-      setUsers(data.users || []);
-      
-      // Buscar empresas para super admin
+      // Só buscar lista de usuários e empresas se for superadmin
+      if (currentUserData.role === 'super_admin') {
+        const data = await userService.listUsers();
+        setUsers(data.users || []);
+
         const tenantsData = await tenantService.listTenants();
         setEmpresas((tenantsData.tenants || []).map((t: Tenant) => ({ ...t, name: t.name })));
+      } else {
+        setUsers([]); // Ou apenas o próprio usuário, se desejar
+        setEmpresas([]);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
       setError(errorMessage);

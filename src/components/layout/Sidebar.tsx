@@ -15,7 +15,8 @@ import {
   ChevronRight,
   LogOut,
   Menu as MenuIcon,
-  ChevronLeft
+  ChevronLeft,
+  CreditCard
 } from 'lucide-react';
 import { Button, Badge } from '@/components/brand';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -33,6 +34,11 @@ const navItems: SidebarItem[] = [
     href: '/dashboard',
     label: 'Dashboard',
     icon: Home
+  },
+  {
+    href: '/assinatura',
+    label: 'Minha Assinatura',
+    icon: CreditCard
   },
   {
     href: '/admin/instancias',

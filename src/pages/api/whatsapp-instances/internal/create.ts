@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { authenticateUser } from '@/lib/supabase/api';
 import { randomUUID } from 'crypto';
+import { checkPlanLimits } from '@/lib/plans';
+import { usageService } from '@/services/usageService';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -50,6 +52,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Verificar permissões
     if (userData.role !== 'super_admin' && tenantId !== userData.tenant_id) {
       return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+
+    // Verificar limites do plano
+    const { data: subscription } = await supabase
+      .from('subscriptions')
+      .select('plan_name, quantity')
+      .eq('user_id', userData.id)
+      .in('status', ['TRIAL', 'ACTIVE'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (subscription?.plan_name) {
+      const usageResponse = await usageService.getUsageStats(tenantId);
+      if (usageResponse.success) {
+        const limitCheck = checkPlanLimits(
+          subscription.plan_name,
+          usageResponse.usage,
+          'create_instance',
+          'native',
+          subscription.quantity || 1
+        );
+
+        if (!limitCheck.allowed) {
+          return res.status(403).json({ 
+            error: limitCheck.reason || 'Limite do plano atingido',
+            limitReached: true
+          });
+        }
+      }
     }
 
     const apikey = process.env.EVOLUTION_API_KEY;

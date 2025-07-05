@@ -40,7 +40,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
       .single();
 
     if (error) {
-      console.error('[Agents External Update] Erro ao atualizar agente externo:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
 
@@ -62,7 +61,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
 
     return res.status(200).json({ success: true, agent });
   } catch (error) {
-    console.error('[Agents External Update] Erro inesperado:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

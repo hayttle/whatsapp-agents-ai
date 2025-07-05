@@ -40,8 +40,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
       .eq('id', id);
 
     if (error) {
-      console.error('[Agents Delete] Erro ao deletar agente:', error);
-      
       // Verificar se é um erro de foreign key constraint (mensagens vinculadas)
       if (error.code === '23503' || 
           error.message?.includes('violates foreign key constraint') ||
@@ -72,7 +70,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
 
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('[Agents Delete] Erro inesperado:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

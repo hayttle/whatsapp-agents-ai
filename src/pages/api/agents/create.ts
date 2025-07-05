@@ -1,5 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth, AuthResult } from '@/lib/auth/helpers';
+import { checkPlanLimits } from '@/lib/plans';
+import { usageService } from '@/services/usageService';
 
 async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResult) {
   if (req.method !== 'POST') {
@@ -22,6 +24,36 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
     }
     if (auth.user.role !== 'super_admin' && tenant_id !== auth.user.tenant_id) {
       return res.status(403).json({ error: 'Forbidden - Cannot create agent for different tenant' });
+    }
+
+    // Verificar limites do plano
+    const { data: subscription } = await auth.supabase
+      .from('subscriptions')
+      .select('plan_name, quantity')
+      .eq('user_id', auth.user.id)
+      .in('status', ['TRIAL', 'ACTIVE'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (subscription?.plan_name) {
+      const usageResponse = await usageService.getUsageStats(tenant_id);
+      if (usageResponse.success) {
+        const limitCheck = checkPlanLimits(
+          subscription.plan_name,
+          usageResponse.usage,
+          'create_agent',
+          agent_type,
+          subscription.quantity || 1
+        );
+
+        if (!limitCheck.allowed) {
+          return res.status(403).json({ 
+            error: limitCheck.reason || 'Limite do plano atingido',
+            limitReached: true
+          });
+        }
+      }
     }
 
     const insertData: Record<string, unknown> = {

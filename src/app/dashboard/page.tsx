@@ -2,15 +2,68 @@
 
 import { useDashboard } from '@/hooks/useDashboard';
 import { useUserRole } from '@/hooks/useUserRole';
+import { PlanLimitsCard } from '@/components/brand';
+import { useUsers } from '@/hooks/useUsers';
+import { useUsage } from '@/hooks/useUsage';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/brand';
 import { Bot, MessageSquare, Users, Settings, MessageCircleMore, Activity, UserCheck, UserX } from 'lucide-react';
 
+const plans = [
+  {
+    id: 'starter',
+    name: 'Starter',
+    price: 'R$ 100,00/mês',
+    description: 'Ideal para quem quer a experiência completa, sem configurar nada.',
+    features: [
+      '2 instâncias nativas',
+      '2 agentes internos (IA)',
+      'Backend, n8n e WhatsApp API inclusos',
+      'Tela de gestão simplificada',
+    ],
+    planData: {
+      billingType: 'CREDIT_CARD',
+      value: 100.0,
+      cycle: 'MONTHLY',
+      description: 'Starter - 2 instâncias nativas + 2 agentes internos',
+    },
+    highlight: false,
+  },
+  {
+    id: 'pro',
+    name: 'Pro',
+    price: 'R$ 100,00/mês',
+    description: 'Para quem possui sua própria infraestrutura.',
+    features: [
+      '5 instâncias externas',
+      '5 agentes externos (n8n)',
+      'Gerenciamento de webhooks',
+      'Infraestrutura própria',
+    ],
+    planData: {
+      billingType: 'CREDIT_CARD',
+      value: 100.0,
+      cycle: 'MONTHLY',
+      description: 'Pro - 5 instâncias externas + 5 agentes externos',
+    },
+    highlight: true,
+  },
+];
+
 export default function DashboardPage() {
   const { isSuperAdmin, userData, isLoading: userLoading } = useUserRole();
-  const { stats, isLoading: statsLoading, error } = useDashboard();
+  const { stats, isLoading: statsLoading, error: statsError } = useDashboard();
+  const { currentUser, loading } = useUsers();
+  const { stats: usageStats, loading: usageLoading } = useUsage(userData?.tenant_id);
+  const router = useRouter();
 
-  const isLoading = userLoading || statsLoading;
+  const isLoading = userLoading || statsLoading || usageLoading;
+
+  const handleSubscribe = () => {
+    router.push('/assinatura');
+  };
 
   if (isLoading) {
     return (
@@ -22,11 +75,11 @@ export default function DashboardPage() {
     );
   }
 
-  if (error) {
+  if (statsError) {
     return (
       <div className="max-w-6xl mx-auto p-8">
         <div className="text-center">
-          <p className="text-red-600">Erro ao carregar dashboard: {error}</p>
+          <p className="text-red-600">Erro ao carregar dashboard: {statsError}</p>
         </div>
       </div>
     );
@@ -169,6 +222,13 @@ export default function DashboardPage() {
               <p className="text-xs text-gray-600">Usuários sem atividade recente</p>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Limites do Plano (apenas para usuários comuns) */}
+      {!isSuperAdmin && usageStats && (
+        <div className="mb-8">
+          <PlanLimitsCard stats={usageStats} loading={usageLoading} />
         </div>
       )}
 

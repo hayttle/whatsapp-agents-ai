@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { checkSubscriptionStatus } from './src/middleware/subscription'
 
 const PUBLIC_PATHS = ['/', '/login', '/signup', '/favicon.ico', '/api', '/_next', '/public', '/design-system'];
 
@@ -54,6 +55,12 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // Verificar status da assinatura para rotas protegidas
+  const subscriptionCheck = await checkSubscriptionStatus(request);
+  if (subscriptionCheck.status !== 200) {
+    return subscriptionCheck;
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're

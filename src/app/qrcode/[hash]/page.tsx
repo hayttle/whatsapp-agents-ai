@@ -1,5 +1,6 @@
 "use client";
 import { use, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { RenderQrCode } from '@/components/admin/instances/QRCodeComponents';
 
 const getInstanceNameByHash = async (hash: string) => {
@@ -12,11 +13,15 @@ const getInstanceNameByHash = async (hash: string) => {
 
 export default function QrCodePage({ params }: { params: Promise<{ hash: string }> }) {
   const { hash } = use(params);
+  const searchParams = useSearchParams();
   const [qrcode, setQrcode] = useState<string | null>(null);
   const [instanceName, setInstanceName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [timer, setTimer] = useState(20);
   const [expired, setExpired] = useState(false);
+
+  // Verificar se foi redirecionado por falta de assinatura
+  const subscriptionRequired = searchParams?.get('subscription_required');
 
   useEffect(() => {
     let cancelled = false;
@@ -95,6 +100,27 @@ export default function QrCodePage({ params }: { params: Promise<{ hash: string 
     }
     return () => clearInterval(interval);
   }, [qrcode, expired, instanceName]);
+
+  // Mostrar mensagem de assinatura necessária
+  if (subscriptionRequired) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md text-center">
+          <div className="text-6xl mb-4">🔒</div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">Assinatura Necessária</h1>
+          <p className="text-gray-600 mb-6">
+            Para acessar esta funcionalidade, você precisa ter uma assinatura ativa.
+          </p>
+          <a
+            href="/assinatura"
+            className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+          >
+            Ver Planos de Assinatura
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (

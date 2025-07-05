@@ -1,0 +1,132 @@
+import { createServerClient } from '@supabase/ssr';
+import { NextRequest, NextResponse } from 'next/server';
+
+// Rotas que não precisam de verificação de assinatura
+const PUBLIC_ROUTES = [
+  '/',
+  '/login',
+  '/signup',
+  '/api',
+  '/_next',
+  '/public',
+  '/favicon.ico',
+  '/design-system',
+];
+
+// Rotas que são permitidas mesmo com assinatura suspensa
+const ALLOWED_WHEN_SUSPENDED = [
+  '/assinatura',
+  '/api/subscriptions',
+  '/api/webhooks',
+];
+
+export async function checkSubscriptionStatus(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Permitir rotas públicas
+  if (PUBLIC_ROUTES.some(route => pathname === route || pathname.startsWith(route + '/'))) {
+    return NextResponse.next();
+  }
+
+  try {
+    // Criar cliente Supabase
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              request.cookies.set(name, value);
+            });
+          },
+        },
+      }
+    );
+
+    // Verificar autenticação
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // Buscar assinatura ativa do usuário
+    const { data: subscription, error: subscriptionError } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', user.id)
+      .in('status', ['TRIAL', 'ACTIVE'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    // Se não há assinatura ou está suspensa/vencida
+    if (subscriptionError || !subscription) {
+      // Permitir acesso à página de assinatura
+      if (pathname === '/assinatura') {
+        return NextResponse.next();
+      }
+
+      // Bloquear acesso à página de QR Code se não há assinatura ativa
+      if (pathname.startsWith('/qrcode')) {
+        const subscriptionUrl = new URL('/assinatura', request.url);
+        subscriptionUrl.searchParams.set('from', 'qrcode');
+        return NextResponse.redirect(subscriptionUrl);
+      }
+
+      // Redirecionar para página de assinatura se tentar acessar outras rotas
+      if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
+        const subscriptionUrl = new URL('/assinatura', request.url);
+        return NextResponse.redirect(subscriptionUrl);
+      }
+
+      return NextResponse.next();
+    }
+
+    // Verificar se a assinatura trial expirou
+    if (subscription.status === 'TRIAL') {
+      const trialEndDate = new Date(subscription.next_due_date);
+      const now = new Date();
+      
+      if (now > trialEndDate) {
+        // Atualizar status para SUSPENDED
+        await supabase
+          .from('subscriptions')
+          .update({ 
+            status: 'SUSPENDED',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', subscription.id);
+
+        // Permitir acesso à página de assinatura
+        if (pathname === '/assinatura') {
+          return NextResponse.next();
+        }
+
+        // Bloquear acesso à página de QR Code se assinatura trial expirou
+        if (pathname.startsWith('/qrcode')) {
+          const subscriptionUrl = new URL('/assinatura', request.url);
+          subscriptionUrl.searchParams.set('from', 'qrcode');
+          return NextResponse.redirect(subscriptionUrl);
+        }
+
+        // Redirecionar para página de assinatura
+        const subscriptionUrl = new URL('/assinatura', request.url);
+        return NextResponse.redirect(subscriptionUrl);
+      }
+    }
+
+    // Assinatura ativa, permitir acesso
+    return NextResponse.next();
+
+  } catch (error) {
+    console.error('Erro ao verificar assinatura:', error);
+    // Em caso de erro, permitir acesso (fail-safe)
+    return NextResponse.next();
+  }
+} 
