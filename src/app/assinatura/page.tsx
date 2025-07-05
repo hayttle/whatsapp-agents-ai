@@ -139,32 +139,23 @@ export default function AssinaturaPage() {
     setError(null);
 
     try {
-      const today = new Date();
-      const nextDueDate = today.toISOString().slice(0, 10); // yyyy-mm-dd
+      // Redirecionar diretamente para o link de checkout do Asaas baseado no plano
+      let checkoutUrl = '';
 
-      const res = await fetch('/api/subscriptions/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          plan_name: selectedPlanData.name,
-          plan_type: selectedPlanData.id,
-          quantity: quantity,
-          value: totalPrice,
-          price: selectedPlanData.price,
-          cycle: 'MONTHLY',
-          billing_type: 'CREDIT_CARD',
-          description: `${selectedPlanData.name} - ${selectedPlanData.description} (${quantity} pacote${quantity > 1 ? 's' : ''})`,
-          next_due_date: nextDueDate,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      } else {
-        setError('Erro ao gerar link de pagamento.');
+      if (selectedPlan === 'starter') {
+        checkoutUrl = process.env.NEXT_PUBLIC_ASAAS_STARTER_CHECKOUT_URL || '';
+      } else if (selectedPlan === 'pro') {
+        checkoutUrl = process.env.NEXT_PUBLIC_ASAAS_PRO_CHECKOUT_URL || '';
       }
+
+      if (!checkoutUrl) {
+        setError('Link de checkout não configurado para este plano.');
+        return;
+      }
+
+      // Redirecionar para o checkout do Asaas
+      window.location.href = checkoutUrl;
+
     } catch (e: any) {
       setError(e.message || 'Erro inesperado.');
     } finally {
