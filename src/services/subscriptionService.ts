@@ -1,3 +1,5 @@
+import { createClient } from '@/lib/supabase/client';
+
 export interface Subscription {
   id: string;
   tenant_id: string;
@@ -127,10 +129,14 @@ class SubscriptionService {
     });
   }
 
-  async getMySubscription(token?: string): Promise<SubscriptionResponse> {
+  async getMySubscription(): Promise<SubscriptionResponse> {
+    // Obter token de autenticação do Supabase
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    
     const headers: Record<string, string> = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
     }
     
     return this.makeRequest<SubscriptionResponse>('/api/subscriptions/my', {
