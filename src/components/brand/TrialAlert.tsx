@@ -5,6 +5,7 @@ import { Alert } from './Alert';
 import { Button } from './Button';
 import { Clock, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface TrialAlertProps {
   variant?: 'info' | 'warning' | 'error';
@@ -13,13 +14,18 @@ interface TrialAlertProps {
 
 export function TrialAlert({ variant = 'info', showActionButton = true }: TrialAlertProps) {
   const { trialAccess, loading } = useTrialAccess();
+  const { user } = useUserRole();
   const router = useRouter();
 
   if (loading) {
     return null;
   }
 
-  if (!trialAccess.needsPlanSelection && trialAccess.canUseFeatures) {
+  if (user?.role === 'super_admin') {
+    return null;
+  }
+
+  if (trialAccess.canUseFeatures) {
     return null;
   }
 

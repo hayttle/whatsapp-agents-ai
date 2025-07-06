@@ -54,10 +54,10 @@ const plans = [
 ];
 
 export default function DashboardPage() {
-  const { isSuperAdmin, userData, isLoading: userLoading } = useUserRole();
+  const { isSuperAdmin, user, isLoading: userLoading } = useUserRole();
   const { stats, isLoading: statsLoading, error: statsError } = useDashboard();
   const { currentUser, loading } = useUsers();
-  const { stats: usageStats, loading: usageLoading } = useUsage(userData?.tenant_id);
+  const { stats: usageStats, loading: usageLoading } = useUsage(user?.tenant_id);
   const router = useRouter();
 
   const isLoading = userLoading || statsLoading || usageLoading;
@@ -91,7 +91,7 @@ export default function DashboardPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-brand-gray-dark mb-2">Dashboard</h1>
         <p className="text-gray-600">
-          Bem-vindo de volta, {userData?.name || userData?.email}
+          Bem-vindo de volta, {user?.name || user?.email}
           {isSuperAdmin && <span className="ml-2 text-brand-green-light font-medium">(Super Admin)</span>}
         </p>
       </div>

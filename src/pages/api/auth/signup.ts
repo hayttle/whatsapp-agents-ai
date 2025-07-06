@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { validateCPF, validateCNPJ } from '@/lib/utils';
 import { asaasRequest } from '@/services/asaasService';
+import { subscriptionService } from '@/services/subscriptionService';
 
 interface SignupRequest {
   company: {
@@ -141,10 +142,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const search: any = await asaasRequest(`/customers?cpfCnpj=${company.cpf_cnpj.replace(/\D/g, '')}`);
         if (search.data && search.data.length > 0) {
           customer = search.data[0];
-          console.log('Customer já existe no Asaas:', customer.id);
+  
         }
       } catch (searchError) {
-        console.log('Erro ao buscar customer existente:', searchError);
+        
       }
 
       // Se não existe, criar novo customer
@@ -160,7 +161,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             notificationDisabled: false,
           })
         });
-        console.log('Customer criado no Asaas:', customer.id);
+        
       }
 
       asaasCustomerId = customer.id;
@@ -229,51 +230,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // 5. Criar assinatura trial com expiração em 7 dias
-    const trialStartDate = new Date();
-    const trialEndDate = new Date();
-    trialEndDate.setDate(trialEndDate.getDate() + 7); // 7 dias de trial
-
-    // Calcular allowed_instances diretamente (evita dependência da função do banco)
-    const calculateAllowedInstances = (planType: string, quantity: number) => {
-      switch (planType) {
-        case 'starter':
-          return 2 * quantity;
-        case 'pro':
-          return 5 * quantity;
-        default:
-          return 0;
-      }
-    };
-
-    const trialSubscriptionData = {
-      tenant_id: tenant.id,
-      asaas_subscription_id: null, // Trial não tem ID do Asaas
-      plan_name: 'Trial',
-      plan_type: 'starter',
-      quantity: 1,
-      allowed_instances: calculateAllowedInstances('starter', 1), // 2 instâncias para trial
-      status: 'TRIAL',
-      value: 0, // Trial é gratuito
-      price: 0,
-      cycle: 'MONTHLY',
-      started_at: trialStartDate.toISOString(),
-      next_due_date: trialEndDate.toISOString().split('T')[0], // Formato YYYY-MM-DD para campo date
-      paid_at: null,
-      invoice_url: null,
-      payment_method: null,
-    };
-
-    const { error: subscriptionError } = await supabase
-      .from('subscriptions')
-      .insert(trialSubscriptionData);
-
-    if (subscriptionError) {
+    try {
+      await subscriptionService.createTrialSubscription({
+        tenant_id: tenant.id,
+        plan_type: 'starter',
+        plan_name: 'Trial',
+        quantity: 1,
+      });
+    } catch (subscriptionError) {
       // Se falhar ao criar assinatura trial, deletar usuário, tenant e usuário do Auth
       await supabase.from('users').delete().eq('id', authUser.user.id);
       await supabase.from('tenants').delete().eq('id', tenant.id);
       await adminClient.auth.admin.deleteUser(authUser.user.id);
       return res.status(500).json({ 
-        error: 'Erro ao criar assinatura trial: ' + subscriptionError.message 
+        error: 'Erro ao criar assinatura trial: ' + (subscriptionError instanceof Error ? subscriptionError.message : String(subscriptionError))
       });
     }
 

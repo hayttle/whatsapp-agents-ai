@@ -1,20 +1,12 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createApiClient } from '@/lib/supabase/api';
+import { withAuth, AuthResult } from '@/lib/auth/helpers';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResult) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
-
   try {
-    const supabase = createApiClient(req, res);
-    
-    // Verificar autenticação
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
+    const { user, supabase } = auth;
     // Buscar dados do usuário
     const { data: userData, error } = await supabase
       .from('users')
@@ -34,4 +26,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
   }
-} 
+}
+
+export default withAuth(handler); 

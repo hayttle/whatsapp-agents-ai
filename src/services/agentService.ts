@@ -1,3 +1,5 @@
+import { authenticatedFetch } from '@/lib/utils';
+
 export interface Agent {
   id: string;
   tenant_id: string;
@@ -27,36 +29,18 @@ export interface ApiResponse {
 }
 
 class AgentService {
-  private async makeRequest<T>(url: string, options?: RequestInit): Promise<T> {
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-      ...options,
-    });
-
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw { message: data.error || `Erro na requisição: ${response.status}`, code: data.code, error: data.error };
-    }
-
-    return data;
-  }
-
   async listAgents(tenantId?: string): Promise<AgentListResponse> {
     let url = "/api/agents/list";
     if (tenantId) {
       url += `?tenantId=${tenantId}`;
     }
     
-    return this.makeRequest<AgentListResponse>(url);
+    return authenticatedFetch(url);
   }
 
   async createAgent(agentData: Omit<Agent, 'id' | 'created_at' | 'updated_at' | 'prompt' | 'fallback_message'> & { prompt?: string }): Promise<ApiResponse> {
     // Usar endpoint único para criação de agentes
-    return this.makeRequest<ApiResponse>("/api/agents/create", {
+    return authenticatedFetch("/api/agents/create", {
       method: "POST",
       body: JSON.stringify(agentData),
     });
@@ -75,28 +59,28 @@ class AgentService {
       ? "/api/agents/external/update"
       : "/api/agents/internal/update";
     
-    return this.makeRequest<ApiResponse>(endpoint, {
+    return authenticatedFetch(endpoint, {
       method: "PUT",
       body: JSON.stringify({ id: agentId, ...agentData }),
     });
   }
 
   async deleteAgent(agentId: string): Promise<ApiResponse> {
-    return this.makeRequest<ApiResponse>("/api/agents/delete", {
+    return authenticatedFetch("/api/agents/delete", {
       method: "DELETE",
       body: JSON.stringify({ id: agentId }),
     });
   }
 
   async toggleAgentStatus(agentId: string, active: boolean): Promise<ApiResponse> {
-    return this.makeRequest<ApiResponse>("/api/agents/toggle-status", {
+    return authenticatedFetch("/api/agents/toggle-status", {
       method: "PUT",
       body: JSON.stringify({ id: agentId, active }),
     });
   }
 
   async getAgentById(agentId: string): Promise<Agent | null> {
-    const data = await this.makeRequest<{ agent: Agent }>(`/api/agents/${agentId}`);
+    const data = await authenticatedFetch(`/api/agents/${agentId}`);
     return data.agent || null;
   }
 }

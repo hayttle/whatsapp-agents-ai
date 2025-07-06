@@ -28,7 +28,7 @@ interface UseDashboardReturn {
 }
 
 export function useDashboard(): UseDashboardReturn {
-  const { isSuperAdmin, userData } = useUserRole();
+  const { isSuperAdmin, user } = useUserRole();
   const [stats, setStats] = useState<DashboardStats>({
     instancesActive: 0,
     instancesInactive: 0,
@@ -48,7 +48,7 @@ export function useDashboard(): UseDashboardReturn {
       setIsLoading(true);
       setError(null);
 
-      const tenantId = userData?.tenant_id;
+      const tenantId = user?.tenant_id;
       const newStats: DashboardStats = {
         instancesActive: 0,
         instancesInactive: 0,
@@ -140,13 +140,13 @@ export function useDashboard(): UseDashboardReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [isSuperAdmin, userData]);
+  }, [isSuperAdmin, user]);
 
   useEffect(() => {
-    if (userData) {
+    if (user) {
       fetchDashboardData();
     }
-  }, [fetchDashboardData, userData]);
+  }, [fetchDashboardData, user]);
 
   return {
     stats,

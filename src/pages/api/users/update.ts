@@ -1,27 +1,18 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { authenticateUser, createApiClient } from '@/lib/supabase/api';
+import { withAuth, AuthResult } from '@/lib/auth/helpers';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResult) {
   if (req.method !== 'PUT') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Autenticar usuário via cookies
-    const auth = await authenticateUser(req, res);
-    
-    if (!auth) {
-      return res.status(401).json({ error: 'Unauthorized - User not authenticated' });
-    }
-
-    const { userData } = auth;
+    const { user, supabase } = auth;
     
     // Apenas super_admin pode atualizar usuários
-    if (userData.role !== 'super_admin') {
+    if (user.role !== 'super_admin') {
       return res.status(403).json({ error: 'Insufficient permissions - Only super_admin can update users' });
     }
-
-    const supabase = createApiClient(req, res);
 
     const { id, email, name, role, tenant_id, status } = req.body;
 
@@ -51,13 +42,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (role !== 'super_admin' && !tenant_id) {
         return res.status(400).json({ error: 'Usuários que não são super_admin devem ter uma empresa associada.' });
       }
-      if (role === 'super_admin' && userData.role !== 'super_admin') {
+      if (role === 'super_admin' && user.role !== 'super_admin') {
         return res.status(403).json({ error: 'Insufficient permissions to assign super_admin role' });
       }
       updateData.role = role;
     }
     if (tenant_id !== undefined) updateData.tenant_id = role === 'super_admin' ? null : tenant_id;
-    if (status !== undefined && status === 'inactive' && id === userData.id) {
+    if (status !== undefined && status === 'inactive' && id === user.id) {
       return res.status(400).json({ error: 'Você não pode desativar o próprio usuário.' });
     }
     if (status !== undefined) updateData.status = status;
@@ -84,4 +75,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
   }
-} 
+}
+
+export default withAuth(handler); 

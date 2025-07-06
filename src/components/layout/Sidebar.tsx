@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import {
   Home,
   Users,
@@ -20,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Button, Badge } from '@/components/brand';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SidebarItem {
   label: string;
@@ -83,7 +83,8 @@ interface SidebarProps {
 
 export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   const pathname = usePathname();
-  const { userRole, userData, isLoading } = useUserRole();
+  const { userRole, user, isLoading } = useUserRole();
+  const { signOut } = useAuth();
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
@@ -111,11 +112,11 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
     }
 
     // Atualizar dados do usuário quando userData mudar
-    if (userData) {
-      setUserName(userData.name || '');
-      setUserEmail(userData.email || '');
+    if (user) {
+      setUserName(user.name || '');
+      setUserEmail(user.email || '');
     }
-  }, [pathname, userData]);
+  }, [pathname, user]);
 
   const toggleExpanded = (href: string) => {
     const newExpanded = new Set(expandedItems);
@@ -144,8 +145,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
 
   const handleLogout = async () => {
     try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
+      await signOut();
       window.location.href = '/login';
     } catch {
       // Silenciar erro de logout

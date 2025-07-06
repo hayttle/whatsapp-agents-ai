@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
+const supabase = createClient();
+
 export function ClientSideUserSection() {
   const [user, setUser] = useState<User | null>(null);
-  const supabase = createClient();
 
   useEffect(() => {
     const getUser = async () => {
@@ -13,7 +14,7 @@ export function ClientSideUserSection() {
       setUser(user);
     };
     getUser();
-  }, [supabase.auth]);
+  }, []);
 
   return (
     <div>

@@ -7,7 +7,7 @@ import { Bot } from 'lucide-react';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
 import { toast } from 'sonner';
 import { agentService } from '@/services/agentService';
-import { deepEqual } from '@/lib/utils';
+import { deepEqual, authenticatedFetch } from '@/lib/utils';
 import AgentForm from '@/components/admin/agents/AgentForm';
 import { PromptModel } from '@/services/promptModelService';
 import type { AgentData } from '@/hooks/useAgentConfig';
@@ -110,8 +110,7 @@ export default function AgentConfigPage() {
 
       try {
         // Buscar dados do usuário para obter tenant_id
-        const userResponse = await fetch('/api/users/current');
-        const userData = await userResponse.json();
+        const userData = await authenticatedFetch('/api/users/current');
 
         const agentData = {
           title: agent?.title || '',

@@ -1,3 +1,5 @@
+import { authenticatedFetch } from '@/lib/utils';
+
 export type CompanyType = 'FISICA' | 'JURIDICA';
 
 export interface Tenant {
@@ -66,26 +68,8 @@ export interface UpdateTenantData {
 }
 
 class TenantService {
-  private async makeRequest<T>(url: string, options?: RequestInit): Promise<T> {
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-      ...options,
-    });
-
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || `Erro na requisição: ${response.status}`);
-    }
-
-    return data;
-  }
-
   async listTenants(): Promise<TenantListResponse> {
-    const response = await this.makeRequest<{ tenants: unknown[] }>("/api/tenants/list");
+    const response = await authenticatedFetch("/api/tenants/list");
     
     // Mapear os dados da API para o formato esperado pelo frontend
     const tenants = (response.tenants as Tenant[]) || [];
@@ -105,7 +89,7 @@ class TenantService {
   }
 
   async createTenant(tenantData: CreateTenantData): Promise<TenantResponse> {
-    const response = await this.makeRequest<{ tenant: unknown }>("/api/tenants/create", {
+    const response = await authenticatedFetch("/api/tenants/create", {
       method: "POST",
       body: JSON.stringify(tenantData),
     });
@@ -128,7 +112,7 @@ class TenantService {
   }
 
   async updateTenant(tenantData: UpdateTenantData): Promise<TenantResponse> {
-    const response = await this.makeRequest<{ tenant: unknown }>("/api/tenants/update", {
+    const response = await authenticatedFetch("/api/tenants/update", {
       method: "PUT",
       body: JSON.stringify(tenantData),
     });
@@ -151,7 +135,7 @@ class TenantService {
   }
 
   async deleteTenant(id: string): Promise<ApiResponse> {
-    return this.makeRequest<ApiResponse>(`/api/tenants/delete?id=${id}`, {
+    return authenticatedFetch(`/api/tenants/delete?id=${id}`, {
       method: "DELETE",
     });
   }

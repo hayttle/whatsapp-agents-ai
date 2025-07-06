@@ -17,7 +17,7 @@ export interface AuthResult {
 }
 
 /**
- * Helper para autenticar usuário via cookies do Supabase
+ * Helper para autenticar usuário via cookies (SSR)
  * Retorna os dados do usuário autenticado ou null se não autenticado
  */
 export async function authenticateUser(
@@ -34,29 +34,41 @@ export async function authenticateUser(
             return Object.entries(req.cookies).map(([name, value]) => ({ name, value: value || '' }));
           },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value }) => {
-              res.setHeader('Set-Cookie', `${name}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400`);
+            cookiesToSet.forEach(({ name, value, options }) => {
+              const cookieOptions = {
+                Path: '/',
+                HttpOnly: true,
+                SameSite: 'Lax' as const,
+                Secure: process.env.NODE_ENV === 'production',
+                ...options
+              };
+              
+              const cookieString = Object.entries(cookieOptions)
+                .map(([key, val]) => `${key}=${val}`)
+                .join('; ');
+              
+              res.setHeader('Set-Cookie', `${name}=${value}; ${cookieString}`);
             });
           },
         },
       }
     );
 
-    // Verificar autenticação
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.log('Erro na autenticação Supabase:', authError);
       return null;
     }
 
     // Buscar dados do usuário na tabela users
-    const { data: userData } = await supabase
+    const { data: userData, error: userError } = await supabase
       .from('users')
       .select('id, email, name, role, tenant_id, created_at, updated_at')
       .eq('email', user.email)
       .single();
 
-    if (!userData) {
+    if (userError || !userData) {
+      console.log('Erro ao buscar dados do usuário:', userError);
       return null;
     }
 
@@ -64,7 +76,8 @@ export async function authenticateUser(
       user: userData as AuthenticatedUser,
       supabase
     };
-  } catch {
+  } catch (error) {
+    console.error('Erro na autenticação:', error);
     return null;
   }
 }
@@ -107,7 +120,7 @@ export function withAuth(
     
     if (!auth) {
       return res.status(401).json({ 
-        error: 'Unauthorized - User not authenticated',
+        error: 'Unauthorized - Authentication required',
         code: 'AUTH_REQUIRED'
       });
     }

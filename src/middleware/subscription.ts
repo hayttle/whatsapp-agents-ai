@@ -11,12 +11,15 @@ const PUBLIC_ROUTES = [
   '/public',
   '/favicon.ico',
   '/design-system',
+  '/qrcode',
 ];
 
 // Rotas que são permitidas mesmo com assinatura suspensa
 const ALLOWED_WHEN_SUSPENDED = [
   '/assinatura',
   '/api/subscriptions',
+  '/api/auth',
+  '/api/users/current',
 ];
 
 export async function checkSubscriptionStatus(request: NextRequest) {
@@ -24,6 +27,11 @@ export async function checkSubscriptionStatus(request: NextRequest) {
 
   // Permitir rotas públicas
   if (PUBLIC_ROUTES.some(route => pathname === route || pathname.startsWith(route + '/'))) {
+    return NextResponse.next();
+  }
+
+  // Permitir rotas de API de autenticação e usuário atual
+  if (pathname.startsWith('/api/auth/') || pathname === '/api/users/current') {
     return NextResponse.next();
   }
 
@@ -57,7 +65,7 @@ export async function checkSubscriptionStatus(request: NextRequest) {
     // Buscar tenant_id do usuário
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('tenant_id')
+      .select('tenant_id, created_at')
       .eq('id', user.id)
       .single();
 
@@ -70,25 +78,18 @@ export async function checkSubscriptionStatus(request: NextRequest) {
       return NextResponse.redirect(subscriptionUrl);
     }
 
-    // Buscar assinatura ativa do tenant
+    // Buscar assinatura mais recente do tenant (todas as assinaturas)
     const { data: subscription, error: subscriptionError } = await supabase
       .from('subscriptions')
       .select('*')
       .eq('tenant_id', userData.tenant_id)
-      .in('status', ['TRIAL', 'ACTIVE'])
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
 
-    // Se não há assinatura ou está suspensa/vencida
+    // Se não há assinatura
     if (subscriptionError || !subscription) {
       // Verificar se o usuário está no período trial (7 dias após cadastro)
-      const { data: userData } = await supabase
-        .from('users')
-        .select('created_at')
-        .eq('id', user.id)
-        .single();
-
       if (userData?.created_at) {
         const userCreatedAt = new Date(userData.created_at);
         const trialEnd = new Date(userCreatedAt);
@@ -106,13 +107,6 @@ export async function checkSubscriptionStatus(request: NextRequest) {
         return NextResponse.next();
       }
 
-      // Bloquear acesso à página de QR Code se não há assinatura ativa
-      if (pathname.startsWith('/qrcode')) {
-        const subscriptionUrl = new URL('/assinatura', request.url);
-        subscriptionUrl.searchParams.set('from', 'qrcode');
-        return NextResponse.redirect(subscriptionUrl);
-      }
-
       // Redirecionar para página de assinatura se tentar acessar outras rotas
       if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
         const subscriptionUrl = new URL('/assinatura', request.url);
@@ -122,7 +116,7 @@ export async function checkSubscriptionStatus(request: NextRequest) {
       return NextResponse.next();
     }
 
-    // Verificar se a assinatura trial expirou
+    // Verificar status da assinatura
     if (subscription.status === 'TRIAL') {
       const trialEndDate = new Date(subscription.next_due_date);
       const now = new Date();
@@ -142,24 +136,32 @@ export async function checkSubscriptionStatus(request: NextRequest) {
           return NextResponse.next();
         }
 
-        // Bloquear acesso à página de QR Code se assinatura trial expirou
-        if (pathname.startsWith('/qrcode')) {
-          const subscriptionUrl = new URL('/assinatura', request.url);
-          subscriptionUrl.searchParams.set('from', 'qrcode');
-          return NextResponse.redirect(subscriptionUrl);
-        }
-
         // Redirecionar para página de assinatura
         const subscriptionUrl = new URL('/assinatura', request.url);
         return NextResponse.redirect(subscriptionUrl);
       }
+      
+      // Trial ativo, permitir acesso
+      return NextResponse.next();
     }
 
-    // Assinatura ativa, permitir acesso
-    return NextResponse.next();
+    if (subscription.status === 'ACTIVE') {
+      // Assinatura ativa, permitir acesso
+      return NextResponse.next();
+    }
+
+    if (subscription.status === 'SUSPENDED' || subscription.status === 'CANCELLED' || subscription.status === 'OVERDUE') {
+      // Permitir acesso à página de assinatura
+      if (pathname === '/assinatura') {
+        return NextResponse.next();
+      }
+
+      // Redirecionar para página de assinatura
+      const subscriptionUrl = new URL('/assinatura', request.url);
+      return NextResponse.redirect(subscriptionUrl);
+    }
 
   } catch (error) {
-    console.error('Erro ao verificar assinatura:', error);
     // Em caso de erro, permitir acesso (fail-safe)
     return NextResponse.next();
   }

@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/client';
+import { authenticatedFetch } from '@/lib/utils';
+import { createClient } from '@supabase/supabase-js';
 
 export interface Subscription {
   id: string;
@@ -34,20 +35,6 @@ export interface SubscriptionPayment {
   created_at: string;
 }
 
-export interface TenantUsageStats {
-  tenant_id: string;
-  tenant_name: string;
-  tenant_email: string;
-  current_plan: string;
-  plan_quantity: number;
-  allowed_instances: number;
-  current_instances: number;
-  remaining_instances: number;
-  subscription_status: string;
-  next_due_date: string;
-  monthly_price: number;
-}
-
 export interface CreateSubscriptionData {
   tenant_id: string;
   user_id: string;
@@ -74,87 +61,100 @@ export interface SubscriptionPaymentsResponse {
   payments: SubscriptionPayment[];
 }
 
-export interface TenantUsageStatsResponse {
-  stats: TenantUsageStats;
-}
-
 export interface CheckoutResponse {
   checkoutUrl: string;
   subscription: Subscription;
 }
 
-
+export interface CreateTrialSubscriptionData {
+  tenant_id: string;
+  plan_type?: 'starter' | 'pro' | 'custom';
+  plan_name?: string;
+  quantity?: number;
+}
 
 class SubscriptionService {
-  private async makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const response = await fetch(endpoint, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    return response.json();
-  }
-
   async createSubscription(data: CreateSubscriptionData): Promise<CheckoutResponse> {
-    return this.makeRequest<CheckoutResponse>('/api/subscriptions/checkout', {
+    return authenticatedFetch('/api/subscriptions/checkout', {
       method: 'POST',
       body: JSON.stringify(data),
-    });
-  }
-
-  async getMySubscription(): Promise<SubscriptionResponse> {
-    // Obter token de autenticação do Supabase
-    const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    const headers: Record<string, string> = {};
-    if (session?.access_token) {
-      headers['Authorization'] = `Bearer ${session.access_token}`;
-    }
-    
-    return this.makeRequest<SubscriptionResponse>('/api/subscriptions/my', {
-      headers
-    });
-  }
-
-  async getTenantUsageStats(tenantId: string): Promise<TenantUsageStatsResponse> {
-    return this.makeRequest<TenantUsageStatsResponse>(`/api/subscriptions/usage/${tenantId}`);
+    }) as Promise<CheckoutResponse>;
   }
 
   async getSubscriptionPayments(subscriptionId: string): Promise<SubscriptionPaymentsResponse> {
-    return this.makeRequest<SubscriptionPaymentsResponse>(`/api/subscriptions/${subscriptionId}/payments`);
+    return authenticatedFetch(`/api/subscriptions/${subscriptionId}/payments`) as Promise<SubscriptionPaymentsResponse>;
   }
 
   async renewSubscription(subscriptionId: string, data: Partial<CreateSubscriptionData>): Promise<SubscriptionResponse> {
-    return this.makeRequest<SubscriptionResponse>(`/api/subscriptions/renew`, {
+    return authenticatedFetch(`/api/subscriptions/renew`, {
       method: 'POST',
       body: JSON.stringify({ subscriptionId, ...data }),
-    });
-  }
-
-  async cancelSubscription(subscriptionId: string): Promise<{ success: boolean }> {
-    return this.makeRequest<{ success: boolean }>(`/api/subscriptions/${subscriptionId}/cancel`, {
-      method: 'POST',
-    });
+    }) as Promise<SubscriptionResponse>;
   }
 
   async updateQuantity(subscriptionId: string, quantity: number): Promise<SubscriptionResponse> {
-    return this.makeRequest<SubscriptionResponse>('/api/subscriptions/update-quantity', {
+    return authenticatedFetch('/api/subscriptions/update-quantity', {
       method: 'POST',
       body: JSON.stringify({ subscriptionId, quantity }),
-    });
+    }) as Promise<SubscriptionResponse>;
   }
 
   async getSubscriptionHistory(): Promise<SubscriptionListResponse> {
-    return this.makeRequest<SubscriptionListResponse>('/api/subscriptions/history');
+    return authenticatedFetch('/api/subscriptions/history') as Promise<SubscriptionListResponse>;
+  }
+
+  async getCurrentSubscription(): Promise<SubscriptionResponse> {
+    return authenticatedFetch('/api/subscriptions/current') as Promise<SubscriptionResponse>;
+  }
+
+  async createTrialSubscription({ tenant_id, plan_type = 'starter', plan_name = 'Trial', quantity = 1 }: CreateTrialSubscriptionData) {
+    const trialStartDate = new Date();
+    const trialExpiresAt = new Date();
+    trialExpiresAt.setDate(trialStartDate.getDate() + 7);
+
+    const calculateAllowedInstances = (planType: string, quantity: number) => {
+      switch (planType) {
+        case 'starter':
+          return 2 * quantity;
+        case 'pro':
+          return 5 * quantity;
+        default:
+          return 0;
+      }
+    };
+
+    const trialSubscriptionData = {
+      tenant_id,
+      asaas_subscription_id: null,
+      plan_name,
+      plan_type,
+      quantity,
+      allowed_instances: calculateAllowedInstances(plan_type, quantity),
+      status: 'TRIAL',
+      value: 0,
+      price: 0,
+      cycle: 'MONTHLY',
+      started_at: trialStartDate.toISOString(),
+      expires_at: trialExpiresAt.toISOString().split('T')[0],
+      next_due_date: trialExpiresAt.toISOString().split('T')[0],
+      paid_at: null,
+      invoice_url: null,
+      payment_method: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    const { error } = await supabase
+      .from('subscriptions')
+      .insert(trialSubscriptionData);
+    if (error) {
+      throw new Error('Erro ao criar assinatura trial: ' + error.message);
+    }
+    return trialSubscriptionData;
   }
 }
 

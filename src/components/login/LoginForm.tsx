@@ -31,18 +31,30 @@ export function LoginForm() {
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: data.email, password: data.senha })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.senha,
+        }),
       });
+
       const result = await response.json();
+
       if (!response.ok) {
-        toast.error(result.error || 'Erro ao fazer login.');
-      } else {
-        toast.success('Login realizado com sucesso!');
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 500);
+        throw new Error(result.error || 'Erro ao fazer login');
       }
+
+      // Salvar o token no localStorage
+      if (result.access_token) {
+        localStorage.setItem('supabase.auth.token', result.access_token);
+      }
+
+      toast.success('Login realizado com sucesso!');
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 500);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
       toast.error(errorMessage);

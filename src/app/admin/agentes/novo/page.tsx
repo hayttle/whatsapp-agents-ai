@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AgentQuickCreateModal from '@/components/admin/agents/AgentQuickCreateModal';
+import { authenticatedFetch } from '@/lib/utils';
 
 export default function NovoAgentePage() {
   const router = useRouter();
@@ -11,8 +12,7 @@ export default function NovoAgentePage() {
   useEffect(() => {
     async function fetchTenantId() {
       try {
-        const res = await fetch('/api/users/current');
-        const data = await res.json();
+        const data = await authenticatedFetch('/api/users/current');
         setTenantId(data.tenant_id || '');
       } catch {
         setTenantId('');

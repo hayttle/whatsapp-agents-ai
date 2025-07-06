@@ -96,7 +96,7 @@ export function TenantDeleteConfirmation({
       onClose();
 
       // Mostrar mensagem de sucesso com estatísticas
-      console.log('Empresa deletada com sucesso:', result);
+
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');

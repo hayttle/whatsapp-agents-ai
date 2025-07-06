@@ -1,3 +1,5 @@
+import { authenticatedFetch } from '@/lib/utils';
+
 export interface InternalAgent {
   id: string;
   tenant_id: string;
@@ -31,48 +33,28 @@ export interface InternalAgentFormData {
 
 class InternalAgentService {
   async createAgent(data: InternalAgentFormData): Promise<InternalAgent> {
-    const response = await fetch('/api/agents/internal/create', {
+    const result = await authenticatedFetch('/api/agents/internal/create', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Erro ao criar agente interno');
-    }
-
-    const result = await response.json();
     return result.agent;
   }
 
   async updateAgent(id: string, data: Partial<InternalAgentFormData>): Promise<InternalAgent> {
-    const response = await fetch('/api/agents/internal/update', {
+    const result = await authenticatedFetch('/api/agents/internal/update', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, ...data }),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Erro ao atualizar agente interno');
-    }
-
-    const result = await response.json();
     return result.agent;
   }
 
   async deleteAgent(id: string): Promise<void> {
-    const response = await fetch('/api/agents/delete', {
+    await authenticatedFetch('/api/agents/delete', {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Erro ao deletar agente interno');
-    }
   }
 
   async listAgents(tenantId?: string): Promise<InternalAgent[]> {
@@ -80,30 +62,16 @@ class InternalAgentService {
       ? `/api/agents/list?tenantId=${tenantId}&agent_type=internal`
       : '/api/agents/list?agent_type=internal';
     
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Erro ao listar agentes internos');
-    }
-
-    const result = await response.json();
+    const result = await authenticatedFetch(url);
     return result.agents;
   }
 
   async toggleStatus(id: string): Promise<InternalAgent> {
-    const response = await fetch('/api/agents/toggle-status', {
+    const result = await authenticatedFetch('/api/agents/toggle-status', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Erro ao alterar status do agente interno');
-    }
-
-    const result = await response.json();
     return result.agent;
   }
 }

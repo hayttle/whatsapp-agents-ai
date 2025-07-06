@@ -1,3 +1,5 @@
+import { authenticatedFetch } from '@/lib/utils';
+
 export interface User {
   id: string;
   email: string;
@@ -24,55 +26,37 @@ export interface ApiResponse {
 }
 
 class UserService {
-  private async makeRequest<T>(url: string, options?: RequestInit): Promise<T> {
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-      ...options,
-    });
-
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || `Erro na requisição: ${response.status}`);
-    }
-
-    return data;
-  }
-
   async listUsers(): Promise<UserListResponse> {
-    return this.makeRequest<UserListResponse>("/api/users/list");
+    return authenticatedFetch("/api/users/list");
   }
 
   async getCurrentUser(): Promise<CurrentUserResponse> {
-    return this.makeRequest<CurrentUserResponse>("/api/users/current");
+    return authenticatedFetch("/api/users/current");
   }
 
-  async createUser(userData: Omit<User, 'id' | 'created_at' | 'updated_at'> & { password: string }): Promise<ApiResponse> {
-    return this.makeRequest<ApiResponse>("/api/users/create", {
+  async createUser(user: Omit<User, 'id' | 'created_at' | 'updated_at'> & { password: string }): Promise<ApiResponse> {
+    return authenticatedFetch("/api/users/create", {
       method: "POST",
-      body: JSON.stringify(userData),
+      body: JSON.stringify(user),
     });
   }
 
-  async updateUser(userId: string, userData: Partial<User> & { password?: string }): Promise<ApiResponse> {
-    return this.makeRequest<ApiResponse>("/api/users/update", {
+  async updateUser(userId: string, user: Partial<User> & { password?: string }): Promise<ApiResponse> {
+    return authenticatedFetch("/api/users/update", {
       method: "PUT",
-      body: JSON.stringify({ id: userId, ...userData }),
+      body: JSON.stringify({ id: userId, ...user }),
     });
   }
 
-  async updateProfile(userData: Partial<User>): Promise<ApiResponse> {
-    return this.makeRequest<ApiResponse>("/api/users/profile", {
+  async updateProfile(user: Partial<User>): Promise<ApiResponse> {
+    return authenticatedFetch("/api/users/profile", {
       method: "PUT",
-      body: JSON.stringify(userData),
+      body: JSON.stringify(user),
     });
   }
 
   async deleteUser(userId: string): Promise<ApiResponse> {
-    return this.makeRequest<ApiResponse>("/api/users/delete", {
+    return authenticatedFetch("/api/users/delete", {
       method: "DELETE",
       body: JSON.stringify({ id: userId }),
     });

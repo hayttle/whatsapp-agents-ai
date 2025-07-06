@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { authenticateUser } from '@/lib/supabase/api';
+import { authenticateUser } from '@/lib/auth/helpers';
 import { createServerClient } from '@supabase/ssr';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!auth) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    const { userData } = auth;
+    const { user } = auth;
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -22,8 +22,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Buscar todos os provedores do tenant ou todos se super_admin
     let query = supabase.from('whatsapp_providers').select('*');
-    if (userData.role !== 'super_admin') {
-      query = query.eq('tenant_id', userData.tenant_id);
+    if (user.role !== 'super_admin') {
+      query = query.eq('tenant_id', user.tenant_id);
     }
     const { data, error } = await query;
 

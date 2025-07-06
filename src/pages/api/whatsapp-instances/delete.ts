@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
-import { authenticateUser } from '@/lib/supabase/api';
+import { authenticateUser } from '@/lib/auth/helpers';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Unauthorized - User not authenticated' });
     }
 
-    const { userData } = auth;
+    const { user } = auth;
 
   const apikey = process.env.EVOLUTION_API_KEY;
   if (!apikey) {
@@ -44,7 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'Instance not found' });
     }
 
-    if (userData.role !== 'super_admin' && existingInstance.tenant_id !== userData.tenant_id) {
+    if (user.role !== 'super_admin' && existingInstance.tenant_id !== user.tenant_id) {
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
 

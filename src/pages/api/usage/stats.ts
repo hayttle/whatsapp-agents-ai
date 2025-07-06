@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { authenticateUser } from '@/lib/supabase/api';
+import { authenticateUser } from '@/lib/auth/helpers';
 import { usageService } from '@/services/usageService';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -14,10 +14,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { userData } = auth;
+    const { user } = auth;
 
     // Buscar estatísticas de uso
-    const usageResponse = await usageService.getUsageStats(userData.tenant_id);
+    const usageResponse = await usageService.getUsageStats(user.tenant_id ?? '');
 
     if (!usageResponse.success) {
       return res.status(500).json({ 

@@ -6,6 +6,38 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/**
+ * Função para fazer requisições autenticadas para a API
+ * Usa cookies automaticamente (não precisa enviar tokens manualmente)
+ */
+export async function authenticatedFetch(
+  url: string, 
+  options: RequestInit = {}
+): Promise<unknown> {
+  const defaultOptions: RequestInit = {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Importante: inclui cookies na requisição
+    ...options,
+  };
+
+  // Se há body, certifique-se de que está como JSON
+  if (options.body && typeof options.body === 'object') {
+    defaultOptions.body = JSON.stringify(options.body);
+  }
+
+  const response = await fetch(url, defaultOptions);
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+}
+
 // Validação de CPF
 export function validateCPF(cpf: string): boolean {
   // Remove caracteres não numéricos

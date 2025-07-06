@@ -1,3 +1,4 @@
+import { authenticatedFetch } from '@/lib/utils';
 import { Instance } from "@/components/admin/instances/types";
 
 export interface InstanceListResponse {
@@ -26,51 +27,31 @@ export interface CreateInstanceData {
 }
 
 class InstanceService {
-  private async makeRequest<T>(url: string, options?: RequestInit): Promise<T> {
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-      ...options,
-    });
-
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || `Erro na requisição: ${response.status}`);
-    }
-
-    return data;
-  }
-
   async listInstances(tenantId?: string): Promise<InstanceListResponse> {
     let url = "/api/whatsapp-instances/list";
     if (tenantId) {
       url += `?tenantId=${tenantId}`;
     }
     
-    return this.makeRequest<InstanceListResponse>(url);
+    return authenticatedFetch(url);
   }
 
   async connectInstance(instanceName: string, forceRegenerate?: boolean): Promise<ConnectResponse> {
-    const response = await this.makeRequest<ConnectResponse>('/api/whatsapp-instances/connect', {
+    return authenticatedFetch('/api/whatsapp-instances/connect', {
       method: 'POST',
       body: JSON.stringify({ instanceName, forceRegenerate }),
     });
-    
-    return response;
   }
 
   async disconnectInstance(instanceName: string): Promise<ApiResponse> {
-    return this.makeRequest<ApiResponse>('/api/whatsapp-instances/disconnect', {
+    return authenticatedFetch('/api/whatsapp-instances/disconnect', {
       method: 'POST',
       body: JSON.stringify({ instanceName }),
     });
   }
 
   async deleteInstance(instanceName: string): Promise<ApiResponse> {
-    return this.makeRequest<ApiResponse>("/api/whatsapp-instances/delete", {
+    return authenticatedFetch("/api/whatsapp-instances/delete", {
       method: "DELETE",
       body: JSON.stringify({ instanceName }),
     });
@@ -82,7 +63,7 @@ class InstanceService {
       ? "/api/whatsapp-instances/external/create"
       : "/api/whatsapp-instances/internal/create";
     
-    return this.makeRequest<ApiResponse>(endpoint, {
+    return authenticatedFetch(endpoint, {
       method: "POST",
       body: JSON.stringify(instanceData),
     });
@@ -101,15 +82,15 @@ class InstanceService {
       ? "/api/whatsapp-instances/external/update"
       : "/api/whatsapp-instances/internal/update";
     
-    return this.makeRequest<ApiResponse>(endpoint, {
+    return authenticatedFetch(endpoint, {
       method: "PUT",
       body: JSON.stringify({ id, ...updateData }),
     });
   }
 
   async getInstanceByName(instanceName: string): Promise<Instance | null> {
-    const data = await this.makeRequest<InstanceListResponse>(`/api/whatsapp-instances/list`);
-    return data.instances.find((inst) => inst.instanceName === instanceName) || null;
+    const data = await authenticatedFetch(`/api/whatsapp-instances/list`);
+    return data.instances.find((inst: Instance) => inst.instanceName === instanceName) || null;
   }
 }
 

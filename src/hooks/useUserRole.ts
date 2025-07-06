@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
+import { authenticatedFetch } from '@/lib/utils';
 
 interface UserData {
   id: string;
@@ -16,13 +17,13 @@ interface UseUserRoleReturn {
   isSuperAdmin: boolean;
   isLoading: boolean;
   error: string | null;
-  userData: UserData | null;
+  user: UserData | null;
   refetch: () => Promise<void>;
 }
 
 export function useUserRole(): UseUserRoleReturn {
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [userData, setUserData] = useState<UserData | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,25 +32,16 @@ export function useUserRole(): UseUserRoleReturn {
       setIsLoading(true);
       setError(null);
       
-      const response = await fetch('/api/users/current');
+      const data = await authenticatedFetch('/api/users/current');
+      const role = data.user?.role || 'user';
       
-      if (response.ok) {
-        const data = await response.json();
-        const role = data.user?.role || 'user';
-        
-        setUserRole(role);
-        setUserData(data.user);
-      } else {
-        console.error('[useUserRole] Erro ao buscar dados do usuário:', response.status);
-        setError('Erro ao buscar dados do usuário');
-        setUserRole(null);
-        setUserData(null);
-      }
+      setUserRole(role);
+      setUser(data.user);
     } catch (error) {
-      console.error('[useUserRole] Erro na requisição:', error);
-      setError('Erro na requisição');
+      console.error('[useUserRole] Erro ao buscar dados do usuário:', error);
+      setError('Erro ao buscar dados do usuário');
       setUserRole(null);
-      setUserData(null);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -66,7 +58,7 @@ export function useUserRole(): UseUserRoleReturn {
     isSuperAdmin,
     isLoading,
     error,
-    userData,
+    user,
     refetch: fetchUserData
   };
 } 

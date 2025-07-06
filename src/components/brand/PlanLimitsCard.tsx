@@ -200,6 +200,18 @@ export function PlanLimitsCard({ stats, loading = false }: PlanLimitsCardProps) 
             </div>
           </Alert>
         )}
+
+        {stats.subscriptionStatus === 'TRIAL' && (
+          <Alert variant="warning">
+            <AlertTriangle className="h-4 w-4" />
+            <div>
+              <h4 className="font-medium">Período Trial Expirado</h4>
+              <p className="text-sm">
+                Seu período de teste expirou. Escolha um plano para continuar usando a plataforma.
+              </p>
+            </div>
+          </Alert>
+        )}
       </CardContent>
     </Card>
   );

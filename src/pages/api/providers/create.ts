@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { authenticateUser } from '@/lib/supabase/api';
-import { createServerClient } from '@supabase/ssr';
+import { withAuth, AuthResult } from '@/lib/auth/helpers';
 
 // Função para validar URL
 function isValidUrl(url: string): boolean {
@@ -86,24 +85,13 @@ async function validateApiKey(serverUrl: string, apiKey: string): Promise<{ vali
   }
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResult) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Autenticar usuário
-    const auth = await authenticateUser(req, res);
-    if (!auth) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const { userData } = auth;
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: { getAll() { return []; }, setAll() {} } }
-    );
-
+    const { user, supabase } = auth;
     const { name, server_url, api_key, tenant_id } = req.body;
     
     // Validação dos campos obrigatórios
@@ -111,7 +99,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Campos obrigatórios não preenchidos.' });
     }
 
-    const isSuperAdmin = userData.role === 'super_admin';
+    const isSuperAdmin = user.role === 'super_admin';
 
     // Normalizar server_url: remover barra final
     const normalizedServerUrl = server_url.replace(/\/+$/, '');
@@ -136,8 +124,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .update({ ...updateData, server_url: normalizedServerUrl, provider_type: 'evolution', updated_at: new Date().toISOString() })
         .eq('id', id);
       if (!isSuperAdmin) {
-        query = query.eq('tenant_id', userData.tenant_id);
-        updateData.tenant_id = userData.tenant_id; // Garante que usuário comum não troque tenant
+        query = query.eq('tenant_id', user.tenant_id);
+        updateData.tenant_id = user.tenant_id; // Garante que usuário comum não troque tenant
       }
       const { error } = await query;
       if (error) {
@@ -151,7 +139,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { error } = await supabase
         .from('whatsapp_providers')
         .insert({
-          tenant_id: isSuperAdmin ? (tenant_id || userData.tenant_id) : userData.tenant_id,
+          tenant_id: isSuperAdmin ? (tenant_id || user.tenant_id) : user.tenant_id,
           name,
           provider_type: 'evolution',
           server_url: normalizedServerUrl,
@@ -170,4 +158,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
     return res.status(500).json({ error: errorMessage });
   }
-} 
+}
+
+export default withAuth(handler); 

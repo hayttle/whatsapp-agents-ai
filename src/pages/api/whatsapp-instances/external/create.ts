@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
-import { authenticateUser } from '@/lib/supabase/api';
+import { authenticateUser } from '@/lib/auth/helpers';
 import { randomUUID } from 'crypto';
 import { checkPlanLimits } from '@/lib/plans';
 import { usageService } from '@/services/usageService';
@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Unauthorized - User not authenticated' });
     }
 
-    const { userData } = auth;
+    const { user } = auth;
 
     const { tenantId, instanceName, provider_id } = req.body;
     
@@ -58,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Verificar permissões
-    if (userData.role !== 'super_admin' && tenantId !== userData.tenant_id) {
+    if (user.role !== 'super_admin' && tenantId !== user.tenant_id) {
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
 

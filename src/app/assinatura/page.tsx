@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/brand';
 import { Button } from '@/components/brand';
 import { Badge } from '@/components/brand';
-import { Check, Star, Zap, MessageSquare, Bot, Server, ExternalLink } from 'lucide-react';
+import { Check, Star, Zap, MessageSquare, XCircle, Clock, FileText } from 'lucide-react';
 
 const plans = [
   {
@@ -52,8 +53,9 @@ function multiplyBenefit(feature: string, quantity: number) {
 }
 
 export default function AssinaturaPage() {
+  const router = useRouter();
   const { subscription, loading: subscriptionLoading } = useSubscription();
-  const { userData, isLoading: userLoading } = useUserRole();
+  const { isLoading: userLoading } = useUserRole();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
@@ -72,29 +74,107 @@ export default function AssinaturaPage() {
     );
   }
 
-  // Se já tem assinatura ativa, mostrar informações dela
-  if (subscription && subscription.isActive) {
+  // Se já tem assinatura, mostrar informações dela
+  if (subscription) {
+    const handleRenew = async () => {
+      setLoadingPlan('renew');
+      setError(null);
+
+      try {
+        const response = await fetch('/api/subscriptions/renew', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            subscriptionId: subscription.id,
+            plan_name: subscription.plan,
+            value: subscription.value,
+            cycle: subscription.cycle,
+            billing_type: 'CREDIT_CARD',
+            description: `Renovação - ${subscription.plan}`,
+            next_due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Erro ao renovar assinatura');
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+          window.location.reload();
+        } else {
+          throw new Error('Erro ao renovar assinatura');
+        }
+
+      } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : 'Erro inesperado.';
+        setError(errorMessage);
+      } finally {
+        setLoadingPlan(null);
+      }
+    };
+
     return (
       <div className="max-w-6xl mx-auto p-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-brand-gray-dark mb-2">Sua Assinatura</h1>
-          <p className="text-gray-600">
-            Você já possui uma assinatura ativa na plataforma.
-          </p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-brand-gray-dark mb-2">Sua Assinatura</h1>
+              <p className="text-gray-600">
+                {subscription.isActive
+                  ? 'Você já possui uma assinatura ativa na plataforma.'
+                  : subscription.isTrial
+                    ? 'Seu período de teste está ativo.'
+                    : 'Gerencie sua assinatura atual.'
+                }
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => router.push('/assinatura/historico')}
+              className="flex items-center gap-2"
+            >
+              <FileText className="w-4 h-4" />
+              Ver Histórico
+            </Button>
+          </div>
         </div>
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600">{error}</p>
+          </div>
+        )}
 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" />
-              {subscription.plan}
+              {subscription.isActive ? (
+                <Check className="w-5 h-5 text-green-500" />
+              ) : subscription.isSuspended ? (
+                <XCircle className="w-5 h-5 text-red-500" />
+              ) : (
+                <Clock className="w-5 h-5 text-yellow-500" />
+              )}
+              {subscription.isTrial ? 'Período Trial' : subscription.plan}
             </CardTitle>
             <CardDescription>
-              Status: {subscription.status}
+              {subscription.isTrial ? 'Período de teste gratuito' : `Plano ${subscription.plan} - ${subscription.cycle}`}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Status</p>
+                <Badge variant={subscription.isActive ? 'success' : subscription.isSuspended ? 'error' : 'warning'}>
+                  {subscription.status}
+                </Badge>
+              </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Plano</p>
                 <p className="text-lg font-semibold capitalize">{subscription.planType}</p>
@@ -115,12 +195,35 @@ export default function AssinaturaPage() {
                   {new Date(subscription.nextDueDate).toLocaleDateString('pt-BR')}
                 </p>
               </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Instâncias Permitidas</p>
+                <p className="text-lg font-semibold">{subscription.allowedInstances}</p>
+              </div>
             </div>
 
-            <div className="pt-4 border-t">
-              <p className="text-sm text-gray-600">
-                Instâncias permitidas: {subscription.allowedInstances}
-              </p>
+            {/* Botões de ação */}
+            <div className="pt-4 border-t flex gap-2">
+              {(subscription.isSuspended || (subscription.isTrial && !subscription.isActive)) && (
+                <Button
+                  onClick={handleRenew}
+                  disabled={loadingPlan === 'renew'}
+                  className="flex-1"
+                  variant="primary"
+                >
+                  {loadingPlan === 'renew' ? 'Processando...' : 'Renovar Plano'}
+                </Button>
+              )}
+
+              {subscription.invoiceUrl && (
+                <Button
+                  onClick={() => window.open(subscription.invoiceUrl, '_blank')}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  Ver Fatura
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -139,25 +242,48 @@ export default function AssinaturaPage() {
     setError(null);
 
     try {
-      // Obter o link de checkout do Asaas baseado no plano
-      let checkoutUrl = '';
+      // Criar assinatura via API
+      const response = await fetch('/api/subscriptions/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          plan_name: selectedPlanData.name,
+          plan_type: selectedPlan,
+          quantity: quantity,
+          value: selectedPlanData.price,
+          price: selectedPlanData.price,
+          cycle: 'MONTHLY',
+          billing_type: 'CREDIT_CARD',
+          description: `${selectedPlanData.name} - ${quantity}x ${selectedPlanData.features[0]}`,
+          next_due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 dias
+        }),
+      });
 
-      if (selectedPlan === 'starter') {
-        checkoutUrl = process.env.NEXT_PUBLIC_ASAAS_STARTER_CHECKOUT_URL || '';
-      } else if (selectedPlan === 'pro') {
-        checkoutUrl = process.env.NEXT_PUBLIC_ASAAS_PRO_CHECKOUT_URL || '';
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao criar assinatura');
       }
 
-      if (!checkoutUrl) {
-        setError('Link de checkout não configurado para este plano.');
-        return;
+      const data = await response.json();
+
+      if (data.success && data.checkoutUrl) {
+        // Abrir o checkout do Asaas em uma nova página/tab
+        window.open(data.checkoutUrl, '_blank');
+
+        // Recarregar dados da assinatura após um delay
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } else {
+        throw new Error('Link de checkout não recebido');
       }
 
-      // Abrir o checkout do Asaas em uma nova página/tab
-      window.open(checkoutUrl, '_blank');
-
-    } catch (e: any) {
-      setError(e.message || 'Erro inesperado.');
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : 'Erro inesperado.';
+      setError(errorMessage);
     } finally {
       setLoadingPlan(null);
     }

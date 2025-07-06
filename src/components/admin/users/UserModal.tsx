@@ -4,8 +4,10 @@ import { toast } from "sonner";
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@/components/ui';
 import { Input, Select, Button, Alert } from '@/components/brand';
 import { User, Mail, Lock, Briefcase, Building, Save } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from '@/lib/supabase/client';
 import { UserModalProps } from './types';
+
+const supabase = createClient();
 
 export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantId, empresas }: UserModalProps) {
   const [name, setName] = useState("");
@@ -17,7 +19,6 @@ export function UserModal({ isOpen, onClose, onSave, user, isSuperAdmin, tenantI
   const [error, setError] = useState("");
 
   const isEditing = !!user;
-  const supabase = createClient();
 
   // Preencher formulário se estiver editando
   useEffect(() => {

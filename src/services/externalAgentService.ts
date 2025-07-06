@@ -1,3 +1,5 @@
+import { authenticatedFetch } from '@/lib/utils';
+
 export interface ExternalAgent {
   id: string;
   tenant_id: string;
@@ -22,52 +24,33 @@ export interface ExternalAgentFormData {
   title: string;
   webhookUrl: string;
   description?: string;
+  active?: boolean;
 }
 
 class ExternalAgentService {
   async createAgent(data: ExternalAgentFormData): Promise<ExternalAgent> {
-    const response = await fetch('/api/agents/external/create', {
+    const result = await authenticatedFetch('/api/agents/external/create', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Erro ao criar agente externo');
-    }
-
-    const result = await response.json();
     return result.agent;
   }
 
   async updateAgent(id: string, data: Partial<ExternalAgentFormData>): Promise<ExternalAgent> {
-    const response = await fetch('/api/agents/external/update', {
+    const result = await authenticatedFetch('/api/agents/external/update', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, ...data }),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Erro ao atualizar agente externo');
-    }
-
-    const result = await response.json();
     return result.agent;
   }
 
   async deleteAgent(id: string): Promise<void> {
-    const response = await fetch('/api/agents/delete', {
+    await authenticatedFetch('/api/agents/delete', {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Erro ao deletar agente externo');
-    }
   }
 
   async listAgents(tenantId?: string): Promise<ExternalAgent[]> {
@@ -75,30 +58,16 @@ class ExternalAgentService {
       ? `/api/agents/list?tenantId=${tenantId}&agent_type=external`
       : '/api/agents/list?agent_type=external';
     
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Erro ao listar agentes externos');
-    }
-
-    const result = await response.json();
+    const result = await authenticatedFetch(url);
     return result.agents;
   }
 
   async toggleStatus(id: string): Promise<ExternalAgent> {
-    const response = await fetch('/api/agents/toggle-status', {
+    const result = await authenticatedFetch('/api/agents/toggle-status', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Erro ao alterar status do agente externo');
-    }
-
-    const result = await response.json();
     return result.agent;
   }
 }

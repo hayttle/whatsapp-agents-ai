@@ -22,10 +22,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const search: any = await asaasRequest(`/customers?cpfCnpj=${cpf_cnpj}`);
       if (search.data && search.data.length > 0) {
         customer = search.data[0];
-        console.log('Customer já existe no Asaas:', customer.id);
+
       }
     } catch (searchError) {
-      console.log('Erro ao buscar customer existente:', searchError);
+      
     }
 
     // Se não existe, criar novo customer
@@ -41,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           notificationDisabled: false,
         })
       });
-      console.log('Customer criado no Asaas:', customer.id);
+      
     }
 
     return res.status(200).json({ 

@@ -1,29 +1,21 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { authenticateUser, createApiClient } from '@/lib/supabase/api';
+import { withAuth, AuthResult } from '@/lib/auth/helpers';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResult) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Autenticar usuário via cookies
-    const auth = await authenticateUser(req, res);
-    
-    if (!auth) {
-      return res.status(401).json({ error: 'Unauthorized - User not authenticated' });
-    }
-
-    const { userData } = auth;
-    const supabase = createApiClient(req, res);
+    const { user, supabase } = auth;
 
     let query = supabase
       .from('whatsapp_instances')
       .select('*');
 
     // Filtrar por tenant se não for super_admin
-    if (userData.role !== 'super_admin') {
-      query = query.eq('tenant_id', userData.tenant_id);
+    if (user.role !== 'super_admin') {
+      query = query.eq('tenant_id', user.tenant_id);
     }
 
     const { data: instances, error } = await query;
@@ -37,4 +29,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
   }
-} 
+}
+
+export default withAuth(handler); 

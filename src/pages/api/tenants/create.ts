@@ -1,25 +1,17 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { authenticateUser, createApiClient } from '@/lib/supabase/api';
+import { withAuth, AuthResult } from '@/lib/auth/helpers';
 import { asaasRequest } from '@/services/asaasService';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResult) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Autenticar usuário via cookies
-    const auth = await authenticateUser(req, res);
-    
-    if (!auth) {
-      return res.status(401).json({ error: 'Unauthorized - User not authenticated' });
-    }
-
-    const { userData } = auth;
-    const supabase = createApiClient(req, res);
+    const { user, supabase } = auth;
 
     // Apenas super_admin pode criar tenants
-    if (userData.role !== 'super_admin') {
+    if (user.role !== 'super_admin') {
       return res.status(403).json({ error: 'Insufficient permissions - Only super_admin can create tenants' });
     }
 
@@ -33,18 +25,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let asaasCustomerId: string | null = null;
     let asaasStatus = { success: false, customer_id: null as string | null, message: '', error: null as string | null };
     try {
-      console.log('[Asaas] Iniciando busca/criação de customer...');
+  
       // Verificar se já existe um customer com este CPF/CNPJ
       let customer: any;
       try {
         const search: any = await asaasRequest(`/customers?cpfCnpj=${cpf_cnpj.replace(/\D/g, '')}`);
-        console.log('[Asaas] Resultado busca customer:', search);
+
         if (search.data && search.data.length > 0) {
           customer = search.data[0];
           asaasStatus = { success: true, customer_id: customer.id, message: 'Cliente já existia no Asaas', error: null };
         }
       } catch (searchError) {
-        console.log('[Asaas] Erro ao buscar customer existente:', searchError);
+        
       }
       // Se não existe, criar novo customer
       if (!customer) {
@@ -59,12 +51,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             notificationDisabled: false,
           })
         });
-        console.log('[Asaas] Customer criado:', customer);
+        
         asaasStatus = { success: true, customer_id: customer.id, message: 'Cliente criado no Asaas', error: null };
       }
       asaasCustomerId = customer.id;
     } catch (asaasError: any) {
-      console.log('[Asaas] Erro ao criar/buscar customer:', asaasError);
+      
       asaasStatus = { success: false, customer_id: null, message: '', error: asaasError?.message || 'Erro desconhecido ao criar/buscar customer no Asaas' };
       // Não falhar o cadastro se não conseguir criar no Asaas
     }
@@ -85,16 +77,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
 
     if (error) {
-      console.log('[Tenant] Erro ao criar tenant:', error);
       return res.status(500).json({ error: 'Error creating tenant: ' + error.message });
     }
 
-    console.log('[Tenant] Tenant criado:', tenant);
-    console.log('[Tenant] Status Asaas:', asaasStatus);
-    return res.status(201).json({ success: true, tenant: tenant, asaas: asaasStatus });
+    // 3. Criar assinatura trial para o tenant
+    let trialSubscription = null;
+    let trialError = null;
+    try {
+      // Importação dinâmica para evitar problemas de importação lado servidor
+      const { subscriptionService } = await import('@/services/subscriptionService');
+      trialSubscription = await subscriptionService.createTrialSubscription({
+        tenant_id: tenant.id,
+      });
+    } catch (err) {
+      trialError = err instanceof Error ? err.message : 'Erro desconhecido ao criar assinatura trial';
+    }
+
+    return res.status(201).json({
+      success: true,
+      tenant: tenant,
+      asaas: asaasStatus,
+      trial: trialSubscription,
+      trialError,
+    });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    console.log('[Tenant] Erro inesperado:', errorMessage);
+    
     return res.status(500).json({ error: 'Internal server error: ' + errorMessage });
   }
-} 
+}
+
+export default withAuth(handler); 

@@ -6,31 +6,55 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return Object.entries(req.cookies).map(([name, value]) => ({ name, value: value || '' }));
+  try {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return Object.entries(req.cookies).map(([name, value]) => ({ name, value: value || '' }));
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              const cookieOptions = {
+                Path: '/',
+                HttpOnly: true,
+                SameSite: 'Lax' as const,
+                Secure: process.env.NODE_ENV === 'production',
+                ...options
+              };
+              
+              const cookieString = Object.entries(cookieOptions)
+                .map(([key, val]) => `${key}=${val}`)
+                .join('; ');
+              
+              res.setHeader('Set-Cookie', `${name}=${value}; ${cookieString}`);
+            });
+          },
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name }) => {
-            res.setHeader('Set-Cookie', `${name}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
-          });
-        },
-      },
+      }
+    );
+
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.error('Erro no logout:', error);
+      return res.status(500).json({ 
+        error: 'Erro ao fazer logout',
+        code: 'LOGOUT_ERROR'
+      });
     }
-  );
 
-  await supabase.auth.signOut();
+    return res.status(200).json({ 
+      message: 'Logout realizado com sucesso' 
+    });
 
-  // Limpa cookies de sessão
-  Object.keys(req.cookies).forEach((name) => {
-    if (name.startsWith('sb-')) {
-      res.setHeader('Set-Cookie', `${name}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
-    }
-  });
-
-  return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Erro interno no logout:', error);
+    return res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      code: 'INTERNAL_ERROR'
+    });
+  }
 } 

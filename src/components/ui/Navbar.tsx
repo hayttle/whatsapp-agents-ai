@@ -13,6 +13,7 @@ import {
   Menu
 } from "lucide-react";
 import { User as UserType } from "@/services/userService";
+import { authenticatedFetch } from '@/lib/utils';
 
 function getInitials(name?: string, email?: string) {
   if (name) {
@@ -40,12 +41,7 @@ export function Navbar() {
     const fetchUser = async () => {
       try {
         // Buscar sempre via API protegida
-        const response = await fetch('/api/users/current');
-        if (!response.ok) {
-          setIsLoading(false);
-          return;
-        }
-        const data = await response.json();
+        const data = await authenticatedFetch('/api/users/current');
         if (!data.user) {
           setIsLoading(false);
           return;

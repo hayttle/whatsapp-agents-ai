@@ -373,11 +373,14 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
                               />
                               <ActionButton
                                 icon={Trash2}
-                                onClick={() => dispatchModal({ type: 'OPEN_DELETE', payload: user })}
+                                onClick={() => {
+                                  if (user.id === currentUserId) return;
+                                  dispatchModal({ type: 'OPEN_DELETE', payload: user });
+                                }}
                                 variant="iconDestructive"
-                                disabled={isDeleteLoading || isToggleLoading}
+                                disabled={isDeleteLoading || isToggleLoading || user.id === currentUserId}
                                 loading={isDeleteLoading}
-                                title="Deletar"
+                                title={user.id === currentUserId ? 'Você não pode remover seu próprio usuário' : 'Deletar'}
                               />
                             </div>
                           </td>
@@ -422,7 +425,7 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
         isOpen={modalState.type === 'DELETE'}
         onClose={closeModal}
         onConfirm={() => {
-          if (modalState.type === 'DELETE') {
+          if (modalState.type === 'DELETE' && modalState.payload.id !== currentUserId) {
             handleDelete(modalState.payload.id);
           }
         }}
@@ -432,8 +435,11 @@ export function UserList({ isSuperAdmin, tenantId }: UserListProps) {
         isLoading={actionLoading === (modalState.type === 'DELETE' ? `delete-${modalState.payload?.id}` : '')}
       >
         <p>
-          Tem certeza que deseja remover o usuário <span className="font-semibold">&quot;{modalState.type === 'DELETE' ? modalState.payload?.name : ''}&quot;</span>?
-          Esta ação não pode ser desfeita.
+          {modalState.type === 'DELETE' && modalState.payload.id === currentUserId ? (
+            <span className="text-red-600 font-semibold">Você não pode remover seu próprio usuário (superadmin).</span>
+          ) : (
+            <>Tem certeza que deseja remover o usuário <span className="font-semibold">&quot;{modalState.type === 'DELETE' ? modalState.payload?.name : ''}&quot;</span>? Esta ação não pode ser desfeita.</>
+          )}
         </p>
       </ConfirmationModal>
     </>
