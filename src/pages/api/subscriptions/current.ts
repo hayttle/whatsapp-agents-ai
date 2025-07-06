@@ -81,7 +81,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Erro ao buscar assinatura: ' + subscriptionError.message });
     }
 
-    // Atualizar status para SUSPENDED se trial expirou
+    // Atualizar status para EXPIRED se trial expirou
     const now = new Date();
     if (
       subscription.status === 'TRIAL' &&
@@ -90,9 +90,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ) {
       await supabase
         .from('subscriptions')
-        .update({ status: 'SUSPENDED' })
+        .update({ status: 'EXPIRED' })
         .eq('id', subscription.id);
-      subscription.status = 'SUSPENDED';
+      subscription.status = 'EXPIRED';
     }
 
     // Formatar resposta
@@ -114,7 +114,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       invoiceUrl: subscription.invoice_url,
       isActive: ['TRIAL', 'ACTIVE'].includes(subscription.status),
       isTrial: (subscription.plan_name && subscription.plan_name.toLowerCase() === 'trial'),
-      isSuspended: subscription.status === 'SUSPENDED',
+      isExpired: subscription.status === 'EXPIRED',
     };
 
     return res.status(200).json({

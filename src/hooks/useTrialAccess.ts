@@ -80,7 +80,7 @@ export function useTrialAccess(): UseTrialAccessReturn {
       }
       // PRIORIDADE 2: Se há assinatura mas não é trial, verificar status
       else if (subscription) {
-        if (subscription.isSuspended) {
+        if (subscription.isExpired) {
           // Verificar se era uma assinatura trial que expirou
           const trialEndDateObj = new Date(subscription.expiresAt);
           const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -94,9 +94,9 @@ export function useTrialAccess(): UseTrialAccessReturn {
             trialEndDate = trialEndDateObj;
             message = 'Seu período de teste gratuito expirou. Para continuar usando os recursos da plataforma, escolha um plano.';
           } else {
-            // Assinatura paga suspensa (não era trial)
+            // Assinatura paga expirada (não era trial)
             canUseFeatures = false;
-            message = 'Sua assinatura está suspensa. Renove para continuar usando a plataforma.';
+            message = 'Sua assinatura expirou. Renove para continuar usando a plataforma.';
           }
         } else if (subscription.isActive) {
           // Assinatura paga ativa

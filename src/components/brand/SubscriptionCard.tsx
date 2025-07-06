@@ -19,7 +19,7 @@ export interface SubscriptionCardProps {
     invoiceUrl?: string;
     isActive: boolean;
     isTrial: boolean;
-    isSuspended: boolean;
+    isExpired: boolean;
   };
   onRenew?: () => void;
   onViewInvoice?: () => void;
@@ -46,20 +46,11 @@ const getStatusConfig = (status: string, isTrial: boolean) => {
         bgColor: 'bg-green-50',
         borderColor: 'border-green-200',
       };
-    case 'SUSPENDED':
+    case 'EXPIRED':
       return {
-        label: 'Suspenso',
+        label: 'Expirado',
         variant: 'error' as const,
         icon: XCircle,
-        color: 'text-red-600',
-        bgColor: 'bg-red-50',
-        borderColor: 'border-red-200',
-      };
-    case 'OVERDUE':
-      return {
-        label: 'Vencido',
-        variant: 'error' as const,
-        icon: AlertTriangle,
         color: 'text-red-600',
         bgColor: 'bg-red-50',
         borderColor: 'border-red-200',
@@ -156,7 +147,7 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
       </CardHeader>
 
       {/* Mensagem amigável de trial expirado */}
-      {subscription.isSuspended && subscription.isTrial && (
+      {subscription.isExpired && subscription.isTrial && (
         <div className="mb-2">
           <Alert variant="error">
             <XCircle className="h-4 w-4" />
@@ -177,7 +168,7 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
 
         {/* Suspended Warning - trial expirado (removido para evitar duplicidade) */}
         {/* Suspended Warning - assinatura suspensa não trial */}
-        {subscription.isSuspended && !subscription.isTrial && (
+        {subscription.isExpired && !subscription.isTrial && (
           <Alert variant="error">
             <XCircle className="h-4 w-4" />
             <div>
@@ -235,7 +226,7 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
       </CardContent>
 
       <CardFooter className="flex gap-2">
-        {(subscription.isSuspended || (subscription.isTrial && trialDaysLeft === 0)) && (
+        {(subscription.isExpired || (subscription.isTrial && trialDaysLeft === 0)) && (
           <Button
             onClick={onRenew}
             disabled={loading}

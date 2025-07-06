@@ -20,7 +20,7 @@ export interface SubscriptionData {
   invoiceUrl?: string;
   isActive: boolean;
   isTrial: boolean;
-  isSuspended: boolean;
+  isExpired: boolean;
 }
 
 interface UseSubscriptionReturn {
