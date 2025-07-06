@@ -62,8 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .rpc('get_tenant_usage_stats', { p_tenant_id: tenantId });
 
     if (statsError) {
-      console.error('Erro ao buscar estatísticas:', statsError);
-      return res.status(500).json({ error: 'Erro ao buscar estatísticas de uso' });
+      return res.status(500).json({ error: 'Erro ao buscar estatísticas.' });
     }
 
     if (!stats || stats.length === 0) {
@@ -88,10 +87,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
-  } catch (error: any) {
-    console.error('Erro ao buscar estatísticas de uso:', error);
-    return res.status(500).json({ 
-      error: error.message || 'Erro interno do servidor' 
-    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Erro ao buscar estatísticas de uso.' });
   }
 } 

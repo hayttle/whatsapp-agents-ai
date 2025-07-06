@@ -91,10 +91,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
       } catch (asaasError: any) {
-        console.error('Erro ao atualizar no Asaas:', asaasError);
-        return res.status(500).json({ 
-          error: 'Erro ao atualizar assinatura no Asaas: ' + asaasError.message 
-        });
+        return res.status(500).json({ error: 'Erro ao atualizar no Asaas.' });
       }
     }
 
@@ -136,9 +133,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
   } catch (error: any) {
-    console.error('Erro ao renovar assinatura:', error);
-    return res.status(500).json({ 
-      error: error.message || 'Erro interno do servidor' 
-    });
+    return res.status(500).json({ error: 'Erro ao renovar assinatura.' });
   }
 } 

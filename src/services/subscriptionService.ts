@@ -81,26 +81,7 @@ export interface CheckoutResponse {
   subscription: Subscription;
 }
 
-export interface WebhookEvent {
-  event: string;
-  payment?: {
-    id: string;
-    subscription: string;
-    status: string;
-    value: number;
-    billingType: string;
-    invoiceUrl?: string;
-    dueDate: string;
-    paymentDate?: string;
-  };
-  subscription?: {
-    id: string;
-    status: string;
-    value: number;
-    cycle: string;
-    nextDueDate: string;
-  };
-}
+
 
 class SubscriptionService {
   private async makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -156,6 +137,13 @@ class SubscriptionService {
   async cancelSubscription(subscriptionId: string): Promise<{ success: boolean }> {
     return this.makeRequest<{ success: boolean }>(`/api/subscriptions/${subscriptionId}/cancel`, {
       method: 'POST',
+    });
+  }
+
+  async updateQuantity(subscriptionId: string, quantity: number): Promise<SubscriptionResponse> {
+    return this.makeRequest<SubscriptionResponse>('/api/subscriptions/update-quantity', {
+      method: 'POST',
+      body: JSON.stringify({ subscriptionId, quantity }),
     });
   }
 

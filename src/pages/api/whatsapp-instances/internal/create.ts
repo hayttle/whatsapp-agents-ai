@@ -165,7 +165,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       qrcode: data.qrcode || null,
       apikey: data.apikey || null,
       tenant_id: tenantId,
-      webhookEvents: ["MESSAGES_UPSERT"],
+      webhookEvents: [],
       byEvents: false,
       base64: true,
       msgCall: "",

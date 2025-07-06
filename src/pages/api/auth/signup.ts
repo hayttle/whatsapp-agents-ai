@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { createServerClient } from '@supabase/ssr';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { validateCPF, validateCNPJ } from '@/lib/utils';
+import { asaasRequest } from '@/services/asaasService';
 
 interface SignupRequest {
   company: {
@@ -129,6 +130,48 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       tenantData.address_zip_code = company.address.zip_code.replace(/\D/g, '');
     } catch {
       // Se os campos não existirem, continuar sem eles
+    }
+
+    // 2.1. Criar customer no Asaas
+    let asaasCustomerId: string | null = null;
+    try {
+      // Verificar se já existe um customer com este CPF/CNPJ
+      let customer: any;
+      try {
+        const search: any = await asaasRequest(`/customers?cpfCnpj=${company.cpf_cnpj.replace(/\D/g, '')}`);
+        if (search.data && search.data.length > 0) {
+          customer = search.data[0];
+          console.log('Customer já existe no Asaas:', customer.id);
+        }
+      } catch (searchError) {
+        console.log('Erro ao buscar customer existente:', searchError);
+      }
+
+      // Se não existe, criar novo customer
+      if (!customer) {
+        customer = await asaasRequest('/customers', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: company.name,
+            email: company.email,
+            cpfCnpj: company.cpf_cnpj.replace(/\D/g, ''),
+            mobilePhone: company.phone.replace(/\D/g, ''),
+            company: company.name,
+            notificationDisabled: false,
+          })
+        });
+        console.log('Customer criado no Asaas:', customer.id);
+      }
+
+      asaasCustomerId = customer.id;
+    } catch (asaasError) {
+      console.error('Erro ao criar customer no Asaas:', asaasError);
+      // Não falhar o cadastro se não conseguir criar no Asaas
+    }
+
+    // 2.2. Adicionar asaas_customer_id aos dados do tenant
+    if (asaasCustomerId) {
+      tenantData.asaas_customer_id = asaasCustomerId;
     }
 
     const { data: tenant, error: tenantError } = await supabase

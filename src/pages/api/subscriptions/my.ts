@@ -92,10 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       subscription: formattedSubscription,
     });
 
-  } catch (error: any) {
-    console.error('Erro ao buscar assinatura:', error);
-    return res.status(500).json({ 
-      error: error.message || 'Erro interno do servidor' 
-    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Erro ao buscar assinatura.' });
   }
 } 

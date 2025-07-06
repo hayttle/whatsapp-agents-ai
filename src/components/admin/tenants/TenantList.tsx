@@ -2,7 +2,7 @@
 import React, { useReducer, useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import TenantModal from "./TenantModal";
-import { ConfirmationModal } from "@/components/ui";
+import { TenantDeleteConfirmation } from "./TenantDeleteConfirmation";
 import { ActionButton } from "@/components/ui";
 import { useActions } from "@/hooks/useActions";
 import { tenantService, Tenant } from "@/services/tenantService";
@@ -309,7 +309,8 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
         onSave={handleSave}
         tenant={modalState.type === 'EDIT' ? modalState.payload : undefined}
       />
-      <ConfirmationModal
+      <TenantDeleteConfirmation
+        tenant={modalState.type === 'DELETE' ? modalState.payload : null}
         isOpen={modalState.type === 'DELETE'}
         onClose={closeModal}
         onConfirm={() => {
@@ -317,16 +318,11 @@ export function TenantList({ isSuperAdmin }: TenantListProps) {
             handleDelete(modalState.payload.id);
           }
         }}
-        title="Confirmar Remoção"
-        confirmText="Remover"
-        cancelText="Cancelar"
-        isLoading={actionLoading === (modalState.type === 'DELETE' ? modalState.payload?.id : '')}
-      >
-        <p>
-          Tem certeza que deseja remover a empresa <span className="font-semibold">&quot;{modalState.type === 'DELETE' ? modalState.payload?.name : ''}&quot;</span>?
-          Esta ação não pode ser desfeita.
-        </p>
-      </ConfirmationModal>
+        onSuccess={() => {
+          toast.success("Empresa deletada com sucesso!");
+          setRefreshKey(k => k + 1);
+        }}
+      />
     </>
   );
 } 

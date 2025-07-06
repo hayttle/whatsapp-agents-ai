@@ -47,10 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       tableExists: true
     });
 
-  } catch (error: any) {
-    console.error('Erro no teste:', error);
-    return res.status(500).json({ 
-      error: error.message || 'Erro interno do servidor' 
-    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Erro no teste.' });
   }
 } 

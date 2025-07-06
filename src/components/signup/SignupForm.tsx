@@ -5,24 +5,24 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Input, Button, Select } from "@/components/brand";
-import { 
-  Building2, 
-  Mail, 
-  Lock, 
-  User, 
-  Phone, 
-  MapPin, 
+import {
+  Building2,
+  Mail,
+  Lock,
+  User,
+  Phone,
+  MapPin,
   FileText,
   ArrowLeft,
   ArrowRight,
   CheckCircle
 } from "lucide-react";
-import { 
-  companySchema, 
-  userSchema, 
-  type CompanyData, 
+import {
+  companySchema,
+  userSchema,
+  type CompanyData,
   type UserData,
-  type SignupResponse 
+  type SignupResponse
 } from "./types";
 import { validateCPF, validateCNPJ, formatCPF, formatCNPJ, formatCEP, formatPhone } from "@/lib/utils";
 
@@ -38,19 +38,19 @@ export function SignupForm() {
   const companyForm = useForm<CompanyData>({
     resolver: zodResolver(companySchema),
     defaultValues: {
-      type: 'FISICA',
-      name: '',
-      cpf_cnpj: '',
-      email: '',
-      phone: '',
+      type: 'JURIDICA',
+      name: 'empresa teste',
+      cpf_cnpj: '60.859.566/0001-03',
+      email: 'teste@teste.com',
+      phone: '11987654321',
       address: {
-        street: '',
-        number: '',
+        street: 'Rua teste',
+        number: '123',
         complement: '',
-        neighborhood: '',
-        city: '',
-        state: '',
-        zip_code: '',
+        neighborhood: 'Bairro teste',
+        city: 'São Paulo',
+        state: 'SP',
+        zip_code: '04101-300',
       }
     }
   });
@@ -59,13 +59,15 @@ export function SignupForm() {
   const userForm = useForm<UserData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
-      full_name: '',
-      email: '',
-      whatsapp: '',
-      password: '',
-      confirm_password: '',
+      full_name: 'João da Silva',
+      email: 'joao@teste.com',
+      whatsapp: '(11) 99999-9999',
+      password: '123456',
+      confirm_password: '123456',
     }
   });
+
+  // TODO: Remover valores default após testes de criação de customer no Asaas
 
   // Validação customizada de CPF/CNPJ
   const validateDocument = (value: string, type: 'FISICA' | 'JURIDICA') => {
@@ -121,7 +123,7 @@ export function SignupForm() {
       });
 
       const result: SignupResponse = await response.json();
-      
+
       if (!response.ok) {
         toast.error(result.error || 'Erro ao cadastrar.');
         return;
@@ -162,8 +164,8 @@ export function SignupForm() {
         Crie sua conta
       </h1>
       <p className="text-brand-gray-medium text-base mb-8 w-full text-left">
-        {currentStep === 'company' 
-          ? 'Primeiro, informe os dados da sua empresa' 
+        {currentStep === 'company'
+          ? 'Primeiro, informe os dados da sua empresa'
           : 'Agora, crie seu acesso ao sistema'
         }
       </p>
@@ -172,18 +174,16 @@ export function SignupForm() {
       <div className="w-full mb-8">
         <div className="flex items-center justify-between">
           <div className={`flex items-center ${currentStep === 'company' ? 'text-brand-green-light' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-              currentStep === 'company' ? 'border-brand-green-light bg-brand-green-light text-white' : 'border-gray-300'
-            }`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === 'company' ? 'border-brand-green-light bg-brand-green-light text-white' : 'border-gray-300'
+              }`}>
               {currentStep === 'company' ? '1' : <CheckCircle className="w-5 h-5" />}
             </div>
             <span className="ml-2 font-medium">Empresa</span>
           </div>
           <div className="flex-1 h-0.5 bg-gray-200 mx-4"></div>
           <div className={`flex items-center ${currentStep === 'user' ? 'text-brand-green-light' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-              currentStep === 'user' ? 'border-brand-green-light bg-brand-green-light text-white' : 'border-gray-300'
-            }`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === 'user' ? 'border-brand-green-light bg-brand-green-light text-white' : 'border-gray-300'
+              }`}>
               {currentStep === 'user' ? '2' : '2'}
             </div>
             <span className="ml-2 font-medium">Usuário</span>
@@ -256,7 +256,7 @@ export function SignupForm() {
               <MapPin className="h-5 w-5 mr-2" />
               Endereço
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
                 <Input

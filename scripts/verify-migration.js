@@ -40,6 +40,19 @@ async function verifyMigration() {
       console.log('✅ Colunas plan_type, allowed_instances e price adicionadas');
     }
 
+    // 2.1. Verificar coluna asaas_customer_id na tabela tenants
+    console.log('\n2.1. Verificando coluna asaas_customer_id na tabela tenants...');
+    const { data: tenants, error: tenantError } = await supabase
+      .from('tenants')
+      .select('asaas_customer_id')
+      .limit(1);
+
+    if (tenantError) {
+      console.error('❌ Erro ao acessar coluna asaas_customer_id:', tenantError.message);
+    } else {
+      console.log('✅ Coluna asaas_customer_id existe na tabela tenants');
+    }
+
     // 3. Verificar views
     console.log('\n3. Verificando views...');
     try {
@@ -115,7 +128,7 @@ async function verifyMigration() {
     console.log('1. Teste o dashboard para ver se o PlanLimitsCard aparece');
     console.log('2. Tente criar uma nova assinatura');
     console.log('3. Verifique se os limites de instâncias estão funcionando');
-    console.log('4. Teste o webhook do Asaas para pagamentos');
+    console.log('4. Configure o n8n para processar webhooks do Asaas');
 
   } catch (error) {
     console.error('❌ Erro durante verificação:', error.message);

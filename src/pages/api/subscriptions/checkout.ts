@@ -76,29 +76,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // 1. Criar ou buscar cliente no Asaas
+    // 1. Usar customer existente do Asaas
+    if (!tenants.asaas_customer_id) {
+      return res.status(400).json({ 
+        error: 'Customer do Asaas não encontrado. Entre em contato com o suporte.' 
+      });
+    }
+
+    // Buscar dados do customer no Asaas para validação
     let customer: any;
     try {
-      // Buscar cliente existente pelo CPF/CNPJ
-      if (tenants.cpf_cnpj) {
-        const search: any = await asaasRequest(`/customers?cpfCnpj=${tenants.cpf_cnpj}`);
-        if (search.data && search.data.length > 0) {
-          customer = search.data[0];
-        }
-      }
-    } catch {}
-
-    if (!customer) {
-      // Criar cliente se não existir
-      customer = await asaasRequest('/customers', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: tenants.name,
-          email: tenants.email,
-          cpfCnpj: tenants.cpf_cnpj || '',
-          phone: tenants.phone || '',
-        })
-      });
+      customer = await asaasRequest(`/customers/${tenants.asaas_customer_id}`);
+    } catch (customerError: any) {
+      return res.status(500).json({ error: 'Erro ao buscar customer no Asaas.' });
     }
 
     // 2. Criar assinatura no Asaas
@@ -171,10 +161,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       subscription,
     });
 
-  } catch (error: any) {
-    console.error('Erro no checkout:', error);
-    return res.status(500).json({ 
-      error: error.message || 'Erro interno do servidor' 
-    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+    return res.status(500).json({ error: 'Erro no checkout: ' + errorMessage });
   }
 } 

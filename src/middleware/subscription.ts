@@ -17,7 +17,6 @@ const PUBLIC_ROUTES = [
 const ALLOWED_WHEN_SUSPENDED = [
   '/assinatura',
   '/api/subscriptions',
-  '/api/webhooks',
 ];
 
 export async function checkSubscriptionStatus(request: NextRequest) {

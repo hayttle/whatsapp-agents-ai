@@ -78,8 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .order('created_at', { ascending: false });
 
     if (paymentsError) {
-      console.error('Erro ao buscar pagamentos:', paymentsError);
-      return res.status(500).json({ error: 'Erro ao buscar histórico de pagamentos' });
+      return res.status(500).json({ error: 'Erro ao buscar pagamentos.' });
     }
 
     return res.status(200).json({
@@ -87,10 +86,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       payments: payments || []
     });
 
-  } catch (error: any) {
-    console.error('Erro ao buscar pagamentos:', error);
-    return res.status(500).json({ 
-      error: error.message || 'Erro interno do servidor' 
-    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Erro ao buscar pagamentos.' });
   }
 } 
