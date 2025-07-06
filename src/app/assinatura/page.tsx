@@ -126,114 +126,75 @@ export default function AssinaturaPage() {
 
   // Se já tem assinatura, mostrar informações dela
   if (subscription) {
-    const handleRenew = async () => {
-      setLoadingPlan('renew');
-      setError(null);
+    // Novo fluxo: trial expirado mostra bloco informativo + escolha de planos
+    const showTrialExpired = subscription.isTrial && subscription.status === 'EXPIRED';
 
-      try {
-        const response = await fetch('/api/subscriptions/renew', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            subscriptionId: subscription.id,
-            plan_name: subscription.plan,
-            value: subscription.value,
-            cycle: subscription.cycle,
-            billing_type: 'CREDIT_CARD',
-            description: `Renovação - ${subscription.plan}`,
-            next_due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Erro ao renovar assinatura');
-        }
-
-        const data = await response.json();
-
-        if (data.success) {
-          window.location.reload();
-        } else {
-          throw new Error('Erro ao renovar assinatura');
-        }
-
-      } catch (e: unknown) {
-        const errorMessage = e instanceof Error ? e.message : 'Erro inesperado.';
-        setError(errorMessage);
-      } finally {
-        setLoadingPlan(null);
-      }
-    };
-
-    return (
-      <div className="max-w-6xl mx-auto p-8">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-brand-gray-dark mb-2">Sua Assinatura</h1>
-              <p className="text-gray-600">
-                {subscription.isActive
-                  ? 'Você já possui uma assinatura ativa na plataforma.'
-                  : subscription.isTrial
-                    ? 'Seu período de teste está ativo.'
-                    : 'Gerencie sua assinatura atual.'
-                }
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => router.push('/assinatura/historico')}
-              className="flex items-center gap-2"
-            >
-              <FileText className="w-4 h-4" />
-              Ver Histórico
-            </Button>
-          </div>
+    // Header sempre visível
+    const header = (
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-brand-gray-dark mb-2">Sua Assinatura</h1>
+          <p className="text-gray-600">
+            {subscription.isActive
+              ? 'Você já possui uma assinatura ativa na plataforma.'
+              : subscription.isTrial
+                ? (showTrialExpired ? 'Seu período de teste expirou.' : 'Seu período de teste está ativo.')
+                : 'Gerencie sua assinatura atual.'
+            }
+          </p>
         </div>
+        <Button
+          variant="outline"
+          onClick={() => router.push('/assinatura/historico')}
+          className="flex items-center gap-2"
+        >
+          <FileText className="w-4 h-4" />
+          Ver Histórico
+        </Button>
+      </div>
+    );
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-600">{error}</p>
-          </div>
-        )}
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              {subscription.isActive ? (
-                <Check className="w-5 h-5 text-green-500" />
-              ) : subscription.isSuspended ? (
+    if (showTrialExpired) {
+      return (
+        <div className="max-w-6xl mx-auto p-8">
+          {header}
+          {/* Bloco informativo trial expirado */}
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
                 <XCircle className="w-5 h-5 text-red-500" />
-              ) : (
-                <Clock className="w-5 h-5 text-yellow-500" />
-              )}
-              {subscription.isTrial ? 'Período Trial' : subscription.plan}
-            </CardTitle>
-            <CardDescription>
-              {subscription.isTrial ? 'Período de teste gratuito' : `Plano ${subscription.plan} - ${subscription.cycle}`}
-            </CardDescription>
-          </CardHeader>
-
-          {/* Alerta amigável de trial expirado */}
-          {subscription.isTrial && subscription.status === 'SUSPENDED' && (
-            <>
-              <div className="mb-4">
-                <div className="flex items-center bg-red-50 border border-red-200 rounded-lg p-3 gap-3">
-                  <XCircle className="w-5 h-5 text-red-500" />
-                  <div>
-                    <p className="font-medium text-red-700">Seu período de teste gratuito expirou</p>
-                    <p className="text-sm text-red-600">Para continuar usando os recursos da plataforma, escolha um plano.</p>
-                  </div>
+                Trial
+              </CardTitle>
+              <CardDescription>
+                Seu período de teste gratuito já expirou.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Data de Cadastro</p>
+                  <p className="text-lg font-semibold">{new Date(subscription.startedAt).toLocaleDateString('pt-BR')}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Data de Expiração</p>
+                  <p className="text-lg font-semibold">{new Date(subscription.expiresAt).toLocaleDateString('pt-BR')}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Status</p>
+                  <Badge variant="error">Expirado</Badge>
                 </div>
               </div>
-              {/* Seção de escolha de planos já existente */}
-              <div className="mt-8">
-                <h2 className="text-2xl font-bold mb-4">Escolha seu novo plano</h2>
-                {/* Coluna da Esquerda - Seleção de Planos */}
+              <div className="mt-4 text-red-700 font-medium">
+                <p>O seu período de teste gratuito de 7 dias terminou.</p>
+                <p>Para continuar usando os recursos da plataforma, escolha um plano abaixo.</p>
+              </div>
+            </CardContent>
+          </Card>
+          {/* Bloco de escolha de planos */}
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold mb-4">Escolha seu novo plano</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {plans.map((plan) => {
                     const Icon = plan.icon;
@@ -275,154 +236,123 @@ export default function AssinaturaPage() {
                     );
                   })}
                 </div>
-                {/* Coluna da Direita - Detalhes e Checkout */}
-                <div className="lg:col-span-1 mt-8">
-                  <Card className="sticky top-8">
-                    <CardHeader>
-                      <CardTitle>Resumo da Assinatura</CardTitle>
-                      <CardDescription>
-                        {selectedPlan ? 'Confirme os detalhes do seu plano' : 'Selecione um plano para continuar'}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      {selectedPlanData ? (
-                        <>
-                          {/* Plano Selecionado */}
-                          <div className="space-y-4">
-                            <div className="flex items-center gap-3">
-                              {(() => {
-                                const Icon = selectedPlanData.icon;
-                                return <Icon className="w-5 h-5 text-brand-green-light" />;
-                              })()}
-                              <div>
-                                <h3 className="font-semibold">{selectedPlanData.name}</h3>
-                                <p className="text-sm text-gray-600">{selectedPlanData.description}</p>
-                              </div>
-                            </div>
-                            {/* Quantidade */}
+              </div>
+              {/* Coluna da Direita - Detalhes e Checkout */}
+              <div className="lg:col-span-1">
+                <Card className="sticky top-8">
+                  <CardHeader>
+                    <CardTitle>Resumo da Assinatura</CardTitle>
+                    <CardDescription>
+                      {selectedPlan ? 'Confirme os detalhes do seu plano' : 'Selecione um plano para continuar'}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {selectedPlanData ? (
+                      <>
+                        {/* Plano Selecionado */}
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3">
+                            {(() => {
+                              const Icon = selectedPlanData.icon;
+                              return <Icon className="w-5 h-5 text-brand-green-light" />;
+                            })()}
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Quantidade de Pacotes
-                              </label>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                  disabled={quantity <= 1}
-                                >
-                                  -
-                                </Button>
-                                <span className="w-12 text-center font-medium">{quantity}</span>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setQuantity(quantity + 1)}
-                                >
-                                  +
-                                </Button>
+                              <h3 className="font-semibold">{selectedPlanData.name}</h3>
+                              <p className="text-sm text-gray-600">{selectedPlanData.description}</p>
+                            </div>
+                          </div>
+                          {/* Quantidade */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Quantidade de Pacotes
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                disabled={quantity <= 1}
+                              >
+                                -
+                              </Button>
+                              <span className="w-12 text-center font-medium">{quantity}</span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setQuantity(quantity + 1)}
+                              >
+                                +
+                              </Button>
+                            </div>
+                          </div>
+                          {/* Recursos multiplicados */}
+                          <div className="space-y-1 mt-4">
+                            {selectedPlanData.features.map((feature, index) => (
+                              <div key={index} className="flex items-center gap-2">
+                                <Check className="w-4 h-4 text-green-500" />
+                                <span className="text-sm text-gray-600">{multiplyBenefit(feature, quantity)}</span>
                               </div>
-                            </div>
-                            {/* Recursos multiplicados */}
-                            <div className="space-y-1 mt-4">
-                              {selectedPlanData.features.map((feature, index) => (
-                                <div key={index} className="flex items-center gap-2">
-                                  <Check className="w-4 h-4 text-green-500" />
-                                  <span className="text-sm text-gray-600">{multiplyBenefit(feature, quantity)}</span>
-                                </div>
-                              ))}
-                            </div>
+                            ))}
                           </div>
-                          {/* Valor Total */}
-                          <div className="flex items-center justify-between mt-4">
-                            <span className="text-gray-600">Valor Total:</span>
-                            <span className="text-lg font-bold text-green-600">
-                              R$ {totalPrice.toFixed(2).replace('.', ',')}
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <p className="text-gray-500">Selecione um plano para ver os detalhes.</p>
-                      )}
-                    </CardContent>
-                    <CardFooter>
-                      <Button
-                        onClick={handleSubscribe}
-                        disabled={!selectedPlan}
-                        loading={loadingPlan === selectedPlan}
-                        className="w-full"
-                      >
-                        Assinar Plano
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                </div>
-              </div>
-            </>
-          )}
-
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Status</p>
-                <Badge variant={subscription.isActive ? 'success' : subscription.isSuspended ? 'error' : 'warning'}>
-                  {subscription.status}
-                </Badge>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Plano</p>
-                <p className="text-lg font-semibold capitalize">{subscription.planType}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Quantidade</p>
-                <p className="text-lg font-semibold">{subscription.quantity} pacote{subscription.quantity > 1 ? 's' : ''}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Valor Mensal</p>
-                <p className="text-lg font-semibold text-green-600">
-                  R$ {subscription.price.toFixed(2).replace('.', ',')}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Próximo Vencimento</p>
-                <p className="text-lg font-semibold">
-                  {new Date(subscription.nextDueDate).toLocaleDateString('pt-BR')}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Instâncias Permitidas</p>
-                <p className="text-lg font-semibold">{subscription.allowedInstances}</p>
+                        </div>
+                        {/* Valor Total */}
+                        <div className="flex items-center justify-between mt-4">
+                          <span className="text-gray-600">Valor Total:</span>
+                          <span className="text-lg font-bold text-green-600">
+                            R$ {totalPrice.toFixed(2).replace('.', ',')}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-8">
+                        <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                        <p className="text-gray-500">
+                          Selecione um plano para ver os detalhes e continuar com a assinatura.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                  <CardFooter>
+                    <Button
+                      onClick={handleSubscribe}
+                      disabled={!selectedPlan}
+                      loading={loadingPlan === selectedPlan}
+                      className="w-full"
+                    >
+                      Assinar Plano
+                    </Button>
+                  </CardFooter>
+                </Card>
               </div>
             </div>
-
-            {/* Botões de ação */}
-            <div className="pt-4 border-t flex gap-2">
-              {(subscription.isSuspended || (subscription.isTrial && !subscription.isActive)) && (
-                <Button
-                  onClick={handleRenew}
-                  disabled={loadingPlan === 'renew'}
-                  className="flex-1"
-                  variant="primary"
-                >
-                  {loadingPlan === 'renew' ? 'Processando...' : 'Renovar Plano'}
-                </Button>
-              )}
-
-              {subscription.invoiceUrl && (
-                <Button
-                  onClick={() => window.open(subscription.invoiceUrl, '_blank')}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <FileText className="w-4 h-4" />
-                  Ver Fatura
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+      );
+    }
+    // Fluxo normal para outros casos de assinatura
+    <div className="mb-8">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h1 className="text-3xl font-bold text-brand-gray-dark mb-2">Sua Assinatura</h1>
+          <p className="text-gray-600">
+            {subscription.isActive
+              ? 'Você já possui uma assinatura ativa na plataforma.'
+              : subscription.isTrial
+                ? 'Seu período de teste está ativo.'
+                : 'Gerencie sua assinatura atual.'
+            }
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => router.push('/assinatura/historico')}
+          className="flex items-center gap-2"
+        >
+          <FileText className="w-4 h-4" />
+          Ver Histórico
+        </Button>
       </div>
-    );
+    </div>
   }
 
   // Se não tem assinatura ativa, mostrar planos disponíveis
