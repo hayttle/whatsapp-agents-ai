@@ -139,7 +139,7 @@ export default function AssinaturaPage() {
     setError(null);
 
     try {
-      // Redirecionar diretamente para o link de checkout do Asaas baseado no plano
+      // Obter o link de checkout do Asaas baseado no plano
       let checkoutUrl = '';
 
       if (selectedPlan === 'starter') {
@@ -153,8 +153,8 @@ export default function AssinaturaPage() {
         return;
       }
 
-      // Redirecionar para o checkout do Asaas
-      window.location.href = checkoutUrl;
+      // Abrir o checkout do Asaas em uma nova página/tab
+      window.open(checkoutUrl, '_blank');
 
     } catch (e: any) {
       setError(e.message || 'Erro inesperado.');
