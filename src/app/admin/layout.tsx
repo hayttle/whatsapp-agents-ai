@@ -1,6 +1,5 @@
 import { AuthProvider } from '@/hooks/useAuth';
 import { AuthenticatedLayout } from "@/components/layout/AuthenticatedLayout";
-import { SubscriptionGuard } from "@/components/brand/SubscriptionGuard";
 
 export default function AdminLayout({
   children,
@@ -10,11 +9,9 @@ export default function AdminLayout({
   return (
     <AuthProvider>
       <AuthenticatedLayout>
-        <SubscriptionGuard>
-          <div className="p-4 md:p-8">
-            {children}
-          </div>
-        </SubscriptionGuard>
+        <div className="p-4 md:p-8">
+          {children}
+        </div>
       </AuthenticatedLayout>
     </AuthProvider>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useTrialAccess } from '@/hooks/useTrialAccess';
 import { useUserRole } from '@/hooks/useUserRole';
 
@@ -13,6 +13,7 @@ export function SubscriptionGuard({ children }: SubscriptionGuardProps) {
   const { trialAccess, loading } = useTrialAccess();
   const { user } = useUserRole();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     // Não fazer nada se ainda está carregando
@@ -23,10 +24,13 @@ export function SubscriptionGuard({ children }: SubscriptionGuardProps) {
 
     // Se o trial expirou e não pode usar features, redirecionar
     if (trialAccess.isTrialExpired && !trialAccess.canUseFeatures) {
-      console.log('🔄 [SUBSCRIPTION GUARD] Trial expirado, redirecionando para /assinatura');
-      router.push('/assinatura');
+      // Não redirecionar se já está na página de assinatura
+      if (pathname !== '/assinatura') {
+        console.log('🔄 [SUBSCRIPTION GUARD] Trial expirado, redirecionando para /assinatura');
+        router.push('/assinatura');
+      }
     }
-  }, [trialAccess, loading, user, router]);
+  }, [trialAccess, loading, user, router, pathname]);
 
   // Se está carregando, mostrar loading
   if (loading) {
