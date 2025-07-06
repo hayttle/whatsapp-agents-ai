@@ -73,7 +73,7 @@ const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tena
       const payload = {
         ...(tenant && { id: tenant.id }),
         name,
-        cpf_cnpj: cpfCnpj,
+        cpf_cnpj: cpfCnpj.replace(/\D/g, ''),
         phone,
         email,
         type,
