@@ -42,22 +42,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Não autorizado' });
     }
 
-    // Buscar tenant_id do usuário
-    if (user.role === 'super_admin') {
-      return res.status(200).json({
-        success: true,
-        subscription: null,
-      });
-    }
-
+    // Buscar tenant_id e role do usuário
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('tenant_id')
+      .select('tenant_id, role')
       .eq('id', user.id)
       .single();
 
     if (userError || !userData) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    // Se for super_admin, retorna imediatamente
+    if (userData.role === 'super_admin') {
+      return res.status(200).json({
+        success: true,
+        subscription: null,
+      });
     }
 
     // Buscar assinatura mais recente do tenant
@@ -80,6 +81,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Erro ao buscar assinatura: ' + subscriptionError.message });
     }
 
+    // Atualizar status para SUSPENDED se trial expirou
+    const now = new Date();
+    if (
+      subscription.status === 'TRIAL' &&
+      subscription.expires_at &&
+      new Date(subscription.expires_at) < now
+    ) {
+      await supabase
+        .from('subscriptions')
+        .update({ status: 'SUSPENDED' })
+        .eq('id', subscription.id);
+      subscription.status = 'SUSPENDED';
+    }
+
     // Formatar resposta
     const formattedSubscription = {
       id: subscription.id,
@@ -93,11 +108,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       cycle: subscription.cycle,
       startedAt: subscription.started_at,
       nextDueDate: subscription.next_due_date,
+      expiresAt: subscription.expires_at,
       paidAt: subscription.paid_at,
       paymentMethod: subscription.payment_method,
       invoiceUrl: subscription.invoice_url,
       isActive: ['TRIAL', 'ACTIVE'].includes(subscription.status),
-      isTrial: subscription.status === 'TRIAL',
+      isTrial: (subscription.plan_name && subscription.plan_name.toLowerCase() === 'trial'),
       isSuspended: subscription.status === 'SUSPENDED',
     };
 

@@ -155,6 +155,19 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
         </CardDescription>
       </CardHeader>
 
+      {/* Mensagem amigável de trial expirado */}
+      {subscription.isSuspended && subscription.isTrial && (
+        <div className="mb-2">
+          <Alert variant="error">
+            <XCircle className="h-4 w-4" />
+            <div>
+              <p className="font-medium">Seu período de teste gratuito expirou</p>
+              <p className="text-sm">Para continuar usando os recursos da plataforma, escolha um plano.</p>
+            </div>
+          </Alert>
+        </div>
+      )}
+
       <CardContent className="space-y-4">
         {/* Valor */}
         <div className="flex items-center justify-between">
@@ -162,31 +175,29 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
           <span className="text-lg font-bold">{formatCurrency(subscription.value)}</span>
         </div>
 
-        {/* Trial Warning */}
-        {subscription.isTrial && trialDaysLeft !== null && (
-          <Alert variant={trialDaysLeft <= 3 ? 'error' : 'warning'}>
-            <Clock className="h-4 w-4" />
-            <div>
-              <p className="font-medium">
-                {trialDaysLeft === 0
-                  ? 'Período trial expirado'
-                  : `${trialDaysLeft} dia${trialDaysLeft !== 1 ? 's' : ''} restante${trialDaysLeft !== 1 ? 's' : ''} no trial`
-                }
-              </p>
-              {trialDaysLeft <= 3 && trialDaysLeft > 0 && (
-                <p className="text-sm">Renove sua assinatura para continuar usando o sistema.</p>
-              )}
-            </div>
-          </Alert>
-        )}
-
-        {/* Suspended Warning */}
-        {subscription.isSuspended && (
+        {/* Suspended Warning - trial expirado (removido para evitar duplicidade) */}
+        {/* Suspended Warning - assinatura suspensa não trial */}
+        {subscription.isSuspended && !subscription.isTrial && (
           <Alert variant="error">
             <XCircle className="h-4 w-4" />
             <div>
               <p className="font-medium">Assinatura suspensa</p>
               <p className="text-sm">Renove sua assinatura para reativar o acesso ao sistema.</p>
+            </div>
+          </Alert>
+        )}
+
+        {/* Trial Warning */}
+        {subscription.isTrial && trialDaysLeft !== null && trialDaysLeft > 0 && (
+          <Alert variant={trialDaysLeft <= 3 ? 'error' : 'warning'}>
+            <Clock className="h-4 w-4" />
+            <div>
+              <p className="font-medium">
+                {`${trialDaysLeft} dia${trialDaysLeft !== 1 ? 's' : ''} restante${trialDaysLeft !== 1 ? 's' : ''} no trial`}
+              </p>
+              {trialDaysLeft <= 3 && trialDaysLeft > 0 && (
+                <p className="text-sm">Renove sua assinatura para continuar usando o sistema.</p>
+              )}
             </div>
           </Alert>
         )}

@@ -58,9 +58,9 @@ export function useTrialAccess(): UseTrialAccessReturn {
       let trialEndDate: Date | null = null;
       let message = '';
 
-      // PRIORIDADE 1: Se há assinatura trial, usar next_due_date da assinatura
+      // PRIORIDADE 1: Se há assinatura trial, usar expiresAt da assinatura
       if (subscription && subscription.isTrial) {
-        const trialEndDateObj = new Date(subscription.nextDueDate);
+        const trialEndDateObj = new Date(subscription.expiresAt);
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const trialEndDay = new Date(trialEndDateObj.getFullYear(), trialEndDateObj.getMonth(), trialEndDateObj.getDate());
         trialEndDate = trialEndDateObj;
@@ -70,7 +70,7 @@ export function useTrialAccess(): UseTrialAccessReturn {
           isTrialExpired = true;
           canUseFeatures = false;
           daysRemaining = 0;
-          message = 'Seu período de teste de 7 dias expirou. Escolha um plano para continuar usando a plataforma.';
+          message = 'Seu período de teste gratuito expirou. Para continuar usando os recursos da plataforma, escolha um plano.';
         } else {
           // Ainda no trial
           const diffTime = trialEndDay.getTime() - today.getTime();
@@ -82,7 +82,7 @@ export function useTrialAccess(): UseTrialAccessReturn {
       else if (subscription) {
         if (subscription.isSuspended) {
           // Verificar se era uma assinatura trial que expirou
-          const trialEndDateObj = new Date(subscription.nextDueDate);
+          const trialEndDateObj = new Date(subscription.expiresAt);
           const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
           const trialEndDay = new Date(trialEndDateObj.getFullYear(), trialEndDateObj.getMonth(), trialEndDateObj.getDate());
 
@@ -92,7 +92,7 @@ export function useTrialAccess(): UseTrialAccessReturn {
             canUseFeatures = false;
             daysRemaining = 0;
             trialEndDate = trialEndDateObj;
-            message = 'Seu período de teste de 7 dias expirou. Escolha um plano para continuar usando a plataforma.';
+            message = 'Seu período de teste gratuito expirou. Para continuar usando os recursos da plataforma, escolha um plano.';
           } else {
             // Assinatura paga suspensa (não era trial)
             canUseFeatures = false;
@@ -122,7 +122,7 @@ export function useTrialAccess(): UseTrialAccessReturn {
             isTrialExpired = true;
             canUseFeatures = false;
             daysRemaining = 0;
-            message = 'Seu período de teste de 7 dias expirou. Escolha um plano para continuar usando a plataforma.';
+            message = 'Seu período de teste gratuito expirou. Para continuar usando os recursos da plataforma, escolha um plano.';
           } else {
             // Ainda no trial
             const diffTime = trialEndDay.getTime() - today.getTime();

@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 export interface SubscriptionData {
   id: string;
   plan: string;
-  planType: 'starter' | 'pro' | 'custom';
+  planType: 'starter' | 'pro';
   quantity: number;
   allowedInstances: number;
   status: string;
@@ -14,6 +14,7 @@ export interface SubscriptionData {
   cycle: string;
   startedAt: string;
   nextDueDate: string;
+  expiresAt: string;
   paidAt?: string;
   paymentMethod?: string;
   invoiceUrl?: string;
