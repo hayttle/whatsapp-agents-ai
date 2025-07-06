@@ -27,11 +27,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Não autorizado' });
     }
 
-    // Buscar assinatura ativa do usuário
+    // Buscar tenant_id do usuário
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('tenant_id')
+      .eq('id', user.id)
+      .single();
+
+    if (userError || !userData) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    // Buscar assinatura ativa do tenant
     const { data: subscription, error: subscriptionError } = await supabase
       .from('subscriptions')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('tenant_id', userData.tenant_id)
       .in('status', ['TRIAL', 'ACTIVE'])
       .order('created_at', { ascending: false })
       .limit(1)

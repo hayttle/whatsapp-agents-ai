@@ -54,11 +54,27 @@ export async function checkSubscriptionStatus(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    // Buscar assinatura ativa do usuário
+    // Buscar tenant_id do usuário
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('tenant_id')
+      .eq('id', user.id)
+      .single();
+
+    if (userError || !userData) {
+      // Se não conseguir buscar o tenant_id, permitir acesso à página de assinatura
+      if (pathname === '/assinatura') {
+        return NextResponse.next();
+      }
+      const subscriptionUrl = new URL('/assinatura', request.url);
+      return NextResponse.redirect(subscriptionUrl);
+    }
+
+    // Buscar assinatura ativa do tenant
     const { data: subscription, error: subscriptionError } = await supabase
       .from('subscriptions')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('tenant_id', userData.tenant_id)
       .in('status', ['TRIAL', 'ACTIVE'])
       .order('created_at', { ascending: false })
       .limit(1)

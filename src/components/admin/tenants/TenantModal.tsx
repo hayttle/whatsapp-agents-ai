@@ -6,6 +6,7 @@ import { Building2, Mail, Phone, FileText, Save } from "lucide-react";
 import { TenantModalProps } from './types';
 import { COMPANY_TYPES, COMPANY_TYPE_OPTIONS } from './constants';
 import { validateCPF, validateCNPJ, formatCPF, formatCNPJ } from '@/lib/utils';
+import { toast } from "sonner";
 
 const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tenant }) => {
   const [name, setName] = useState("");
@@ -16,6 +17,7 @@ const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tena
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
+  const [asaasMsg, setAsaasMsg] = useState<string>("");
 
   // Handler para formatação automática de CPF/CNPJ
   const handleCPFCNPJChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,6 +42,7 @@ const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tena
     }
     setMsg("");
     setError("");
+    setAsaasMsg("");
   }, [tenant, isOpen]);
 
   // Limpar CPF/CNPJ quando o tipo mudar
@@ -87,18 +90,32 @@ const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tena
       const data = await response.json();
 
       if (!response.ok) {
+        toast.error(data.error || 'Erro ao salvar empresa');
         throw new Error(data.error || 'Erro ao salvar empresa');
       }
 
       setMsg(`Empresa ${tenant ? 'atualizada' : 'criada'} com sucesso!`);
+      toast.success(`Empresa ${tenant ? 'atualizada' : 'criada'} com sucesso!`);
+      // Exibir status do Asaas se for criação
+      if (!tenant && data.asaas) {
+        if (data.asaas.success) {
+          setAsaasMsg(data.asaas.message + (data.asaas.customer_id ? ` (ID: ${data.asaas.customer_id})` : ''));
+          toast.success(data.asaas.message + (data.asaas.customer_id ? ` (ID: ${data.asaas.customer_id})` : ''));
+        } else {
+          setAsaasMsg('Atenção: Não foi possível criar o cliente no Asaas. ' + (data.asaas.error || ''));
+          toast.warning('Atenção: Não foi possível criar o cliente no Asaas. ' + (data.asaas.error || ''));
+        }
+      }
       onSave(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao salvar empresa');
+      toast.error(err instanceof Error ? err.message : 'Erro ao salvar empresa');
     } finally {
       setLoading(false);
       setTimeout(() => {
         setMsg("");
         setError("");
+        setAsaasMsg("");
       }, 3000);
     }
   };
@@ -111,6 +128,11 @@ const TenantModal: React.FC<TenantModalProps> = ({ isOpen, onClose, onSave, tena
           {msg && (
             <Alert variant="success" title="Sucesso">
               {msg}
+            </Alert>
+          )}
+          {asaasMsg && (
+            <Alert variant={asaasMsg.startsWith('Atenção') ? 'warning' : 'info'} title="Status Asaas">
+              {asaasMsg}
             </Alert>
           )}
           {error && (

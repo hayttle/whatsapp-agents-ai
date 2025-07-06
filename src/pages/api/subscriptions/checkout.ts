@@ -108,7 +108,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 3. Salvar assinatura no banco local
     const subscriptionData = {
       tenant_id,
-      user_id: user.id,
       asaas_subscription_id: asaasSubscription.id,
       plan_name,
       plan_type,

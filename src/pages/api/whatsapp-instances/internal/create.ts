@@ -58,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: subscription } = await supabase
       .from('subscriptions')
       .select('plan_name, quantity')
-      .eq('user_id', userData.id)
+      .eq('tenant_id', tenantId)
       .in('status', ['TRIAL', 'ACTIVE'])
       .order('created_at', { ascending: false })
       .limit(1)

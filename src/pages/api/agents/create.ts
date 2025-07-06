@@ -30,7 +30,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
     const { data: subscription } = await auth.supabase
       .from('subscriptions')
       .select('plan_name, quantity')
-      .eq('user_id', auth.user.id)
+      .eq('tenant_id', tenant_id)
       .in('status', ['TRIAL', 'ACTIVE'])
       .order('created_at', { ascending: false })
       .limit(1)

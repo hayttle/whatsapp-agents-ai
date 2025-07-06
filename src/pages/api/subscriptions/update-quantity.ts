@@ -50,12 +50,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
+    // Buscar tenant_id do usuário
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('tenant_id')
+      .eq('id', user.id)
+      .single();
+
+    if (userError || !userData) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
     // Buscar assinatura atual
     const { data: currentSubscription, error: subscriptionError } = await supabase
       .from('subscriptions')
       .select('*, tenants(asaas_customer_id)')
       .eq('id', subscriptionId)
-      .eq('user_id', user.id)
+      .eq('tenant_id', userData.tenant_id)
       .single();
 
     if (subscriptionError || !currentSubscription) {

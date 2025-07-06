@@ -247,7 +247,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const trialSubscriptionData = {
       tenant_id: tenant.id,
-      user_id: authUser.user.id,
       asaas_subscription_id: null, // Trial não tem ID do Asaas
       plan_name: 'Trial',
       plan_type: 'starter',
