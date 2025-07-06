@@ -1,39 +1,25 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { withAuth, AuthResult } from '@/lib/auth/helpers';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResult) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Autenticação
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              );
-            } catch {
-              // Ignore
-            }
-          },
-        },
-      }
-    );
+    const { user, supabase } = auth;
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return res.status(401).json({ error: 'Não autorizado' });
+    // Verificar permissões
+    if (!user.role || !['user', 'super_admin'].includes(user.role)) {
+      return res.status(403).json({ error: 'Forbidden - Insufficient permissions' });
+    }
+
+    // Se for super_admin, retorna lista vazia
+    if (user.role === 'super_admin') {
+      return res.status(200).json({
+        success: true,
+        subscriptions: [],
+      });
     }
 
     // Buscar tenant_id do usuário
@@ -58,36 +44,78 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Erro ao buscar histórico: ' + subscriptionError.message });
     }
 
-    // Formatar resposta
-    const formattedSubscriptions = subscriptions?.map(subscription => ({
-      id: subscription.id,
-      plan: subscription.plan_name,
-      planType: subscription.plan_type,
-      quantity: subscription.quantity,
-      allowedInstances: subscription.allowed_instances,
-      status: subscription.status,
-      value: subscription.value,
-      price: subscription.price,
-      cycle: subscription.cycle,
-      startedAt: subscription.started_at,
-      nextDueDate: subscription.next_due_date,
-      paidAt: subscription.paid_at,
-      paymentMethod: subscription.payment_method,
-      invoiceUrl: subscription.invoice_url,
-      isActive: ['TRIAL', 'ACTIVE'].includes(subscription.status),
-      isTrial: subscription.status === 'TRIAL',
-      isSuspended: subscription.status === 'SUSPENDED',
-      createdAt: subscription.created_at,
-      updatedAt: subscription.updated_at,
-    })) || [];
+    // Buscar cobranças para cada assinatura
+    const subscriptionsWithPayments = await Promise.all(
+      (subscriptions || []).map(async (subscription: any) => {
+        let payments: Array<{
+          id: string;
+          asaasPaymentId: string;
+          amount: number;
+          status: string;
+          paidAt: string | null;
+          paymentMethod: string | null;
+          invoiceUrl: string | null;
+          createdAt: string;
+        }> = [];
+        
+        if (subscription.asaas_subscription_id) {
+          const { data: subscriptionPayments, error: paymentsError } = await supabase
+            .from('subscription_payments')
+            .select('*')
+            .eq('asaas_subscription_id', subscription.asaas_subscription_id)
+            .order('created_at', { ascending: false });
+
+          if (!paymentsError && subscriptionPayments) {
+            payments = subscriptionPayments.map((payment: any) => ({
+              id: payment.id,
+              asaasPaymentId: payment.asaas_payment_id,
+              amount: payment.amount,
+              status: payment.status,
+              paidAt: payment.paid_at,
+              paymentMethod: payment.payment_method,
+              invoiceUrl: payment.invoice_url,
+              createdAt: payment.created_at,
+            }));
+          }
+        }
+
+        return {
+          id: subscription.id,
+          asaasSubscriptionId: subscription.asaas_subscription_id,
+          plan: subscription.plan_name,
+          planType: subscription.plan_type,
+          quantity: subscription.quantity,
+          allowedInstances: subscription.allowed_instances,
+          status: subscription.status,
+          value: subscription.value,
+          price: subscription.price,
+          cycle: subscription.cycle,
+          startedAt: subscription.started_at,
+          nextDueDate: subscription.next_due_date,
+          expiresAt: subscription.expires_at,
+          paidAt: subscription.paid_at,
+          paymentMethod: subscription.payment_method,
+          invoiceUrl: subscription.invoice_url,
+          isActive: ['TRIAL', 'ACTIVE'].includes(subscription.status),
+          isTrial: subscription.status === 'TRIAL',
+          isSuspended: subscription.status === 'SUSPENDED',
+          createdAt: subscription.created_at,
+          updatedAt: subscription.updated_at,
+          payments: payments,
+          paymentsCount: payments.length,
+        };
+      })
+    );
 
     return res.status(200).json({
       success: true,
-      subscriptions: formattedSubscriptions,
+      subscriptions: subscriptionsWithPayments,
     });
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     return res.status(500).json({ error: 'Erro interno: ' + errorMessage });
   }
-} 
+}
+
+export default withAuth(handler); 

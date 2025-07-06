@@ -1,6 +1,7 @@
 export interface PlanLimits {
   name: string;
   price: number;
+  cycle: 'MONTHLY' | 'QUARTERLY' | 'SEMIANNUALLY' | 'YEARLY';
   instancesPerPack: {
     native: number;
     external: number;
@@ -20,9 +21,10 @@ export interface PlanLimits {
 }
 
 export const PLANS: Record<string, PlanLimits> = {
-  'starter_pro': {
-    name: 'Starter Pro',
+  'starter': {
+    name: 'Starter',
     price: 100.00,
+    cycle: 'MONTHLY',
     instancesPerPack: {
       native: 2,
       external: 0,
@@ -40,9 +42,10 @@ export const PLANS: Record<string, PlanLimits> = {
     description: 'Ideal para quem quer a experiência completa, sem configurar nada. Inclui backend, n8n e WhatsApp API.',
     packDescription: 'Cada pacote inclui 2 instâncias nativas + 2 agentes internos gerenciados pela plataforma',
   },
-  'tech_integrator': {
-    name: 'Tech Integrator',
+  'pro': {
+    name: 'Pro',
     price: 100.00,
+    cycle: 'MONTHLY',
     instancesPerPack: {
       native: 0,
       external: 5,

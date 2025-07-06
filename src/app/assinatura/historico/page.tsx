@@ -1,21 +1,23 @@
 "use client";
 
 import { useState } from 'react';
-import { SubscriptionHistory } from '@/components/brand';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/brand';
+import { useSubscriptionHistory } from '@/hooks/useSubscriptionHistory';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/brand';
 import { Button } from '@/components/brand';
+import { Badge } from '@/components/brand';
 import { Alert } from '@/components/brand';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Download, Eye, Calendar, DollarSign, CreditCard } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function HistoricoPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { subscriptions, loading, error, refetch } = useSubscriptionHistory();
+  const [loadingAction, setLoadingAction] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const handleRenew = async (subscriptionId: string) => {
-    setLoading(true);
-    setError(null);
+    setLoadingAction(true);
+    setActionError(null);
 
     try {
       const response = await fetch('/api/subscriptions/renew', {
@@ -43,21 +45,48 @@ export default function HistoricoPage() {
       const data = await response.json();
 
       if (data.success) {
-        window.location.reload();
+        await refetch();
       } else {
         throw new Error('Erro ao renovar assinatura');
       }
 
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : 'Erro inesperado.';
-      setError(errorMessage);
+      setActionError(errorMessage);
     } finally {
-      setLoading(false);
+      setLoadingAction(false);
     }
   };
 
   const handleViewInvoice = (invoiceUrl: string) => {
     window.open(invoiceUrl, '_blank');
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      'TRIAL': { variant: 'warning' as const, label: 'Trial' },
+      'ACTIVE': { variant: 'success' as const, label: 'Ativa' },
+      'PENDING_PAYMENT': { variant: 'warning' as const, label: 'Aguardando Pagamento' },
+      'EXPIRED': { variant: 'error' as const, label: 'Expirada' },
+      'SUSPENDED': { variant: 'error' as const, label: 'Suspensa' },
+      'CANCELLED': { variant: 'error' as const, label: 'Cancelada' },
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig] || { variant: 'default' as const, label: status };
+    return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
+  const getPaymentStatusBadge = (status: string) => {
+    const statusConfig = {
+      'PENDING': { variant: 'warning' as const, label: 'Pendente' },
+      'CONFIRMED': { variant: 'success' as const, label: 'Confirmado' },
+      'RECEIVED': { variant: 'success' as const, label: 'Recebido' },
+      'OVERDUE': { variant: 'error' as const, label: 'Vencido' },
+      'REFUNDED': { variant: 'default' as const, label: 'Estornado' },
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig] || { variant: 'default' as const, label: status };
+    return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   return (
@@ -74,7 +103,7 @@ export default function HistoricoPage() {
           </Button>
           <Button
             variant="outline"
-            onClick={() => window.location.reload()}
+            onClick={refetch}
             disabled={loading}
             className="flex items-center gap-2"
           >
@@ -89,29 +118,145 @@ export default function HistoricoPage() {
         </p>
       </div>
 
-      {error && (
+      {(error || actionError) && (
         <Alert variant="error" className="mb-6">
           <div>
             <p className="font-medium">Erro ao processar ação</p>
-            <p className="text-sm">{error}</p>
+            <p className="text-sm">{error || actionError}</p>
           </div>
         </Alert>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Suas Assinaturas</CardTitle>
-          <CardDescription>
-            Histórico completo de todas as suas assinaturas na plataforma
-          </CardDescription>
-        </CardHeader>
-        <div className="p-6">
-          <SubscriptionHistory
-            onRenew={handleRenew}
-            onViewInvoice={handleViewInvoice}
-          />
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-green-light"></div>
         </div>
-      </Card>
+      ) : subscriptions.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-12">
+            <p className="text-gray-500">Nenhuma assinatura encontrada.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-6">
+          {subscriptions.map((subscription) => (
+            <Card key={subscription.id}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      {subscription.plan}
+                      {getStatusBadge(subscription.status)}
+                    </CardTitle>
+                    <CardDescription>
+                      Plano {subscription.planType} - {subscription.quantity} pacote(s)
+                    </CardDescription>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-green-600">
+                      R$ {subscription.value.toFixed(2).replace('.', ',')}
+                    </p>
+                    <p className="text-sm text-gray-500">{subscription.cycle}</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-600">Início</p>
+                      <p className="font-medium">{new Date(subscription.startedAt).toLocaleDateString('pt-BR')}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-600">Próximo Vencimento</p>
+                      <p className="font-medium">
+                        {subscription.nextDueDate
+                          ? new Date(subscription.nextDueDate).toLocaleDateString('pt-BR')
+                          : 'N/A'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-600">Cobranças</p>
+                      <p className="font-medium">{subscription.paymentsCount}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lista de Cobranças */}
+                {subscription.payments.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="font-semibold mb-3 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4" />
+                      Cobranças ({subscription.paymentsCount})
+                    </h4>
+                    <div className="space-y-3">
+                      {subscription.payments.map((payment) => (
+                        <div key={payment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div>
+                              <p className="font-medium">R$ {payment.amount.toFixed(2).replace('.', ',')}</p>
+                              <p className="text-sm text-gray-500">
+                                {new Date(payment.createdAt).toLocaleDateString('pt-BR')}
+                              </p>
+                            </div>
+                            {getPaymentStatusBadge(payment.status)}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {payment.invoiceUrl && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewInvoice(payment.invoiceUrl!)}
+                                className="flex items-center gap-1"
+                              >
+                                <Eye className="w-3 h-3" />
+                                Ver Fatura
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Ações */}
+                <div className="flex items-center gap-2 mt-6 pt-4 border-t">
+                  {subscription.invoiceUrl && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewInvoice(subscription.invoiceUrl!)}
+                      className="flex items-center gap-1"
+                    >
+                      <Download className="w-3 h-3" />
+                      Baixar Fatura
+                    </Button>
+                  )}
+                  {subscription.status === 'EXPIRED' && (
+                    <Button
+                      onClick={() => handleRenew(subscription.id)}
+                      disabled={loadingAction}
+                      size="sm"
+                      className="flex items-center gap-1"
+                    >
+                      Renovar Assinatura
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 } 

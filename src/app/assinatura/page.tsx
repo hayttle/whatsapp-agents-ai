@@ -73,23 +73,16 @@ export default function AssinaturaPage() {
     setLoadingPlan(selectedPlan);
     setError(null);
     try {
-      // Criar assinatura via API
-      const response = await fetch('/api/subscriptions/checkout', {
+      // Criar assinatura pendente via nova API
+      const response = await fetch('/api/subscriptions/create-pending', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
         body: JSON.stringify({
-          plan_name: selectedPlanData.name,
           plan_type: selectedPlan,
           quantity: quantity,
-          value: selectedPlanData.price,
-          price: selectedPlanData.price,
-          cycle: 'MONTHLY',
-          billing_type: 'CREDIT_CARD',
-          description: `${selectedPlanData.name} - ${quantity}x ${selectedPlanData.features[0]}`,
-          next_due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 dias
         }),
       });
       if (!response.ok) {
@@ -97,13 +90,15 @@ export default function AssinaturaPage() {
         throw new Error(errorData.error || 'Erro ao criar assinatura');
       }
       const data = await response.json();
-      if (data.success && data.checkoutUrl) {
-        window.open(data.checkoutUrl, '_blank');
+      if (data.success && data.asaas_payment_url) {
+        // Redirecionar para o link de pagamento do Asaas em nova aba
+        window.open(data.asaas_payment_url, '_blank');
+        // Recarregar a página após um breve delay
         setTimeout(() => {
           window.location.reload();
         }, 2000);
       } else {
-        throw new Error('Link de checkout não recebido');
+        throw new Error('Link de pagamento não recebido');
       }
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : 'Erro inesperado.';

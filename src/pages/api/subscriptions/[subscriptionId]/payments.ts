@@ -1,61 +1,28 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { withAuth, AuthResult } from '@/lib/auth/helpers';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResult) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Autenticação
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              );
-            } catch {
-              // Ignore
-            }
-          },
-        },
-      }
-    );
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return res.status(401).json({ error: 'Não autorizado' });
-    }
-
+    const { user, supabase } = auth;
     const { subscriptionId } = req.query;
+
     if (!subscriptionId || typeof subscriptionId !== 'string') {
-      return res.status(400).json({ error: 'ID da assinatura é obrigatório' });
+      return res.status(400).json({ error: 'subscriptionId é obrigatório' });
     }
 
-    // Buscar dados do usuário para verificar permissões
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('role, tenant_id')
-      .eq('id', user.id)
-      .single();
-
-    if (userError || !userData) {
-      return res.status(404).json({ error: 'Usuário não encontrado' });
+    // Verificar permissões
+    if (!user.role || !['user', 'super_admin'].includes(user.role)) {
+      return res.status(403).json({ error: 'Forbidden - Insufficient permissions' });
     }
 
-    // Buscar a assinatura para verificar permissões
+    // Buscar a assinatura para verificar se pertence ao usuário
     const { data: subscription, error: subscriptionError } = await supabase
       .from('subscriptions')
-      .select('tenant_id, user_id')
+      .select('tenant_id, asaas_subscription_id')
       .eq('id', subscriptionId)
       .single();
 
@@ -63,30 +30,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'Assinatura não encontrada' });
     }
 
-    // Verificar permissões: usuário pode ver apenas suas próprias assinaturas, super_admin pode ver todas
-    if (userData.role !== 'super_admin' && 
-        subscription.user_id !== user.id && 
-        subscription.tenant_id !== userData.tenant_id) {
-      return res.status(403).json({ error: 'Sem permissão para acessar esta assinatura' });
+    // Verificar se o usuário tem acesso a esta assinatura
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('tenant_id')
+      .eq('id', user.id)
+      .single();
+
+    if (userError || !userData || userData.tenant_id !== subscription.tenant_id) {
+      return res.status(403).json({ error: 'Acesso negado a esta assinatura' });
     }
 
-    // Buscar pagamentos da assinatura
+    // Buscar cobranças da assinatura usando asaas_subscription_id
     const { data: payments, error: paymentsError } = await supabase
       .from('subscription_payments')
       .select('*')
-      .eq('subscription_id', subscriptionId)
+      .eq('asaas_subscription_id', subscription.asaas_subscription_id)
       .order('created_at', { ascending: false });
 
     if (paymentsError) {
-      return res.status(500).json({ error: 'Erro ao buscar pagamentos.' });
+      console.error('[Payments] Erro ao buscar cobranças:', paymentsError);
+      return res.status(500).json({ error: 'Erro ao buscar cobranças' });
     }
+
+    // Formatar resposta
+    const formattedPayments = (payments || []).map((payment: any) => ({
+      id: payment.id,
+      asaasPaymentId: payment.asaas_payment_id,
+      amount: payment.amount,
+      status: payment.status,
+      paidAt: payment.paid_at,
+      paymentMethod: payment.payment_method,
+      invoiceUrl: payment.invoice_url,
+      createdAt: payment.created_at,
+    }));
 
     return res.status(200).json({
       success: true,
-      payments: payments || []
+      payments: formattedPayments,
+      total_count: formattedPayments.length,
     });
 
   } catch (error) {
-    return res.status(500).json({ error: 'Erro ao buscar pagamentos.' });
+    console.error('[Payments] Erro inesperado:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+    return res.status(500).json({ error: 'Erro interno: ' + errorMessage });
   }
-} 
+}
+
+export default withAuth(handler); 
