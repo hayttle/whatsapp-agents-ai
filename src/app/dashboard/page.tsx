@@ -245,14 +245,14 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
-              <a href="/admin/instancias" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-brand-green-light hover:bg-brand-green-light/5 transition-colors">
+              <a href="/instancias" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-brand-green-light hover:bg-brand-green-light/5 transition-colors">
                 <MessageSquare className="h-5 w-5 text-brand-green-light" />
                 <div>
                   <p className="text-sm font-medium">Instâncias</p>
                   <p className="text-xs text-gray-600">Gerenciar WhatsApp</p>
                 </div>
               </a>
-              <a href="/admin/agentes" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-brand-green-light hover:bg-brand-green-light/5 transition-colors">
+              <a href="/agentes" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-brand-green-light hover:bg-brand-green-light/5 transition-colors">
                 <Bot className="h-5 w-5 text-brand-green-light" />
                 <div>
                   <p className="text-sm font-medium">Agentes</p>

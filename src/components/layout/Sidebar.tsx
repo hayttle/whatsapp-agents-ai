@@ -41,21 +41,20 @@ const navItems: SidebarItem[] = [
     icon: CreditCard
   },
   {
-    href: '/admin/instancias',
+    href: '/instancias',
     label: 'Instâncias',
     icon: MessageSquare
   },
   {
-    href: '/admin/agentes',
+    href: '/agentes',
     label: 'Agentes',
     icon: Bot
   },
   {
-    href: '/admin/whatsapp-api',
+    href: '/whatsapp-api',
     label: 'Whatsapp API',
     icon: MessageCircleMore
   },
-
   {
     href: '/admin/prompt-models',
     label: 'Modelos de Prompt',
