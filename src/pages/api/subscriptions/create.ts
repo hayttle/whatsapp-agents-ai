@@ -100,13 +100,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
       });
     }
 
-    // Criar registro local com status PENDING (alinhado com Asaas)
+    // Criar registro local com status ACTIVE (alinhado com Asaas)
     const subscriptionData = {
       tenant_id,
       plan_name: plan.name,
       plan_type,
       quantity,
-      status: 'PENDING',
+      status: 'ACTIVE',
       value: totalValue,
       price: plan.price,
       cycle: plan.cycle,

@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/brand';
 import { Badge } from '@/components/brand';
 import { Check, Star, Zap, MessageSquare, XCircle, Clock, FileText } from 'lucide-react';
-import { formatDateToDisplay } from '@/lib/utils';
+import { formatDateToDisplay, getCycleLabel } from '@/lib/utils';
 
 const plans = [
   {
@@ -74,7 +74,7 @@ export default function AssinaturaPage() {
     setError(null);
     try {
       // Criar assinatura pendente via nova API
-      const response = await fetch('/api/subscriptions/create-pending', {
+      const response = await fetch('/api/subscriptions/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -147,9 +147,6 @@ export default function AssinaturaPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               {subscription.plan}
-              <Badge variant={subscription.isActive ? 'success' : 'error'}>
-                {subscription.isActive ? 'Ativa' : 'Inativa'}
-              </Badge>
             </CardTitle>
             <CardDescription>
               Plano {subscription.planType} - {subscription.quantity} pacote(s)
@@ -163,7 +160,7 @@ export default function AssinaturaPage() {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Ciclo</p>
-                <p className="text-lg font-semibold">{subscription.cycle}</p>
+                <p className="text-lg font-semibold">{getCycleLabel(subscription.cycle || '')}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Próximo Vencimento</p>
@@ -172,7 +169,7 @@ export default function AssinaturaPage() {
               <div>
                 <p className="text-sm text-gray-600">Status</p>
                 <Badge variant={subscription.isActive ? 'success' : 'error'}>
-                  {subscription.status}
+                  {subscription.status === 'ACTIVE' ? 'Ativa' : subscription.status === 'INACTIVE' ? 'Inativa' : subscription.status}
                 </Badge>
               </div>
             </div>

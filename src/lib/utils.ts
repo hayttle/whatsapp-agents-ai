@@ -183,3 +183,18 @@ export function formatDateToISO(date: Date, timeZone = 'America/Sao_Paulo'): str
   const [day, month, year] = formatter.format(date).split('/');
   return `${year}-${month}-${day}`;
 }
+
+export function getCycleLabel(cycle: string): string {
+  switch (cycle) {
+    case 'MONTHLY':
+      return 'Mensal';
+    case 'YEARLY':
+      return 'Anual';
+    case 'WEEKLY':
+      return 'Semanal';
+    case 'DAILY':
+      return 'Diário';
+    default:
+      return cycle;
+  }
+}

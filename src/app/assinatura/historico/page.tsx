@@ -6,9 +6,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/brand';
 import { Badge } from '@/components/brand';
 import { Alert } from '@/components/brand';
-import { ArrowLeft, RefreshCw, Download, Eye, Calendar, DollarSign, CreditCard } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Download, Eye, Calendar, DollarSign, CreditCard, CheckCircle, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { formatDateToDisplay } from '@/lib/utils';
+import { formatDateToDisplay, getCycleLabel } from '@/lib/utils';
 
 export default function HistoricoPage() {
   const router = useRouter();
@@ -147,7 +147,6 @@ export default function HistoricoPage() {
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       {subscription.plan}
-                      {getStatusBadge(subscription.status)}
                     </CardTitle>
                     <CardDescription>
                       Plano {subscription.planType} - {subscription.quantity} pacote(s)
@@ -157,7 +156,7 @@ export default function HistoricoPage() {
                     <p className="text-2xl font-bold text-green-600">
                       R$ {subscription.value.toFixed(2).replace('.', ',')}
                     </p>
-                    <p className="text-sm text-gray-500">{subscription.cycle}</p>
+                    <p className="text-sm text-gray-500">{getCycleLabel(subscription.cycle || '')}</p>
                   </div>
                 </div>
               </CardHeader>
@@ -174,16 +173,20 @@ export default function HistoricoPage() {
                     <Calendar className="w-4 h-4 text-gray-400" />
                     <div>
                       <p className="text-sm text-gray-600">Próximo Vencimento</p>
-                      <p className="font-medium">
-                        {subscription.nextDueDate ? formatDateToDisplay(subscription.nextDueDate) : 'N/A'}
-                      </p>
+                      <p className="font-medium">{subscription.nextDueDate ? formatDateToDisplay(subscription.nextDueDate) : 'N/A'}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-gray-400" />
+                    {subscription.status === 'ACTIVE' ? (
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-gray-400" />
+                    )}
                     <div>
-                      <p className="text-sm text-gray-600">Cobranças</p>
-                      <p className="font-medium">{subscription.paymentsCount}</p>
+                      <p className="text-sm text-gray-600">Status</p>
+                      <Badge variant={subscription.isActive ? 'success' : 'error'}>
+                        {subscription.status === 'ACTIVE' ? 'Ativa' : subscription.status === 'INACTIVE' ? 'Inativa' : subscription.status}
+                      </Badge>
                     </div>
                   </div>
                 </div>
