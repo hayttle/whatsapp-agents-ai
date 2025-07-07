@@ -34,7 +34,7 @@ async function testTimezone() {
       plan_name: 'Teste Timezone',
       plan_type: 'starter',
       quantity: 1,
-      status: 'PENDING_PAYMENT',
+      status: 'PENDING',
       value: 99.99,
     };
 

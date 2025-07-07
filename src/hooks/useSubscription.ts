@@ -21,10 +21,35 @@ export interface SubscriptionData {
   isActive: boolean;
   isTrial: boolean;
   isExpired: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TrialStatus {
+  hasActiveTrial: boolean;
+  isExpired: boolean;
+  daysRemaining: number;
+  trial?: {
+    id: string;
+    tenant_id: string;
+    started_at: string;
+    expires_at: string;
+    status: 'ACTIVE' | 'EXPIRED';
+    created_at: string;
+    updated_at: string;
+  };
+}
+
+export interface SubscriptionResponse {
+  subscription: SubscriptionData | null;
+  trialStatus: TrialStatus | null;
+  hasAccess: boolean;
 }
 
 interface UseSubscriptionReturn {
   subscription: SubscriptionData | null;
+  trialStatus: TrialStatus | null;
+  hasAccess: boolean;
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
@@ -32,6 +57,8 @@ interface UseSubscriptionReturn {
 
 export function useSubscription(): UseSubscriptionReturn {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
+  const [trialStatus, setTrialStatus] = useState<TrialStatus | null>(null);
+  const [hasAccess, setHasAccess] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,6 +80,8 @@ export function useSubscription(): UseSubscriptionReturn {
       
       if (data.success) {
         setSubscription(data.subscription);
+        setTrialStatus(data.trialStatus);
+        setHasAccess(data.hasAccess);
       } else {
         throw new Error(data.error || 'Erro ao buscar assinatura');
       }
@@ -60,6 +89,8 @@ export function useSubscription(): UseSubscriptionReturn {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar assinatura';
       setError(errorMessage);
       setSubscription(null);
+      setTrialStatus(null);
+      setHasAccess(false);
     } finally {
       setLoading(false);
     }
@@ -71,6 +102,8 @@ export function useSubscription(): UseSubscriptionReturn {
 
   return {
     subscription,
+    trialStatus,
+    hasAccess,
     loading,
     error,
     refetch: fetchSubscription

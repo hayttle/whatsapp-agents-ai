@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth, AuthResult } from '@/lib/auth/helpers';
 import { asaasRequest } from '@/services/asaasService';
+import { TrialService } from '@/services/trialService';
 
 async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResult) {
   if (req.method !== 'POST') {
@@ -80,24 +81,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
       return res.status(500).json({ error: 'Error creating tenant: ' + error.message });
     }
 
-    // 3. Criar assinatura trial para o tenant
-    let trialSubscription = null;
+    // 3. Criar trial para o tenant
+    let trial = null;
     let trialError = null;
     try {
-      // Importação dinâmica para evitar problemas de importação lado servidor
-      const { subscriptionService } = await import('@/services/subscriptionService');
-      trialSubscription = await subscriptionService.createTrialSubscription({
-        tenant_id: tenant.id,
-      });
+      const trialService = new TrialService(supabase);
+      trial = await trialService.createTrial(tenant.id, 7);
     } catch (err) {
-      trialError = err instanceof Error ? err.message : 'Erro desconhecido ao criar assinatura trial';
+      trialError = err instanceof Error ? err.message : 'Erro desconhecido ao criar trial';
     }
 
     return res.status(201).json({
       success: true,
       tenant: tenant,
       asaas: asaasStatus,
-      trial: trialSubscription,
+      trial: trial,
       trialError,
     });
   } catch (error) {

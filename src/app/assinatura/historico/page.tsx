@@ -8,6 +8,7 @@ import { Badge } from '@/components/brand';
 import { Alert } from '@/components/brand';
 import { ArrowLeft, RefreshCw, Download, Eye, Calendar, DollarSign, CreditCard } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { formatDateToDisplay } from '@/lib/utils';
 
 export default function HistoricoPage() {
   const router = useRouter();
@@ -66,7 +67,7 @@ export default function HistoricoPage() {
     const statusConfig = {
       'TRIAL': { variant: 'warning' as const, label: 'Trial' },
       'ACTIVE': { variant: 'success' as const, label: 'Ativa' },
-      'PENDING_PAYMENT': { variant: 'warning' as const, label: 'Aguardando Pagamento' },
+      'PENDING': { variant: 'warning' as const, label: 'Aguardando Pagamento' },
       'EXPIRED': { variant: 'error' as const, label: 'Expirada' },
       'SUSPENDED': { variant: 'error' as const, label: 'Suspensa' },
       'CANCELLED': { variant: 'error' as const, label: 'Cancelada' },
@@ -166,7 +167,7 @@ export default function HistoricoPage() {
                     <Calendar className="w-4 h-4 text-gray-400" />
                     <div>
                       <p className="text-sm text-gray-600">Início</p>
-                      <p className="font-medium">{new Date(subscription.startedAt).toLocaleDateString('pt-BR')}</p>
+                      <p className="font-medium">{formatDateToDisplay(subscription.startedAt)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -174,10 +175,7 @@ export default function HistoricoPage() {
                     <div>
                       <p className="text-sm text-gray-600">Próximo Vencimento</p>
                       <p className="font-medium">
-                        {subscription.nextDueDate
-                          ? new Date(subscription.nextDueDate).toLocaleDateString('pt-BR')
-                          : 'N/A'
-                        }
+                        {subscription.nextDueDate ? formatDateToDisplay(subscription.nextDueDate) : 'N/A'}
                       </p>
                     </div>
                   </div>
@@ -204,7 +202,7 @@ export default function HistoricoPage() {
                             <div>
                               <p className="font-medium">R$ {payment.amount.toFixed(2).replace('.', ',')}</p>
                               <p className="text-sm text-gray-500">
-                                {new Date(payment.createdAt).toLocaleDateString('pt-BR')}
+                                {formatDateToDisplay(payment.dueDate)}
                               </p>
                             </div>
                             {getPaymentStatusBadge(payment.status)}

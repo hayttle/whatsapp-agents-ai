@@ -56,6 +56,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
           paymentMethod: string | null;
           invoiceUrl: string | null;
           createdAt: string;
+          dueDate: string | null;
         }> = [];
         
         if (subscription.asaas_subscription_id) {
@@ -75,6 +76,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
               paymentMethod: payment.payment_method,
               invoiceUrl: payment.invoice_url,
               createdAt: payment.created_at,
+              dueDate: payment.due_date,
             }));
           }
         }
@@ -96,8 +98,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
           paidAt: subscription.paid_at,
           paymentMethod: subscription.payment_method,
           invoiceUrl: subscription.invoice_url,
-          isActive: ['TRIAL', 'ACTIVE'].includes(subscription.status),
-          isTrial: subscription.status === 'TRIAL',
+          isActive: ['ACTIVE', 'PENDING'].includes(subscription.status),
+          isTrial: false, // Trial agora está na tabela separada
           isSuspended: subscription.status === 'SUSPENDED',
           createdAt: subscription.created_at,
           updatedAt: subscription.updated_at,
@@ -107,6 +109,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
       })
     );
 
+    console.log('SubscriptionsWithPayments:', JSON.stringify(subscriptionsWithPayments, null, 2));
     return res.status(200).json({
       success: true,
       subscriptions: subscriptionsWithPayments,

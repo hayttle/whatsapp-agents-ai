@@ -112,7 +112,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       plan_name,
       plan_type,
       quantity,
-      status: 'TRIAL' as const, // Começa como trial
+      status: 'PENDING' as const, // Status inicial para assinaturas pagas (alinhado com Asaas)
       value,
       price,
       cycle,

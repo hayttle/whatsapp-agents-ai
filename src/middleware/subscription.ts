@@ -1,40 +1,9 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Rotas que não precisam de verificação de assinatura
-const PUBLIC_ROUTES = [
-  '/',
-  '/login',
-  '/signup',
-  '/api',
-  '/_next',
-  '/public',
-  '/favicon.ico',
-  '/design-system',
-  '/qrcode',
-];
 
-// Rotas que são permitidas mesmo com assinatura suspensa
-const ALLOWED_WHEN_SUSPENDED = [
-  '/assinatura',
-  '/api/subscriptions',
-  '/api/auth',
-  '/api/users/current',
-];
 
-export async function checkSubscriptionStatus(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  // Permitir rotas públicas
-  if (PUBLIC_ROUTES.some(route => pathname === route || pathname.startsWith(route + '/'))) {
-    return NextResponse.next();
-  }
-
-  // Permitir rotas de API de autenticação e usuário atual
-  if (pathname.startsWith('/api/auth/') || pathname === '/api/users/current') {
-    return NextResponse.next();
-  }
-
+export async function checkSubscriptionAccess(request: NextRequest) {
   try {
     // Criar cliente Supabase
     const supabase = createServerClient(
@@ -46,7 +15,7 @@ export async function checkSubscriptionStatus(request: NextRequest) {
             return request.cookies.getAll();
           },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
+            cookiesToSet.forEach(({ name, value }) => {
               request.cookies.set(name, value);
             });
           },
@@ -57,112 +26,70 @@ export async function checkSubscriptionStatus(request: NextRequest) {
     // Verificar autenticação
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('redirect', pathname);
-      return NextResponse.redirect(loginUrl);
+      return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    // Buscar tenant_id do usuário
+    // Buscar dados do usuário
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('tenant_id, created_at')
+      .select('tenant_id, role')
       .eq('id', user.id)
       .single();
 
     if (userError || !userData) {
-      // Se não conseguir buscar o tenant_id, permitir acesso à página de assinatura
-      if (pathname === '/assinatura') {
-        return NextResponse.next();
-      }
-      const subscriptionUrl = new URL('/assinatura', request.url);
-      return NextResponse.redirect(subscriptionUrl);
+      return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    // Buscar assinatura mais recente do tenant (todas as assinaturas)
-    const { data: subscription, error: subscriptionError } = await supabase
+    // Super admin tem acesso total
+    if (userData.role === 'super_admin') {
+      return NextResponse.next();
+    }
+
+    // Verificar se tem assinatura paga ativa
+    const { data: subscription } = await supabase
       .from('subscriptions')
-      .select('*')
+      .select('status')
       .eq('tenant_id', userData.tenant_id)
+      .in('status', ['ACTIVE', 'PENDING'])
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
 
-    // Se não há assinatura
-    if (subscriptionError || !subscription) {
-      // Verificar se o usuário está no período trial (7 dias após cadastro)
-      if (userData?.created_at) {
-        const userCreatedAt = new Date(userData.created_at);
-        const trialEnd = new Date(userCreatedAt);
-        trialEnd.setDate(trialEnd.getDate() + 7);
-        const now = new Date();
-
-        // Se ainda está no período trial, permitir acesso total
-        if (now <= trialEnd) {
-          return NextResponse.next();
-        }
-      }
-
-      // Permitir acesso à página de assinatura
-      if (pathname === '/assinatura') {
-        return NextResponse.next();
-      }
-
-      // Redirecionar para página de assinatura se tentar acessar outras rotas
-      if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
-        const subscriptionUrl = new URL('/assinatura', request.url);
-        return NextResponse.redirect(subscriptionUrl);
-      }
-
-      return NextResponse.next();
+    if (subscription) {
+      return NextResponse.next(); // Tem assinatura paga ativa
     }
 
-    // Verificar status da assinatura
-    if (subscription.status === 'TRIAL') {
-      const trialEndDate = new Date(subscription.next_due_date);
+    // Se não tem assinatura paga, verificar trial
+    const { data: trial } = await supabase
+      .from('trials')
+      .select('status, expires_at')
+      .eq('tenant_id', userData.tenant_id)
+      .eq('status', 'ACTIVE')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (trial) {
       const now = new Date();
+      const expiresAt = new Date(trial.expires_at);
       
-      if (now > trialEndDate) {
-        // Atualizar status para SUSPENDED
+      if (expiresAt > now) {
+        return NextResponse.next(); // Trial ativo
+      } else {
+        // Trial expirado, atualizar status
         await supabase
-          .from('subscriptions')
-          .update({ 
-            status: 'SUSPENDED',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', subscription.id);
-
-        // Permitir acesso à página de assinatura
-        if (pathname === '/assinatura') {
-          return NextResponse.next();
-        }
-
-        // Redirecionar para página de assinatura
-        const subscriptionUrl = new URL('/assinatura', request.url);
-        return NextResponse.redirect(subscriptionUrl);
+          .from('trials')
+          .update({ status: 'EXPIRED' })
+          .eq('tenant_id', userData.tenant_id)
+          .eq('status', 'ACTIVE');
       }
-      
-      // Trial ativo, permitir acesso
-      return NextResponse.next();
     }
 
-    if (subscription.status === 'ACTIVE') {
-      // Assinatura ativa, permitir acesso
-      return NextResponse.next();
-    }
-
-    if (subscription.status === 'SUSPENDED' || subscription.status === 'CANCELLED' || subscription.status === 'OVERDUE') {
-      // Permitir acesso à página de assinatura
-      if (pathname === '/assinatura') {
-        return NextResponse.next();
-      }
-
-      // Redirecionar para página de assinatura
-      const subscriptionUrl = new URL('/assinatura', request.url);
-      return NextResponse.redirect(subscriptionUrl);
-    }
+    // Sem acesso - redirecionar para página de assinatura
+    return NextResponse.redirect(new URL('/assinatura', request.url));
 
   } catch (error) {
-    // Em caso de erro, permitir acesso (fail-safe)
-    return NextResponse.next();
+    console.error('Erro no middleware de assinatura:', error);
+    return NextResponse.redirect(new URL('/assinatura', request.url));
   }
 } 

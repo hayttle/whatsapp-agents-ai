@@ -11,6 +11,7 @@ export interface SubscriptionPayment {
   paymentMethod: string | null;
   invoiceUrl: string | null;
   createdAt: string;
+  dueDate?: string | null;
 }
 
 export interface SubscriptionHistoryItem {

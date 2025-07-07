@@ -12,6 +12,7 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
+import { formatDateToDisplay } from '@/lib/utils';
 
 interface PlanLimitsCardProps {
   stats: UsageStats;
@@ -47,10 +48,6 @@ export function PlanLimitsCard({ stats, loading = false }: PlanLimitsCardProps) 
       style: 'currency',
       currency: 'BRL',
     }).format(value);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
   const getStatusIcon = () => {
@@ -146,9 +143,7 @@ export function PlanLimitsCard({ stats, loading = false }: PlanLimitsCardProps) 
               <Calendar className="w-4 h-4 text-gray-500" />
               <span className="text-sm font-medium">Próximo Vencimento</span>
             </div>
-            <p className="text-sm text-gray-600">
-              {formatDate(stats.nextDueDate)}
-            </p>
+            <p className="text-sm text-gray-600">{formatDateToDisplay(stats.nextDueDate)}</p>
           </div>
         </div>
 
@@ -201,17 +196,7 @@ export function PlanLimitsCard({ stats, loading = false }: PlanLimitsCardProps) 
           </Alert>
         )}
 
-        {stats.subscriptionStatus === 'TRIAL' && (
-          <Alert variant="warning">
-            <AlertTriangle className="h-4 w-4" />
-            <div>
-              <h4 className="font-medium">Período Trial Expirado</h4>
-              <p className="text-sm">
-                Seu período de teste expirou. Escolha um plano para continuar usando a plataforma.
-              </p>
-            </div>
-          </Alert>
-        )}
+        {/* Trial agora é gerenciado separadamente via TrialService */}
       </CardContent>
     </Card>
   );

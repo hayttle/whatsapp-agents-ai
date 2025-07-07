@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth, AuthResult } from '@/lib/auth/helpers';
 import { PLANS } from '@/lib/plans';
 import { createAsaasSubscription, AsaasSubscriptionRequest } from '@/services/asaasService';
+import { formatDateToISO } from '@/lib/utils';
 
 async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResult) {
   if (req.method !== 'POST') {
@@ -68,9 +69,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
     const plan = PLANS[plan_type];
     const totalValue = plan.price * quantity;
 
-    // Data de vencimento para hoje
-    const nextDueDate = new Date();
-    const nextDueDateStr = nextDueDate.toISOString().split('T')[0]; // YYYY-MM-DD
+    // Data de vencimento para hoje no timezone America/Sao_Paulo
+    const now = new Date();
+    const nextDueDateStr = formatDateToISO(now, 'America/Sao_Paulo'); // YYYY-MM-DD
 
     // Criar assinatura no Asaas
     const asaasSubscriptionData: AsaasSubscriptionRequest = {
@@ -99,13 +100,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
       });
     }
 
-    // Criar registro local com status PENDING_PAYMENT
+    // Criar registro local com status PENDING (alinhado com Asaas)
     const subscriptionData = {
       tenant_id,
       plan_name: plan.name,
       plan_type,
       quantity,
-      status: 'PENDING_PAYMENT',
+      status: 'PENDING',
       value: totalValue,
       price: plan.price,
       cycle: plan.cycle,

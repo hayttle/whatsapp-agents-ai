@@ -132,8 +132,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       paidAt: updatedSubscription.paid_at,
       paymentMethod: updatedSubscription.payment_method,
       invoiceUrl: updatedSubscription.invoice_url,
-      isActive: ['TRIAL', 'ACTIVE'].includes(updatedSubscription.status),
-      isTrial: updatedSubscription.status === 'TRIAL',
+              isActive: ['ACTIVE', 'PENDING'].includes(updatedSubscription.status),
+              isTrial: false, // Trial agora está na tabela separada
       isSuspended: updatedSubscription.status === 'SUSPENDED',
     };
 

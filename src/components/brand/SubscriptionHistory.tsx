@@ -6,6 +6,7 @@ import { Button } from './Button';
 import { Badge } from './Badge';
 import { Alert } from './Alert';
 import { Calendar, FileText, Clock, CheckCircle, XCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+import { formatDateToDisplay } from '@/lib/utils';
 
 export interface SubscriptionHistoryItem {
   id: string;
@@ -56,6 +57,7 @@ export function SubscriptionHistory({ onRenew, onViewInvoice }: SubscriptionHist
       const data = await response.json();
 
       if (data.success) {
+        console.log('Subscriptions recebidas:', data.subscriptions);
         setSubscriptions(data.subscriptions);
       } else {
         throw new Error(data.error || 'Erro ao buscar histórico');
@@ -138,9 +140,7 @@ export function SubscriptionHistory({ onRenew, onViewInvoice }: SubscriptionHist
     }).format(value);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
+  const formatDate = formatDateToDisplay;
 
   const getCycleLabel = (cycle: string) => {
     switch (cycle) {

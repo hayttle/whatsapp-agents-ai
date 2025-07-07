@@ -4,6 +4,7 @@ import { Button } from './Button';
 import { Badge } from './Badge';
 import { Alert } from './Alert';
 import { Calendar, CreditCard, FileText, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { formatDateToDisplay } from '@/lib/utils';
 
 export interface SubscriptionCardProps {
   subscription: {
@@ -26,7 +27,7 @@ export interface SubscriptionCardProps {
   loading?: boolean;
 }
 
-const getStatusConfig = (status: string, isTrial: boolean) => {
+const getStatusConfig = (status: string) => {
   switch (status) {
     case 'TRIAL':
       return {
@@ -74,10 +75,6 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('pt-BR');
-};
-
 const getCycleLabel = (cycle: string) => {
   switch (cycle) {
     case 'MONTHLY':
@@ -112,7 +109,7 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   onViewInvoice,
   loading = false,
 }) => {
-  const statusConfig = getStatusConfig(subscription.status, subscription.isTrial);
+  const statusConfig = getStatusConfig(subscription.status);
   const StatusIcon = statusConfig.icon;
 
   const getTrialDaysLeft = () => {
@@ -198,20 +195,20 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-gray-500" />
             <span className="text-gray-600">Início:</span>
-            <span>{formatDate(subscription.startedAt)}</span>
+            <span>{formatDateToDisplay(subscription.startedAt)}</span>
           </div>
 
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-gray-500" />
             <span className="text-gray-600">Próximo vencimento:</span>
-            <span>{formatDate(subscription.nextDueDate)}</span>
+            <span>{formatDateToDisplay(subscription.nextDueDate)}</span>
           </div>
 
           {subscription.paidAt && (
             <div className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-green-500" />
               <span className="text-gray-600">Último pagamento:</span>
-              <span>{formatDate(subscription.paidAt)}</span>
+              <span>{formatDateToDisplay(subscription.paidAt)}</span>
             </div>
           )}
 

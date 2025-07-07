@@ -3,7 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { validateCPF, validateCNPJ } from '@/lib/utils';
 import { asaasRequest } from '@/services/asaasService';
-import { subscriptionService } from '@/services/subscriptionService';
+import { TrialService } from '@/services/trialService';
 
 interface SignupRequest {
   company: {
@@ -229,21 +229,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Não falhar o cadastro por causa do login automático
     }
 
-    // 5. Criar assinatura trial com expiração em 7 dias
+    // 5. Criar trial com expiração em 7 dias
     try {
-      await subscriptionService.createTrialSubscription({
-        tenant_id: tenant.id,
-        plan_type: 'starter',
-        plan_name: 'Trial',
-        quantity: 1,
-      });
-    } catch (subscriptionError) {
-      // Se falhar ao criar assinatura trial, deletar usuário, tenant e usuário do Auth
+      const trialService = new TrialService(supabase);
+      await trialService.createTrial(tenant.id, 7);
+    } catch (trialError) {
+      // Se falhar ao criar trial, deletar usuário, tenant e usuário do Auth
       await supabase.from('users').delete().eq('id', authUser.user.id);
       await supabase.from('tenants').delete().eq('id', tenant.id);
       await adminClient.auth.admin.deleteUser(authUser.user.id);
       return res.status(500).json({ 
-        error: 'Erro ao criar assinatura trial: ' + (subscriptionError instanceof Error ? subscriptionError.message : String(subscriptionError))
+        error: 'Erro ao criar trial: ' + (trialError instanceof Error ? trialError.message : String(trialError))
       });
     }
 

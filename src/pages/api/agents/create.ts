@@ -26,12 +26,54 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
       return res.status(403).json({ error: 'Forbidden - Cannot create agent for different tenant' });
     }
 
+    // Verificar se o tenant tem acesso (trial ativo ou assinatura paga)
+    const { data: activeSubscription } = await auth.supabase
+      .from('subscriptions')
+      .select('status')
+      .eq('tenant_id', auth.user.tenant_id)
+      .in('status', ['ACTIVE', 'PENDING'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (activeSubscription) {
+      // Tem assinatura paga ativa
+    } else {
+      // Verificar trial
+      const { data: trial } = await auth.supabase
+        .from('trials')
+        .select('status, expires_at')
+        .eq('tenant_id', auth.user.tenant_id)
+        .eq('status', 'ACTIVE')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (!trial) {
+        return res.status(403).json({ error: 'Acesso negado. Trial expirado ou sem assinatura ativa.' });
+      }
+
+      const now = new Date();
+      const expiresAt = new Date(trial.expires_at);
+      
+      if (expiresAt <= now) {
+        // Trial expirado, atualizar status
+        await auth.supabase
+          .from('trials')
+          .update({ status: 'EXPIRED' })
+          .eq('tenant_id', auth.user.tenant_id)
+          .eq('status', 'ACTIVE');
+        
+        return res.status(403).json({ error: 'Trial expirado. Renove sua assinatura para continuar.' });
+      }
+    }
+
     // Verificar limites do plano
     const { data: subscription } = await auth.supabase
       .from('subscriptions')
       .select('plan_name, quantity')
       .eq('tenant_id', tenant_id)
-      .in('status', ['TRIAL', 'ACTIVE'])
+      .in('status', ['ACTIVE', 'PENDING'])
       .order('created_at', { ascending: false })
       .limit(1)
       .single();

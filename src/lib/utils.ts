@@ -161,3 +161,25 @@ export function deepEqual(obj1: unknown, obj2: unknown): boolean {
   }
   return true;
 }
+
+// Para exibir datas no formato DD/MM/YYYY
+export function formatDateToDisplay(dateString: string): string {
+  if (!dateString) return '';
+  // Extrai apenas a parte da data se vier um timestamp
+  const onlyDate = dateString.split('T')[0];
+  const [year, month, day] = onlyDate.split('-');
+  if (!year || !month || !day) return dateString;
+  return `${day}/${month}/${year}`;
+}
+
+// Para converter Date para YYYY-MM-DD em um timezone específico
+export function formatDateToISO(date: Date, timeZone = 'America/Sao_Paulo'): string {
+  const formatter = new Intl.DateTimeFormat('pt-BR', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  const [day, month, year] = formatter.format(date).split('/');
+  return `${year}-${month}-${day}`;
+}
