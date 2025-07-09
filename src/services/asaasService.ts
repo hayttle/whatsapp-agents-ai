@@ -114,11 +114,24 @@ export async function getAsaasSubscription(subscriptionId: string): Promise<Asaa
   return asaasRequest<AsaasSubscriptionResponse>(`/v3/subscriptions/${subscriptionId}`);
 }
 
+// Função para atualizar status da assinatura no Asaas
+export async function updateAsaasSubscriptionStatus(subscriptionId: string, status: 'ACTIVE' | 'INACTIVE'): Promise<AsaasSubscriptionResponse> {
+  return asaasRequest<AsaasSubscriptionResponse>(`/v3/subscriptions/${subscriptionId}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      status
+    }),
+  });
+}
+
 // Função para cancelar assinatura no Asaas
 export async function cancelAsaasSubscription(subscriptionId: string): Promise<AsaasSubscriptionResponse> {
-  return asaasRequest<AsaasSubscriptionResponse>(`/v3/subscriptions/${subscriptionId}/cancel`, {
-    method: 'POST',
-  });
+  return updateAsaasSubscriptionStatus(subscriptionId, 'INACTIVE');
+}
+
+// Função para reativar assinatura no Asaas
+export async function reactivateAsaasSubscription(subscriptionId: string): Promise<AsaasSubscriptionResponse> {
+  return updateAsaasSubscriptionStatus(subscriptionId, 'ACTIVE');
 }
 
 // Tipos para cobranças do Asaas

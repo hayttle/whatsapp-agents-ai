@@ -1,20 +1,33 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSubscriptionHistory } from '@/hooks/useSubscriptionHistory';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/brand';
 import { Button } from '@/components/brand';
 import { Badge } from '@/components/brand';
 import { Alert } from '@/components/brand';
 import { ArrowLeft, RefreshCw, Download, Eye, Calendar, DollarSign, CreditCard, CheckCircle, XCircle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { formatDateToDisplay, getCycleLabel } from '@/lib/utils';
 
 export default function HistoricoPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const subscriptionFilter = searchParams?.get('subscription') || null;
+
   const { subscriptions, loading, error, refetch } = useSubscriptionHistory();
   const [loadingAction, setLoadingAction] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Filtrar assinaturas se houver parâmetro de filtro
+  const filteredSubscriptions = subscriptionFilter
+    ? subscriptions.filter(sub => sub.id === subscriptionFilter)
+    : subscriptions;
+
+  // Buscar dados da assinatura filtrada para o título
+  const filteredSubscription = subscriptionFilter
+    ? subscriptions.find(sub => sub.id === subscriptionFilter)
+    : null;
 
   const handleRenew = async (subscriptionId: string) => {
     setLoadingAction(true);
@@ -113,10 +126,20 @@ export default function HistoricoPage() {
           </Button>
         </div>
 
-        <h1 className="text-3xl font-bold text-brand-gray-dark mb-2">Histórico de Assinaturas</h1>
-        <p className="text-gray-600">
-          Visualize todas as suas assinaturas e transações na plataforma.
-        </p>
+        <div>
+          <h1 className="text-3xl font-bold text-brand-gray-dark mb-2">
+            {subscriptionFilter && filteredSubscription
+              ? `Cobranças - ${filteredSubscription.plan}`
+              : 'Histórico de Assinaturas'
+            }
+          </h1>
+          <p className="text-gray-600">
+            {subscriptionFilter && filteredSubscription
+              ? `Visualize todas as cobranças da assinatura ${filteredSubscription.plan}`
+              : 'Visualize todas as suas assinaturas e transações na plataforma.'
+            }
+          </p>
+        </div>
       </div>
 
       {(error || actionError) && (
@@ -132,15 +155,18 @@ export default function HistoricoPage() {
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-green-light"></div>
         </div>
-      ) : subscriptions.length === 0 ? (
+      ) : filteredSubscriptions.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
-            <p className="text-gray-500">Nenhuma assinatura encontrada.</p>
+            {subscriptionFilter
+              ? <p className="text-gray-500">Nenhuma cobrança encontrada para esta assinatura.</p>
+              : <p className="text-gray-500">Nenhuma assinatura encontrada.</p>
+            }
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-6">
-          {subscriptions.map((subscription) => (
+          {filteredSubscriptions.map((subscription) => (
             <Card key={subscription.id}>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -205,7 +231,7 @@ export default function HistoricoPage() {
                             <div>
                               <p className="font-medium">R$ {payment.amount.toFixed(2).replace('.', ',')}</p>
                               <p className="text-sm text-gray-500">
-                                {formatDateToDisplay(payment.dueDate)}
+                                {payment.dueDate ? formatDateToDisplay(payment.dueDate) : 'N/A'}
                               </p>
                             </div>
                             {getPaymentStatusBadge(payment.status)}

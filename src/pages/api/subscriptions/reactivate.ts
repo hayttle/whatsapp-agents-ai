@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth, AuthResult } from '@/lib/auth/helpers';
-import { cancelAsaasSubscription } from '@/services/asaasService';
+import { reactivateAsaasSubscription } from '@/services/asaasService';
+import { formatDateToISO } from '@/lib/utils';
 
 async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResult) {
   if (req.method !== 'POST') {
@@ -47,23 +48,28 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
       return res.status(400).json({ error: 'Assinatura não possui ID do Asaas' });
     }
 
-    // Verificar se a assinatura já está cancelada
-    if (subscription.status === 'CANCELED' || subscription.status === 'INACTIVE') {
-      return res.status(400).json({ error: 'Assinatura já está cancelada' });
-    }
+    // Gerar data de hoje no formato YYYY-MM-DD para nextDueDate usando fuso horário correto
+    const today = new Date();
+    const nextDueDate = formatDateToISO(today, 'America/Sao_Paulo'); // Formato YYYY-MM-DD no fuso horário de São Paulo
 
-    // Cancelar assinatura no Asaas usando o serviço
-    const asaasResult = await cancelAsaasSubscription(subscription.asaas_subscription_id);
-    console.log('Assinatura cancelada no Asaas:', asaasResult);
+    // Log do payload enviado para o Asaas
+    const payload = { status: 'ACTIVE', nextDueDate };
+    console.log('[Reativação Assinatura] Payload enviado para o Asaas:', payload);
+    
+    // Reativar assinatura no Asaas usando o serviço
+    const asaasResult = await reactivateAsaasSubscription(subscription.asaas_subscription_id, nextDueDate);
+    console.log('Assinatura reativada no Asaas:', asaasResult);
+    console.log('Próxima data de vencimento:', nextDueDate);
 
     return res.status(200).json({
       success: true,
-      message: 'Solicitação de cancelamento enviada com sucesso. O status será atualizado em breve.',
-      asaasData: asaasResult
+      message: `Solicitação de reativação enviada com sucesso. A próxima cobrança será em ${nextDueDate}. O status será atualizado em breve.`,
+      asaasData: asaasResult,
+      nextDueDate
     });
 
   } catch (error) {
-    console.error('Erro ao cancelar assinatura:', error);
+    console.error('Erro ao reativar assinatura:', error);
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     return res.status(500).json({ error: 'Erro interno: ' + errorMessage });
   }
