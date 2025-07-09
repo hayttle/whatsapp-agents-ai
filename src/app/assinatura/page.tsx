@@ -175,6 +175,154 @@ export default function AssinaturaPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Seção de planos disponíveis para usuários com assinatura ativa */}
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold mb-4">Planos Disponíveis</h2>
+          <p className="text-gray-600 mb-6">
+            Você pode adquirir planos adicionais ou fazer upgrade da sua assinatura atual.
+            Novos planos serão adicionados à sua conta existente.
+          </p>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600">{error}</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {plans.map((plan) => {
+                  const Icon = plan.icon;
+                  const isSelected = selectedPlan === plan.id;
+                  return (
+                    <Card
+                      key={plan.id}
+                      className={`cursor-pointer transition-all duration-200 ${isSelected ? 'ring-4 ring-brand-green-light border-brand-green-light bg-green-50 scale-105 shadow-lg' : 'hover:border-gray-300'}`}
+                      onClick={() => setSelectedPlan(plan.id)}
+                    >
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Icon className={`w-6 h-6 ${isSelected ? 'text-brand-green-light' : 'text-gray-400'}`} />
+                            <div>
+                              <CardTitle className="text-xl">{plan.name}</CardTitle>
+                              {plan.highlight && (
+                                <Badge variant="default" className="mt-1">
+                                  <Star className="w-3 h-3 mr-1" />
+                                  Popular
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <CardDescription>{plan.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {plan.features.map((feature, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <Check className="w-4 h-4 text-green-500" />
+                              <span className="text-sm text-gray-600">{feature}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+            {/* Coluna da Direita - Detalhes e Checkout */}
+            <div className="lg:col-span-1">
+              <Card className="sticky top-8">
+                <CardHeader>
+                  <CardTitle>Adicionar Plano</CardTitle>
+                  <CardDescription>
+                    {selectedPlan ? 'Confirme os detalhes do novo plano' : 'Selecione um plano para continuar'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {selectedPlanData ? (
+                    <>
+                      {/* Plano Selecionado */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          {(() => {
+                            const Icon = selectedPlanData.icon;
+                            return <Icon className="w-5 h-5 text-brand-green-light" />;
+                          })()}
+                          <div>
+                            <h3 className="font-semibold">{selectedPlanData.name}</h3>
+                            <p className="text-sm text-gray-600">{selectedPlanData.description}</p>
+                          </div>
+                        </div>
+                        {/* Quantidade */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Quantidade de Pacotes
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                              disabled={quantity <= 1}
+                            >
+                              -
+                            </Button>
+                            <span className="w-12 text-center font-medium">{quantity}</span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setQuantity(quantity + 1)}
+                            >
+                              +
+                            </Button>
+                          </div>
+                        </div>
+                        {/* Recursos multiplicados */}
+                        <div className="space-y-1 mt-4">
+                          {selectedPlanData.features.map((feature, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <Check className="w-4 h-4 text-green-500" />
+                              <span className="text-sm text-gray-600">{multiplyBenefit(feature, quantity)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Valor Total */}
+                      <div className="flex items-center justify-between mt-4">
+                        <span className="text-gray-600">Valor Total:</span>
+                        <span className="text-lg font-bold text-green-600">
+                          R$ {totalPrice.toFixed(2).replace('.', ',')}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8">
+                      <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500">
+                        Selecione um plano para ver os detalhes e continuar com a assinatura.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    onClick={handleSubscribe}
+                    disabled={!selectedPlan}
+                    loading={!!selectedPlan && loadingPlan === selectedPlan}
+                    className="w-full"
+                  >
+                    Adicionar Plano
+                  </Button>
+                </CardFooter>
+              </Card>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

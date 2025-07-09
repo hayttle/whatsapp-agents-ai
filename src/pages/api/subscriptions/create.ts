@@ -100,6 +100,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
       });
     }
 
+    // Buscar o primeiro pagamento da assinatura para obter o link de pagamento
+    let paymentUrl = null;
+    try {
+      const payments = await import('@/services/asaasService').then(({ getAsaasSubscriptionPayments }) =>
+        getAsaasSubscriptionPayments(asaasSubscription.id)
+      );
+      const firstPayment = payments?.data?.[0];
+      paymentUrl = firstPayment?.invoiceUrl || null;
+    } catch (err) {
+      console.error('[Create Pending] Erro ao buscar pagamentos da assinatura:', err);
+    }
+
+    if (!paymentUrl) {
+      return res.status(500).json({ error: 'Não foi possível obter o link de pagamento. Tente novamente em instantes.' });
+    }
+
     // Criar registro local com status ACTIVE (alinhado com Asaas)
     const subscriptionData = {
       tenant_id,
@@ -138,7 +154,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
     return res.status(201).json({
       success: true,
       subscription,
-      asaas_payment_url: asaasSubscription.invoiceUrl, // Link de pagamento exclusivo do cliente
+      asaas_payment_url: paymentUrl,
       asaas_subscription_id: asaasSubscription.id,
     });
 

@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 
 export async function checkSubscriptionAccess(request: NextRequest) {
+  console.log('MIDDLEWARE subscription: executando');
   try {
     // Criar cliente Supabase
     const supabase = createServerClient(
@@ -83,6 +84,22 @@ export async function checkSubscriptionAccess(request: NextRequest) {
           .eq('tenant_id', userData.tenant_id)
           .eq('status', 'ACTIVE');
       }
+    }
+
+    // Verificar se há cobrança vencida (OVERDUE) para o tenant
+    const { data: overduePayment } = await supabase
+      .from('subscription_payments')
+      .select('id')
+      .eq('tenant_id', userData.tenant_id)
+      .eq('status', 'OVERDUE')
+      .limit(1)
+      .single();
+
+    console.log('MIDDLEWARE subscription: tenant_id:', userData.tenant_id, 'overduePayment:', overduePayment);
+
+    if (overduePayment) {
+      // Bloquear acesso e redirecionar para /assinatura
+      return NextResponse.redirect(new URL('/assinatura', request.url));
     }
 
     // Sem acesso - redirecionar para página de assinatura
