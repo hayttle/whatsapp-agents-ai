@@ -4,6 +4,7 @@ import { useDashboard } from '@/hooks/useDashboard';
 import { useUserRole } from '@/hooks/useUserRole';
 import { PlanLimitsCard } from '@/components/brand';
 import { TrialAlert } from '@/components/brand';
+import { ResourceLimitsCard } from '@/components/brand';
 import { useUsers } from '@/hooks/useUsers';
 import { useUsage } from '@/hooks/useUsage';
 import { useRouter } from 'next/navigation';
@@ -57,7 +58,7 @@ export default function DashboardPage() {
   const { isSuperAdmin, user, isLoading: userLoading } = useUserRole();
   const { stats, isLoading: statsLoading, error: statsError } = useDashboard();
   const { currentUser, loading } = useUsers();
-  const { stats: usageStats, loading: usageLoading } = useUsage(user?.tenant_id);
+  const { data: usageData, loading: usageLoading } = useUsage({ tenantId: user?.tenant_id });
   const router = useRouter();
 
   const isLoading = userLoading || statsLoading || usageLoading;
@@ -229,10 +230,10 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Limites do Plano (apenas para usuários comuns) */}
-      {!isSuperAdmin && usageStats && (
+      {/* Limites de Recursos (apenas para usuários comuns) */}
+      {!isSuperAdmin && (
         <div className="mb-8">
-          <PlanLimitsCard stats={usageStats} loading={usageLoading} />
+          <ResourceLimitsCard tenantId={user?.tenant_id} />
         </div>
       )}
 

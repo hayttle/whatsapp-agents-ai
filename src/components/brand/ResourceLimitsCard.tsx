@@ -48,9 +48,9 @@ export function ResourceLimitsCard({
           <CardTitle>Limites de Recursos</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-2 text-red-600">
-            <AlertTriangle className="w-4 h-4" />
-            <span>Erro ao carregar limites de recursos</span>
+          <div className="flex items-center gap-2 text-gray-600">
+            <Info className="w-4 h-4" />
+            <span>Faça login para visualizar os limites de recursos</span>
           </div>
         </CardContent>
       </Card>

@@ -20,7 +20,11 @@ export function useUsage({ tenantId, isSuperAdmin = false }: UseUsageProps = {})
   const [error, setError] = useState<string | null>(null);
 
   const fetchUsage = async () => {
-    if (!tenantId && !isSuperAdmin) return;
+    if (!tenantId && !isSuperAdmin) {
+      setLoading(false);
+      setError('Tenant ID ou permissão de super admin é necessária');
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -40,6 +44,13 @@ export function useUsage({ tenantId, isSuperAdmin = false }: UseUsageProps = {})
 
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // Se for erro de autenticação, não mostrar erro, apenas parar o loading
+        if (response.status === 401) {
+          setLoading(false);
+          return;
+        }
+        
         throw new Error(errorData.error || 'Erro ao buscar estatísticas de uso');
       }
 
