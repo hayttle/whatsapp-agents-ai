@@ -15,4 +15,5 @@ export * from './Switch';
 export { PlanCard } from './PlanCard';
 export { SubscriptionHistory } from './SubscriptionHistory';
 export { TrialAlert } from './TrialAlert';
-export { ResourceLimitsCard } from './ResourceLimitsCard'; 
+export { ResourceLimitsCard } from './ResourceLimitsCard';
+export { SubscriptionsTable } from './SubscriptionsTable'; 

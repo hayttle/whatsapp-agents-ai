@@ -7,6 +7,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/brand';
 import { Button } from '@/components/brand';
 import { Badge } from '@/components/brand';
+import { SubscriptionsTable } from '@/components/brand';
 import { Check, Star, Zap, MessageSquare, XCircle, Clock, FileText } from 'lucide-react';
 import { formatDateToDisplay, getCycleLabel } from '@/lib/utils';
 
@@ -175,6 +176,11 @@ export default function AssinaturaPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Tabela de todas as assinaturas */}
+        <div className="mt-8">
+          <SubscriptionsTable />
+        </div>
 
         {/* Seção de planos disponíveis para usuários com assinatura ativa */}
         <div className="mt-8">
