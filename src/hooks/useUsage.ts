@@ -1,65 +1,71 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { UsageStats, TotalLimits } from '@/lib/plans';
 
-export interface UsageStats {
-  tenantId: string;
-  tenantName: string;
-  tenantEmail: string;
-  currentPlan: string;
-  planQuantity: number;
-  allowedInstances: number;
-  currentInstances: number;
-  remainingInstances: number;
-  subscriptionStatus: string;
-  nextDueDate: string;
-  monthlyPrice: number;
-  usagePercentage: number;
-  isOverLimit: boolean;
+interface UsageData {
+  usage: UsageStats;
+  totalLimits: TotalLimits;
+  usagePercentage: Record<string, number>;
 }
 
-export interface UseUsageReturn {
-  stats: UsageStats | null;
-  loading: boolean;
-  error: string | null;
-  refresh: () => Promise<void>;
+interface UseUsageProps {
+  tenantId?: string;
+  isSuperAdmin?: boolean;
 }
 
-export function useUsage(tenantId?: string): UseUsageReturn {
-  const [stats, setStats] = useState<UsageStats | null>(null);
+export function useUsage({ tenantId, isSuperAdmin = false }: UseUsageProps = {}) {
+  const [data, setData] = useState<UsageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchUsageStats = useCallback(async () => {
-    if (!tenantId) {
-      setStats(null);
-      setLoading(false);
-      return;
-    }
+  const fetchUsage = async () => {
+    if (!tenantId && !isSuperAdmin) return;
+
+    setLoading(true);
+    setError(null);
 
     try {
-      setLoading(true);
-      setError(null);
-      
-      // Endpoint removido - definir stats como null
-      setStats(null);
+      const url = isSuperAdmin && tenantId 
+        ? `/api/usage/stats?tenantId=${tenantId}`
+        : '/api/usage/stats';
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao buscar estatísticas de uso');
+      }
+
+      const result = await response.json();
+      setData(result);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar estatísticas de uso';
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
       setError(errorMessage);
-      setStats(null);
+      console.error('Erro ao buscar estatísticas de uso:', err);
     } finally {
       setLoading(false);
     }
-  }, [tenantId]);
+  };
 
   useEffect(() => {
-    fetchUsageStats();
-  }, [fetchUsageStats]);
+    fetchUsage();
+  }, [tenantId, isSuperAdmin]);
+
+  const refetch = () => {
+    fetchUsage();
+  };
 
   return {
-    stats,
+    data,
     loading,
     error,
-    refresh: fetchUsageStats,
+    refetch,
   };
 } 

@@ -20,6 +20,22 @@ export interface PlanLimits {
   packDescription: string;
 }
 
+// Nova interface para representar uma assinatura ativa
+export interface ActiveSubscription {
+  plan_name: string;
+  quantity: number;
+  status: string;
+}
+
+// Interface para limites totais de um tenant
+export interface TotalLimits {
+  nativeInstances: number;
+  externalInstances: number;
+  internalAgents: number;
+  externalAgents: number;
+  subscriptions: ActiveSubscription[];
+}
+
 export const PLANS: Record<string, PlanLimits> = {
   'starter': {
     name: 'Starter',
@@ -173,4 +189,93 @@ export function calculateTotalPrice(planKey: string, quantity: number): number {
   const plan = PLANS[planKey];
   if (!plan) return 0;
   return plan.price * quantity;
+}
+
+// Nova função para calcular limites totais baseados em múltiplas assinaturas
+export function calculateTotalLimits(subscriptions: ActiveSubscription[]): TotalLimits {
+  const totalLimits: TotalLimits = {
+    nativeInstances: 0,
+    externalInstances: 0,
+    internalAgents: 0,
+    externalAgents: 0,
+    subscriptions: subscriptions.filter(sub => sub.status === 'ACTIVE')
+  };
+
+  // Calcular limites somando todas as assinaturas ativas
+  totalLimits.subscriptions.forEach(subscription => {
+    const plan = getPlanByName(subscription.plan_name);
+    if (plan) {
+      totalLimits.nativeInstances += plan.instancesPerPack.native * subscription.quantity;
+      totalLimits.externalInstances += plan.instancesPerPack.external * subscription.quantity;
+      totalLimits.internalAgents += plan.agentsPerPack.internal * subscription.quantity;
+      totalLimits.externalAgents += plan.agentsPerPack.external * subscription.quantity;
+    }
+  });
+
+  return totalLimits;
+}
+
+// Nova função para verificar limites considerando múltiplas assinaturas
+export function checkTotalPlanLimits(
+  subscriptions: ActiveSubscription[],
+  currentUsage: UsageStats,
+  action: 'create_instance' | 'create_agent',
+  type: 'native' | 'external' | 'internal' | 'external'
+): { allowed: boolean; reason?: string; totalLimits?: TotalLimits } {
+  const totalLimits = calculateTotalLimits(subscriptions);
+  
+  if (action === 'create_instance') {
+    if (type === 'native') {
+      if (currentUsage.nativeInstances >= totalLimits.nativeInstances) {
+        return { 
+          allowed: false, 
+          reason: `Limite total de ${totalLimits.nativeInstances} instância(s) nativa(s) atingido`,
+          totalLimits
+        };
+      }
+    } else if (type === 'external') {
+      if (currentUsage.externalInstances >= totalLimits.externalInstances) {
+        return { 
+          allowed: false, 
+          reason: `Limite total de ${totalLimits.externalInstances} instância(s) externa(s) atingido`,
+          totalLimits
+        };
+      }
+    }
+  } else if (action === 'create_agent') {
+    if (type === 'internal') {
+      if (currentUsage.internalAgents >= totalLimits.internalAgents) {
+        return { 
+          allowed: false, 
+          reason: `Limite total de ${totalLimits.internalAgents} agente(s) interno(s) atingido`,
+          totalLimits
+        };
+      }
+    } else if (type === 'external') {
+      if (currentUsage.externalAgents >= totalLimits.externalAgents) {
+        return { 
+          allowed: false, 
+          reason: `Limite total de ${totalLimits.externalAgents} agente(s) externo(s) atingido`,
+          totalLimits
+        };
+      }
+    }
+  }
+
+  return { allowed: true, totalLimits };
+}
+
+// Função para obter porcentagem de uso considerando múltiplas assinaturas
+export function getTotalUsagePercentage(
+  subscriptions: ActiveSubscription[],
+  currentUsage: UsageStats
+): Record<string, number> {
+  const totalLimits = calculateTotalLimits(subscriptions);
+  
+  return {
+    nativeInstances: totalLimits.nativeInstances > 0 ? (currentUsage.nativeInstances / totalLimits.nativeInstances) * 100 : 0,
+    externalInstances: totalLimits.externalInstances > 0 ? (currentUsage.externalInstances / totalLimits.externalInstances) * 100 : 0,
+    internalAgents: totalLimits.internalAgents > 0 ? (currentUsage.internalAgents / totalLimits.internalAgents) * 100 : 0,
+    externalAgents: totalLimits.externalAgents > 0 ? (currentUsage.externalAgents / totalLimits.externalAgents) * 100 : 0,
+  };
 } 

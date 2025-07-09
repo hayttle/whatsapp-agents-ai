@@ -1,10 +1,27 @@
-import { createClient } from '@/lib/supabase/client';
-import { UsageStats } from '@/lib/plans';
+import { createClient } from '@supabase/supabase-js';
+import { UsageStats, ActiveSubscription, TotalLimits, calculateTotalLimits, checkTotalPlanLimits, getTotalUsagePercentage } from '@/lib/plans';
 
-const supabase = createClient();
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export interface UsageResponse {
   usage: UsageStats;
+  success: boolean;
+  error?: string;
+}
+
+export interface TotalLimitsResponse {
+  totalLimits: TotalLimits;
+  success: boolean;
+  error?: string;
+}
+
+export interface PlanLimitsResponse {
+  allowed: boolean;
+  reason?: string;
+  totalLimits?: TotalLimits;
   success: boolean;
   error?: string;
 }
@@ -76,30 +93,114 @@ class UsageService {
     }
   }
 
-  async getUsageStatsForUser(userId: string): Promise<UsageResponse> {
+  // Nova função para buscar todas as assinaturas ativas de um tenant
+  async getActiveSubscriptions(tenantId: string): Promise<ActiveSubscription[]> {
     try {
-      // Buscar tenant do usuário
-      const { data: user, error: userError } = await supabase
-        .from('users')
-        .select('tenant_id')
-        .eq('id', userId)
-        .single();
+      const { data: subscriptions, error } = await supabase
+        .from('subscriptions')
+        .select('plan_name, quantity, status')
+        .eq('tenant_id', tenantId)
+        .in('status', ['ACTIVE', 'PENDING'])
+        .order('created_at', { ascending: false });
 
-      if (userError || !user?.tenant_id) {
-        throw new Error('Usuário não encontrado ou sem tenant');
+      if (error) {
+        throw new Error(`Erro ao buscar assinaturas: ${error.message}`);
       }
 
-      return this.getUsageStats(user.tenant_id);
+      return subscriptions || [];
+    } catch (error) {
+      console.error('Erro ao buscar assinaturas ativas:', error);
+      return [];
+    }
+  }
+
+  // Nova função para calcular limites totais de um tenant
+  async getTotalLimits(tenantId: string): Promise<TotalLimitsResponse> {
+    try {
+      const subscriptions = await this.getActiveSubscriptions(tenantId);
+      const totalLimits = calculateTotalLimits(subscriptions);
+
+      return {
+        totalLimits,
+        success: true,
+      };
     } catch (error) {
       return {
-        usage: {
+        totalLimits: {
           nativeInstances: 0,
           externalInstances: 0,
           internalAgents: 0,
           externalAgents: 0,
+          subscriptions: [],
         },
         success: false,
         error: error instanceof Error ? error.message : 'Erro desconhecido',
+      };
+    }
+  }
+
+  // Nova função para verificar se uma ação é permitida considerando todas as assinaturas
+  async checkPlanLimits(
+    tenantId: string,
+    action: 'create_instance' | 'create_agent',
+    type: 'native' | 'external' | 'internal' | 'external'
+  ): Promise<PlanLimitsResponse> {
+    try {
+      const [usageResponse, subscriptions] = await Promise.all([
+        this.getUsageStats(tenantId),
+        this.getActiveSubscriptions(tenantId)
+      ]);
+
+      if (!usageResponse.success) {
+        throw new Error(usageResponse.error || 'Erro ao buscar estatísticas de uso');
+      }
+
+      const limitCheck = checkTotalPlanLimits(
+        subscriptions,
+        usageResponse.usage,
+        action,
+        type
+      );
+
+      return {
+        ...limitCheck,
+        success: true,
+      };
+    } catch (error) {
+      return {
+        allowed: false,
+        reason: 'Erro ao verificar limites do plano',
+        success: false,
+        error: error instanceof Error ? error.message : 'Erro desconhecido',
+      };
+    }
+  }
+
+  // Nova função para obter porcentagem de uso total
+  async getTotalUsagePercentage(tenantId: string): Promise<Record<string, number>> {
+    try {
+      const [usageResponse, subscriptions] = await Promise.all([
+        this.getUsageStats(tenantId),
+        this.getActiveSubscriptions(tenantId)
+      ]);
+
+      if (!usageResponse.success) {
+        return {
+          nativeInstances: 0,
+          externalInstances: 0,
+          internalAgents: 0,
+          externalAgents: 0,
+        };
+      }
+
+      return getTotalUsagePercentage(subscriptions, usageResponse.usage);
+    } catch (error) {
+      console.error('Erro ao calcular porcentagem de uso:', error);
+      return {
+        nativeInstances: 0,
+        externalInstances: 0,
+        internalAgents: 0,
+        externalAgents: 0,
       };
     }
   }

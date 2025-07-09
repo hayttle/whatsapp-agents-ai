@@ -104,34 +104,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    // Verificar limites do plano
-    const { data: subscription } = await supabase
-      .from('subscriptions')
-      .select('plan_name, quantity')
-      .eq('tenant_id', tenantId)
-      .in('status', ['ACTIVE', 'PENDING'])
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+    // Verificar limites do plano considerando todas as assinaturas ativas
+    const limitCheck = await usageService.checkPlanLimits(tenantId, 'create_instance', 'external');
+    
+    if (!limitCheck.success) {
+      return res.status(500).json({ 
+        error: limitCheck.error || 'Erro ao verificar limites do plano',
+        limitReached: false
+      });
+    }
 
-    if (subscription?.plan_name) {
-      const usageResponse = await usageService.getUsageStats(tenantId);
-      if (usageResponse.success) {
-        const limitCheck = checkPlanLimits(
-          subscription.plan_name,
-          usageResponse.usage,
-          'create_instance',
-          'external',
-          subscription.quantity || 1
-        );
-
-        if (!limitCheck.allowed) {
-          return res.status(403).json({ 
-            error: limitCheck.reason || 'Limite do plano atingido',
-            limitReached: true
-          });
-        }
-      }
+    if (!limitCheck.allowed) {
+      return res.status(403).json({ 
+        error: limitCheck.reason || 'Limite do plano atingido',
+        limitReached: true,
+        totalLimits: limitCheck.totalLimits
+      });
     }
 
     // Validação de duplicidade: não permitir instância com mesmo nome para o mesmo provedor

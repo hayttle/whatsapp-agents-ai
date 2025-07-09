@@ -1,39 +1,51 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { authenticateUser } from '@/lib/auth/helpers';
+import { withAuth, AuthResult } from '@/lib/auth/helpers';
 import { usageService } from '@/services/usageService';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResult) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Autenticar usuário
-    const auth = await authenticateUser(req, res);
-    if (!auth) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    const { user } = auth;
+    const { tenantId } = req.query;
+
+    // Verificar permissões
+    if (!user.role || !['user', 'super_admin'].includes(user.role)) {
+      return res.status(403).json({ error: 'Forbidden - Insufficient permissions' });
     }
 
-    const { user } = auth;
+    // Se não for super_admin, só pode ver dados do próprio tenant
+    const targetTenantId = user.role === 'super_admin' && tenantId ? String(tenantId) : (user.tenant_id || '');
 
     // Buscar estatísticas de uso
-    const usageResponse = await usageService.getUsageStats(user.tenant_id ?? '');
-
+    const usageResponse = await usageService.getUsageStats(targetTenantId);
     if (!usageResponse.success) {
-      return res.status(500).json({ 
-        error: usageResponse.error || 'Erro ao buscar estatísticas de uso' 
-      });
+      return res.status(500).json({ error: usageResponse.error || 'Erro ao buscar estatísticas de uso' });
     }
+
+    // Buscar limites totais
+    const totalLimitsResponse = await usageService.getTotalLimits(targetTenantId);
+    if (!totalLimitsResponse.success) {
+      return res.status(500).json({ error: totalLimitsResponse.error || 'Erro ao buscar limites totais' });
+    }
+
+    // Calcular porcentagens de uso
+    const usagePercentage = await usageService.getTotalUsagePercentage(targetTenantId);
 
     return res.status(200).json({
       success: true,
       usage: usageResponse.usage,
+      totalLimits: totalLimitsResponse.totalLimits,
+      usagePercentage,
     });
 
   } catch (error) {
-    console.error('Erro ao buscar estatísticas de uso:', error);
-    return res.status(500).json({ 
-      error: error instanceof Error ? error.message : 'Erro interno do servidor' 
-    });
+    console.error('[Usage Stats] Erro:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+    return res.status(500).json({ error: 'Erro interno: ' + errorMessage });
   }
-} 
+}
+
+export default withAuth(handler); 
