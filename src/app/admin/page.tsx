@@ -18,7 +18,7 @@ export default async function AdminPage() {
     .single();
 
   const isSuperAdmin = userData?.role === 'super_admin';
-  
+
   if (!isSuperAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
@@ -43,7 +43,7 @@ export default async function AdminPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-brand-gray-dark mb-2">Painel Administrativo</h1>
         <p className="text-gray-600">
-          Bem-vindo, {user.email} 
+          Bem-vindo, {user.email}
           <span className="ml-2 text-brand-green-dark font-medium">(Super Admin)</span>
         </p>
       </div>
@@ -132,7 +132,7 @@ export default async function AdminPage() {
               Crie e configure agentes de inteligência artificial.
             </p>
             <Button className="w-full">
-              <a href="/admin/agentes">Gerenciar Agentes</a>
+              <a href="/agentes">Gerenciar Agentes</a>
             </Button>
           </CardContent>
         </Card>

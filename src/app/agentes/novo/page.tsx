@@ -1,12 +1,13 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import AgentQuickCreateModal from '@/components/admin/agents/AgentQuickCreateModal';
+import { AgentModal } from '@/components/admin/agents/AgentModal';
 import { authenticatedFetch } from '@/lib/utils';
 
 export default function NovoAgentePage() {
   const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
+  const [createdAgentId, setCreatedAgentId] = useState<string | null>(null);
   const [tenantId, setTenantId] = useState('');
 
   useEffect(() => {
@@ -21,9 +22,11 @@ export default function NovoAgentePage() {
     fetchTenantId();
   }, []);
 
-  const handleCreated = (agentId: string) => {
+  const handleSaved = (agentId: string) => {
     setModalOpen(false);
-    router.push(`/admin/agentes/${agentId}/configuracao`);
+    if (agentId) {
+      router.push(`/agentes/${agentId}/configuracao`);
+    }
   };
 
   return (
@@ -34,11 +37,13 @@ export default function NovoAgentePage() {
       >
         Criar agente
       </button>
-      <AgentQuickCreateModal
+      <AgentModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        onCreated={handleCreated}
+        onSaved={handleSaved}
+        agent={null}
         tenantId={tenantId}
+        isSuperAdmin={!tenantId}
       />
     </div>
   );

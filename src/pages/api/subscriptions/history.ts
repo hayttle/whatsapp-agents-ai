@@ -82,27 +82,27 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
         }
 
         return {
-          id: subscription.id,
+      id: subscription.id,
           asaasSubscriptionId: subscription.asaas_subscription_id,
-          plan: subscription.plan_name,
-          planType: subscription.plan_type,
-          quantity: subscription.quantity,
-          allowedInstances: subscription.allowed_instances,
-          status: subscription.status,
-          value: subscription.value,
-          price: subscription.price,
-          cycle: subscription.cycle,
-          startedAt: subscription.started_at,
-          nextDueDate: subscription.next_due_date,
+      plan: subscription.plan_name,
+      planType: subscription.plan_type,
+      quantity: subscription.quantity,
+      allowedInstances: subscription.allowed_instances,
+      status: subscription.status,
+      value: subscription.value,
+      price: subscription.price,
+      cycle: subscription.cycle,
+      startedAt: subscription.started_at,
+      nextDueDate: subscription.next_due_date,
           expiresAt: subscription.expires_at,
-          paidAt: subscription.paid_at,
-          paymentMethod: subscription.payment_method,
-          invoiceUrl: subscription.invoice_url,
+      paidAt: subscription.paid_at,
+      paymentMethod: subscription.payment_method,
+      invoiceUrl: subscription.invoice_url,
           isActive: ['ACTIVE', 'PENDING'].includes(subscription.status),
           isTrial: false, // Trial agora está na tabela separada
-          isSuspended: subscription.status === 'SUSPENDED',
-          createdAt: subscription.created_at,
-          updatedAt: subscription.updated_at,
+      isSuspended: subscription.status === 'SUSPENDED',
+      createdAt: subscription.created_at,
+      updatedAt: subscription.updated_at,
           payments: payments,
           paymentsCount: payments.length,
         };
@@ -119,6 +119,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     return res.status(500).json({ error: 'Erro interno: ' + errorMessage });
   }
-}
+} 
 
 export default withAuth(handler); 

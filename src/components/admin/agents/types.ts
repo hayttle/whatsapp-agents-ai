@@ -3,7 +3,7 @@ export interface Agent {
   title: string;
   prompt?: string;
   fallback_message?: string;
-  active: boolean;
+  status: "active" | "inactive";
   instance_id?: string | null;
   tenant_id: string;
   personality?: string;
@@ -24,7 +24,7 @@ export interface Instance {
 export interface AgentModalProps {
   open: boolean;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (agentId: string) => void;
   agent?: Agent | null;
   tenantId: string;
   isSuperAdmin?: boolean;

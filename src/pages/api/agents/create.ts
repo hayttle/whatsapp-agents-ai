@@ -26,6 +26,30 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
       return res.status(403).json({ error: 'Forbidden - Cannot create agent for different tenant' });
     }
 
+    if (auth.user.role === 'super_admin') {
+      // Superadmin pode criar agente sem restrição de tenant, assinatura ou trial
+      const insertData: Record<string, unknown> = {
+        tenant_id,
+        title,
+        description: description || null,
+        agent_type,
+        status: 'active',
+      };
+      if (agent_type === 'external') {
+        insertData.webhookUrl = webhookUrl;
+      }
+      const { data: agent, error } = await auth.supabase
+        .from('agents')
+        .insert(insertData)
+        .select()
+        .single();
+      if (error) {
+        console.error('[Agents Create] Erro ao criar agente:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+      }
+      return res.status(201).json({ success: true, agent });
+    }
+
     // Verificar se o tenant tem acesso (trial ativo ou assinatura paga)
     const { data: activeSubscription } = await auth.supabase
       .from('subscriptions')
@@ -91,6 +115,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
       title,
       description: description || null,
       agent_type,
+      status: 'active',
     };
     if (agent_type === 'external') {
       insertData.webhookUrl = webhookUrl;

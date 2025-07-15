@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, Alert } from
 import { createClient } from '@/lib/supabase/server';
 import { Shield } from 'lucide-react';
 
-// Página de configuração de agente será criada em /admin/agentes/[id]/configuracao
+// Página de configuração de agente será criada em /agentes/[id]/configuracao
 
 export default async function AgentesAdminPage() {
   const supabase = await createClient();
@@ -23,7 +23,7 @@ export default async function AgentesAdminPage() {
 
   const isSuperAdmin = userData?.role === 'super_admin';
   const isUser = userData?.role === 'user';
-  
+
   if (!isSuperAdmin && !isUser) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">

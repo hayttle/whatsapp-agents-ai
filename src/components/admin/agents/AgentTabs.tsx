@@ -8,8 +8,8 @@ interface AgentTabsProps {
 export function AgentTabs({ agentId }: AgentTabsProps) {
   const pathname = usePathname();
   const tabs = [
-    { label: 'Configurações', href: `/admin/agentes/${agentId}/configuracao` },
-    { label: 'Conversas', href: `/admin/agentes/${agentId}/conversas` },
+    { label: 'Configurações', href: `/agentes/${agentId}/configuracao` },
+    { label: 'Conversas', href: `/agentes/${agentId}/conversas` },
   ];
   return (
     <div className="flex gap-4 border-b mb-6">

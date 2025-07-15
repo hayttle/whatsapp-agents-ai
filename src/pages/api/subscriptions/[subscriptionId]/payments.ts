@@ -76,6 +76,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     return res.status(500).json({ error: 'Erro interno: ' + errorMessage });
   }
-}
+} 
 
 export default withAuth(handler); 

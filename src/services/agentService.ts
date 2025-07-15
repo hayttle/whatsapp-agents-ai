@@ -6,7 +6,7 @@ export interface Agent {
   instance_id?: string | null;
   title: string;
   prompt?: string;
-  active: boolean;
+  status: "active" | "inactive";
   created_at: string;
   updated_at: string;
   personality?: string;
@@ -72,10 +72,10 @@ class AgentService {
     });
   }
 
-  async toggleAgentStatus(agentId: string, active: boolean): Promise<ApiResponse> {
+  async toggleAgentStatus(agentId: string, status: "active" | "inactive"): Promise<ApiResponse> {
     return authenticatedFetch("/api/agents/toggle-status", {
       method: "PUT",
-      body: JSON.stringify({ id: agentId, active }),
+      body: JSON.stringify({ id: agentId, status }),
     });
   }
 

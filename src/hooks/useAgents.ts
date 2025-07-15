@@ -14,7 +14,7 @@ interface AgentFormData {
   title: string;
   prompt: string;
   fallback_message: string;
-  active: boolean;
+  status: "active" | "inactive";
 }
 
 export const useAgents = ({ isSuperAdmin, tenantId }: UseAgentsProps) => {
@@ -66,9 +66,9 @@ export const useAgents = ({ isSuperAdmin, tenantId }: UseAgentsProps) => {
     }
   }, [fetchAgentes]);
 
-  const toggleAgentStatus = useCallback(async (id: string, active: boolean) => {
+  const toggleAgentStatus = useCallback(async (id: string, status: "active" | "inactive") => {
     try {
-      await agentService.toggleAgentStatus(id, active);
+      await agentService.toggleAgentStatus(id, status);
       await fetchAgentes();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao alterar status do agente';

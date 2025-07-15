@@ -12,20 +12,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
       return res.status(403).json({ error: 'Forbidden - Insufficient permissions' });
     }
 
-    const { id, active } = req.body;
+    const { id, status } = req.body;
 
     if (!id) {
       return res.status(400).json({ error: 'Agent ID is required' });
     }
 
-    if (typeof active !== 'boolean') {
-      return res.status(400).json({ error: 'Active status is required' });
+    if (typeof status !== 'string' || !['active', 'inactive'].includes(status)) {
+      return res.status(400).json({ error: 'Status is required and must be "active" or "inactive"' });
     }
 
     // Verificar se o agente existe e se o usuário tem permissão
     const { data: existingAgent } = await auth.supabase
       .from('agents')
-      .select('tenant_id, title, agent_type, active')
+      .select('tenant_id, title, agent_type, status')
       .eq('id', id)
       .single();
 
@@ -40,7 +40,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
 
     const { data: agent, error } = await auth.supabase
       .from('agents')
-      .update({ active })
+      .update({ status })
       .eq('id', id)
       .select()
       .single();

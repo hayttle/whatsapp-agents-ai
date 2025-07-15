@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { AdminListLayout } from '@/components/layout/AdminListLayout';
 import { FiSettings } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
-import AgentQuickCreateModal from './AgentQuickCreateModal';
+import { AgentModal } from './AgentModal';
 
 interface AgentListProps {
   isSuperAdmin: boolean;
@@ -25,6 +25,7 @@ interface AgentListProps {
 export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
   const [deleteAgent, setDeleteAgent] = useState<Agent | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [createdAgentId, setCreatedAgentId] = useState<string | null>(null);
   const router = useRouter();
 
   // Estados dos filtros
@@ -71,8 +72,8 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
   const filteredAgents = useMemo(() => {
     return agentes.filter((agente: Agent) => {
       const matchesStatus = !filterStatus ||
-        (filterStatus === 'active' && agente.active) ||
-        (filterStatus === 'inactive' && !agente.active);
+        (filterStatus === 'active' && agente.status === 'active') ||
+        (filterStatus === 'inactive' && agente.status === 'inactive');
       const matchesEmpresa = !filterEmpresa || agente.tenant_id === filterEmpresa;
       const matchesSearch = !filterSearch ||
         agente.title.toLowerCase().includes(filterSearch.toLowerCase()) ||
@@ -93,12 +94,12 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
   // Verificar se há filtros ativos
   const hasActiveFilters = filterStatus || filterEmpresa || filterSearch || filterType;
 
-  const handleToggleActive = (agente: Agent) => handleAction(
+  const handleToggleStatus = (agente: Agent) => handleAction(
     async () => {
-      await toggleAgentStatus(agente.id, !agente.active);
-      toast.success(`Agente ${agente.active ? 'desativado' : 'ativado'} com sucesso!`);
+      await toggleAgentStatus(agente.id, agente.status === 'active' ? 'inactive' : 'active');
+      toast.success(`Agente ${agente.status === 'active' ? 'desativado' : 'ativado'} com sucesso!`);
     },
-    `toggle-${agente.id}`
+    agente.id
   );
 
   const handleDelete = () => handleAction(
@@ -132,7 +133,13 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
 
   const handleCreated = (agentId: string) => {
     setModalOpen(false);
-    router.push(`/admin/agentes/${agentId}/configuracao`);
+    router.push(`/agentes/${agentId}/configuracao`);
+  };
+
+  const handleSaved = () => {
+    setModalOpen(false);
+    // Atualizar lista de agentes após criação
+    refetch();
   };
 
   return (
@@ -152,11 +159,13 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
               <Plus className="w-4 h-4" />
               Novo Agente
             </Button>
-            <AgentQuickCreateModal
+            <AgentModal
               open={modalOpen}
               onClose={() => setModalOpen(false)}
-              onCreated={handleCreated}
+              onSaved={handleSaved}
+              agent={null}
               tenantId={tenantId || ''}
+              isSuperAdmin={isSuperAdmin}
             />
           </>
         )
@@ -282,15 +291,15 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                 <Card key={agente.id} className="flex flex-col p-4">
                   <CardHeader>
                     <CardTitle className="flex items-start justify-between">
-                      <Link href={`/admin/agentes/${agente.id}/configuracao`} className="flex items-center gap-2 hover:text-brand-green-light transition-colors">
+                      <Link href={`/agentes/${agente.id}/configuracao`} className="flex items-center gap-2 hover:text-brand-green-light transition-colors">
                         <Bot className="w-5 h-5 text-brand-green-light" />
                         {agente.title}
                       </Link>
                       <Switch
-                        checked={agente.active}
-                        onCheckedChange={() => handleToggleActive(agente)}
+                        checked={agente.status === 'active'}
+                        onCheckedChange={() => handleToggleStatus(agente)}
                         disabled={isLoading}
-                        aria-label={agente.active ? 'Desativar agente' : 'Ativar agente'}
+                        aria-label={agente.status === 'active' ? 'Desativar agente' : 'Ativar agente'}
                       />
                     </CardTitle>
                     <CardDescription>
@@ -325,7 +334,7 @@ export function AgentList({ isSuperAdmin, tenantId }: AgentListProps) {
                   </CardContent>
                   <CardFooter className="flex flex-wrap items-center justify-end gap-2 pt-2 pb-2 px-0 bg-transparent">
                     <Tooltip content="Ver detalhes e acessar conversas do agente">
-                      <Link href={`/admin/agentes/${agente.id}/configuracao`}>
+                      <Link href={`/agentes/${agente.id}/configuracao`}>
                         <Button
                           variant="outline"
                           size="sm"

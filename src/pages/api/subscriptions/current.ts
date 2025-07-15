@@ -43,32 +43,32 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
     if (accessInfo.hasActiveSubscription && accessInfo.subscription) {
       const subscription = accessInfo.subscription;
       
-      const formattedSubscription = {
-        id: subscription.id,
-        plan: subscription.plan_name,
-        planType: subscription.plan_type,
-        quantity: subscription.quantity,
-        allowedInstances: subscription.allowed_instances,
-        status: subscription.status,
-        value: subscription.value,
-        price: subscription.price,
-        cycle: subscription.cycle,
-        startedAt: subscription.started_at,
-        nextDueDate: subscription.next_due_date,
-        expiresAt: subscription.expires_at,
-        paidAt: subscription.paid_at,
-        paymentMethod: subscription.payment_method,
-        invoiceUrl: subscription.invoice_url,
+    const formattedSubscription = {
+      id: subscription.id,
+      plan: subscription.plan_name,
+      planType: subscription.plan_type,
+      quantity: subscription.quantity,
+      allowedInstances: subscription.allowed_instances,
+      status: subscription.status,
+      value: subscription.value,
+      price: subscription.price,
+      cycle: subscription.cycle,
+      startedAt: subscription.started_at,
+      nextDueDate: subscription.next_due_date,
+      expiresAt: subscription.expires_at,
+      paidAt: subscription.paid_at,
+      paymentMethod: subscription.payment_method,
+      invoiceUrl: subscription.invoice_url,
         isActive: ['ACTIVE', 'PENDING'].includes(subscription.status),
         isTrial: false, // Agora sempre false, pois trial está separado
-        isExpired: subscription.status === 'EXPIRED',
+      isExpired: subscription.status === 'EXPIRED',
         createdAt: subscription.created_at,
         updatedAt: subscription.updated_at,
-      };
+    };
 
-      return res.status(200).json({
-        success: true,
-        subscription: formattedSubscription,
+    return res.status(200).json({
+      success: true,
+      subscription: formattedSubscription,
         trialStatus: accessInfo.trialStatus,
         hasAccess: accessInfo.hasAccess,
       });
@@ -86,6 +86,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse, auth: AuthResu
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     return res.status(500).json({ error: 'Erro interno: ' + errorMessage });
   }
-}
+} 
 
 export default withAuth(handler); 

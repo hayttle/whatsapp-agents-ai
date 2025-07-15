@@ -135,7 +135,7 @@ export default function AgentConfigPage() {
 
         await agentService.createAgent(agentData);
         toast.success('Agente criado com sucesso!');
-        router.push('/admin/agentes');
+        router.push('/agentes');
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Erro ao criar agente';
         toast.error(errorMessage);
@@ -160,7 +160,7 @@ export default function AgentConfigPage() {
           setShowSuccess(true);
           toast.success('Agente salvo com sucesso!');
           setTimeout(() => setShowSuccess(false), 3000);
-          router.push('/admin/agentes');
+          router.push('/agentes');
         } else {
           toast.error(result.error || 'Erro ao salvar agente');
         }
@@ -187,7 +187,7 @@ export default function AgentConfigPage() {
           setShowSuccess(true);
           toast.success('Agente salvo com sucesso!');
           setTimeout(() => setShowSuccess(false), 3000);
-          router.push('/admin/agentes');
+          router.push('/agentes');
         } else {
           toast.error(result.error || 'Erro ao salvar agente');
         }

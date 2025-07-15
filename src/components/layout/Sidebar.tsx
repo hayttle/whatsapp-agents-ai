@@ -226,7 +226,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                   const isChildActive = hasChildren && item.children!.some(subItem => pathname === subItem.href);
                   const isItemActive = (
                     pathname === item.href ||
-                    (item.href === '/admin/agentes' && (pathname?.startsWith('/admin/agentes') || false)) ||
+                    (item.href === '/agentes' && (pathname?.startsWith('/agentes') || false)) ||
                     isChildActive
                   );
                   const isExpanded = expandedItems.has(item.href);
@@ -296,7 +296,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                   const isChildActive = hasChildren && item.children!.some(subItem => pathname === subItem.href);
                   const isItemActive = (
                     pathname === item.href ||
-                    (item.href === '/admin/agentes' && (pathname?.startsWith('/admin/agentes') || false)) ||
+                    (item.href === '/agentes' && (pathname?.startsWith('/agentes') || false)) ||
                     isChildActive
                   );
                   const isExpanded = expandedItems.has(item.href);
@@ -365,7 +365,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                 const isChildActive = hasChildren && item.children!.some(subItem => pathname === subItem.href);
                 const isItemActive = (
                   pathname === item.href ||
-                  (item.href === '/admin/agentes' && (pathname?.startsWith('/admin/agentes') || false)) ||
+                  (item.href === '/agentes' && (pathname?.startsWith('/agentes') || false)) ||
                   isChildActive
                 );
                 const isExpanded = expandedItems.has(item.href);
